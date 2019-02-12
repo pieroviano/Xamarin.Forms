@@ -1,18 +1,16 @@
-﻿using OpenTK;
-using OpenTK.Graphics.OpenGL;
+﻿#if HAVE_OPENTK
 using System;
+using OpenTK;
 
-namespace Xamarin.Forms.ControlGallery.GTK
+#if __WPF__ || __GTK__ || __MACOS__
+using OpenTK.Graphics.OpenGL;
+#elif __ANDROID__ || __IOS__
+using OpenTK.Graphics.ES20;
+#endif
+
+namespace Xamarin.Forms.Controls
 {
-    public class AdvancedOpenGLApp : Application
-    {
-        public AdvancedOpenGLApp()
-        {
-            MainPage = new AdvancedOpenGLView();
-        }
-    }
-
-    public class AdvancedOpenGLView : ContentPage
+    public class AdvancedOpenGLGallery : ContentPage
     {
         private const string VertexShader = @"
             uniform mat4 uMVPMatrix;
@@ -48,7 +46,7 @@ namespace Xamarin.Forms.ControlGallery.GTK
 
         private Xamarin.Forms.OpenGLView _openGLView = null;
 
-        public AdvancedOpenGLView()
+        public AdvancedOpenGLGallery()
         {
             Title = "Advanced OpenGLView Sample";
 
@@ -213,3 +211,4 @@ namespace Xamarin.Forms.ControlGallery.GTK
         }
     }
 }
+#endif

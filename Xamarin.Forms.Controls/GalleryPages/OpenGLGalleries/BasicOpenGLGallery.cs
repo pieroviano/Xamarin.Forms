@@ -1,17 +1,10 @@
-﻿using System;
+﻿#if HAVE_OPENTK
+using System;
 using OpenTK.Graphics.OpenGL;
 
-namespace Xamarin.Forms.ControlGallery.GTK
+namespace Xamarin.Forms.Controls
 {
-    public class BasicOpenGLApp : Application
-    {
-        public BasicOpenGLApp()
-        {
-            MainPage = new BasicOpenGLView();
-        }
-    }
-
-    public class BasicOpenGLView : ContentPage
+    public class BasicOpenGLGallery : ContentPage
     {
         private bool _initGl = false;
         private int _viewportWidth;
@@ -19,7 +12,7 @@ namespace Xamarin.Forms.ControlGallery.GTK
         private uint _mProgramHandle;
         private OpenGLView _openGLView = null;
 
-        public BasicOpenGLView()
+        public BasicOpenGLGallery()
         {
             Title = "Basic OpenGLView Sample";
 
@@ -96,3 +89,4 @@ namespace Xamarin.Forms.ControlGallery.GTK
         }
     }
 }
+#endif
