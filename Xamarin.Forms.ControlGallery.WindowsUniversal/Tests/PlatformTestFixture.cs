@@ -1,15 +1,13 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
-using UIKit;
-using Xamarin.Forms.Platform.iOS;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Shapes;
+using Xamarin.Forms.Platform.UWP;
 
-namespace Xamarin.Forms.ControlGallery.iOS.Tests
+namespace Xamarin.Forms.ControlGallery.WindowsUniversal.Tests
 {
-	[Internals.Preserve(AllMembers = true)]
 	public class PlatformTestFixture
 	{
-		protected static UIColor EmptyBackground = new UIColor(0f,0f,0f,0f);
-
 		// Sequence for generating test cases
 		protected static IEnumerable<View> BasicViews
 		{
@@ -46,42 +44,44 @@ namespace Xamarin.Forms.ControlGallery.iOS.Tests
 
 		protected IVisualElementRenderer GetRenderer(VisualElement element)
 		{
-			return Platform.iOS.Platform.CreateRenderer(element);
+			return element.GetOrCreateRenderer();
 		}
 
-		protected UIView GetNativeControl(VisualElement visualElement)
+		protected Control GetNativeControl(VisualElement element)
 		{
-			var renderer = GetRenderer(visualElement);
-			var viewRenderer = renderer as IVisualNativeElementRenderer;
-			return viewRenderer?.Control;
+			return GetRenderer(element).GetNativeElement() as Control;
 		}
 
-		protected UILabel GetNativeControl(Label label)
+		protected Panel GetPanel(VisualElement element) 
 		{
-			var renderer = GetRenderer(label);
-			var viewRenderer = renderer.NativeView as LabelRenderer;
-			return viewRenderer.Control;
+			return GetRenderer(element).ContainerElement as Panel;
 		}
 
-		protected UITextField GetNativeControl(Entry entry)
+		protected Border GetBorder(VisualElement element) 
 		{
-			var renderer = GetRenderer(entry);
-			var viewRenderer = renderer.NativeView as EntryRenderer;
-			return viewRenderer.Control;
+			var renderer = GetRenderer(element);
+			var nativeElement = renderer.GetNativeElement();
+			return nativeElement as Border;
+		}
+		
+		protected TextBlock GetNativeControl(Label label)
+		{
+			return GetRenderer(label).GetNativeElement() as TextBlock;
 		}
 
-		protected UITextView GetNativeControl(Editor editor)
+		protected FormsButton GetNativeControl(Button button)
 		{
-			var renderer = GetRenderer(editor);
-			var viewRenderer = renderer.NativeView as EditorRenderer;
-			return viewRenderer.Control;
+			return GetRenderer(button).GetNativeElement() as FormsButton;
 		}
 
-		protected UIButton GetNativeControl(Button button)
+		protected FormsTextBox GetNativeControl(Entry entry)
 		{
-			var renderer = GetRenderer(button);
-			var viewRenderer = renderer.NativeView as ButtonRenderer;
-			return viewRenderer.Control;
+			return GetRenderer(entry).GetNativeElement() as FormsTextBox;
+		}
+
+		protected FormsTextBox GetNativeControl(Editor editor)
+		{
+			return GetRenderer(editor).GetNativeElement() as FormsTextBox;
 		}
 	}
 }
