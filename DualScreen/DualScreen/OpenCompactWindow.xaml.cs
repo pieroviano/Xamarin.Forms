@@ -5,18 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
+using Xamarin.Forms.DualScreen;
 using Xamarin.Forms.Xaml;
 
-namespace Xamarin.Forms.Controls.GalleryPages.TwoPaneViewGalleries
+namespace DualScreen
 {
 	[XamlCompilation(XamlCompilationOptions.Compile)]
 	public partial class OpenCompactWindow : ContentPage
 	{
-		DualScreen.DualScreenInfo info;
+		DualScreenInfo info;
 		public OpenCompactWindow()
 		{
 			InitializeComponent();
-			info = new DualScreen.DualScreenInfo(layout);
+			info = new DualScreenInfo(layout);
 			info.PropertyChanged += Info_PropertyChanged;
 		}
 
@@ -53,22 +54,14 @@ namespace Xamarin.Forms.Controls.GalleryPages.TwoPaneViewGalleries
 				VerticalOptions = LayoutOptions.Fill
 			};
 
-
-			layout.BatchCommitted += Layout_BatchCommitted;
 			page.Content = new ScrollView() { Content = layout };
 
-			var args = await DualScreen.DualScreenHelper.OpenCompactMode(page);
+			var args = await DualScreenHelper.OpenCompactMode(page);
 
 			button.Command = new Command(async () =>
 			{
 				await args.CloseAsync();
 			});
-		}
-
-		void Layout_BatchCommitted(object sender, Internals.EventArg<VisualElement> e)
-		{
-			if (sender is StackLayout layout)
-				System.Diagnostics.Debug.WriteLine($"{layout.Bounds}");
 		}
 	}
 }
