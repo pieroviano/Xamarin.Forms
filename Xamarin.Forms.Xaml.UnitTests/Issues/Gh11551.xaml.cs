@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
-using NUnit.Framework;
-
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	public partial class Gh11541 : ContentPage
+	public partial class Gh11551 : ContentPage
 	{
-		public Gh11541() => InitializeComponent();
-		public Gh11541(bool useCompiledXaml)
+		public Gh11551() => InitializeComponent();
+		public Gh11551(bool useCompiledXaml)
 		{
 			//this stub will be replaced at compile time
 		}
@@ -24,9 +22,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
 			[Test]
-			public void RectangleGeometryDoesntThrow([Values(false, true)] bool useCompiledXaml)
+			public void RectBoundsDoesntThrow([Values(false, true)] bool useCompiledXaml)
 			{
-				Assert.DoesNotThrow(()=> new Gh11541(useCompiledXaml));
+				var layout = new Gh11551(useCompiledXaml);
+				var bounds = AbsoluteLayout.GetLayoutBounds(layout.label);
+				Assert.That(bounds, Is.EqualTo(new Rect(1, .5, -1, 22)));
 			}
 		}
 	}
