@@ -1,26 +1,24 @@
-
-<img src="Assets/banner.png" alt="Xamarin.Forms banner" height="145" >
-
 # Xamarin.Forms #
+
+## Support
+
+Support for Xamarin.Forms ended on **May 1, 2024** as per the [Xamarin Support Policy][xamarin-support-policy]:
+
+> Xamarin support ended on May 1, 2024 for all Xamarin SDKs including Xamarin.Forms.
+
+Xamarin.Forms was succeeded by .NET MAUI in May 2022 as part of .NET 6, and is currently supported as described on the [.NET MAUI Support Policy][maui-support-policy]. Follow the [official upgrade guidance](https://learn.microsoft.com/dotnet/maui/migration) to bring your Xamarin applications to the latest version of .NET.
+
+To all our developers and contributors, thank you so much for being a part of our Xamarin community. We'll see you all over in [.NET MAUI][dotnet-maui-repo]!
+
+[maui-support-policy]: https://dotnet.microsoft.com/platform/support/policy/maui
+[xamarin-support-policy]: https://dotnet.microsoft.com/platform/support/policy/xamarin
+[dotnet-maui-repo]:https://github.com/dotnet/maui/
+
+## About Xamarin.Forms ##
 
 Xamarin.Forms provides a way to quickly build native apps for iOS, Android, Windows and macOS, completely in C#.
 
 Read more about the platform at https://www.xamarin.com/forms.
-
-# Support
-
-Xamarin.Forms now has a successor which is .NET MAUI as part of .NET 6+ and follows the same support lifecycle as the [MAUI Support Lifecycle][maui-support-lifecycle].
-
-Support for Xamarin.Forms will end on **May 1, 2024** as per the [Xamarin Support Policy][xamarin-support-policy]:
-
-> Xamarin support will end on May 1, 2024 for all classic Xamarin SDKs.
-
-[maui-support-lifecycle]: https://dotnet.microsoft.com/platform/support/policy/maui
-[xamarin-support-policy]: https://dotnet.microsoft.com/platform/support/policy/xamarin
-
-## Build Status ##
-
-![Azure DevOps](https://devdiv.visualstudio.com/DevDiv/_apis/build/status/Xamarin/XamarinForms/Xamarin%20Forms?branchName=main "Azure Pipelines")
 
 ## Packages ##
 
