@@ -1,16 +1,22 @@
-﻿using System;
-using System.IO;
+using System;
 using Gtk;
-using Xamarin.Forms.Platform.GTK.Helpers;
-using IOPath = System.IO.Path;
 
 namespace Xamarin.Forms.Platform.GTK
 {
+	/// <summary>
+	/// Application-wide GTK theming.
+	/// </summary>
+	/// <remarks>
+	/// The GTK2 implementation probed the Windows registry for a GTK# 2.12 install and
+	/// called kernel32!SetDllDirectory so the native DLLs could be found; on Linux the
+	/// loader finds libgtk-3 through the normal search path, so none of that applies.
+	///
+	/// GTK3 also replaced the RC-file mechanism (<c>Gtk.Rc.Parse</c>) with CSS, so
+	/// <see cref="LoadCustomTheme"/> now expects a .css file rather than a .rc file.
+	/// </remarks>
 	public static class GtkThemes
 	{
-		[System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
-		[return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-		static extern bool SetDllDirectory(string lpPathName);
+		static CssProvider s_customThemeProvider;
 
 		public static bool IsInitialized { get; private set; }
 
@@ -19,12 +25,14 @@ namespace Xamarin.Forms.Platform.GTK
 			if (IsInitialized)
 				return;
 
-			if (PlatformHelper.GetGTKPlatform() == GTKPlatform.Windows)
-				CheckWindowsGtk();
-
 			IsInitialized = true;
 		}
 
+		/// <summary>
+		/// Applies a custom GTK3 CSS theme across every screen of the application,
+		/// replacing any theme previously applied through this method.
+		/// </summary>
+		/// <param name="filename">Path to a GTK3 CSS file.</param>
 		public static void LoadCustomTheme(string filename)
 		{
 			if (string.IsNullOrEmpty(filename))
@@ -33,46 +41,22 @@ namespace Xamarin.Forms.Platform.GTK
 			if (!IsInitialized)
 				throw new InvalidOperationException("call GtkThemes.Init() before this");
 
-			// GTK provides resource file mechanism for configuring various aspects of the operation of a GTK program at runtime. 
-			// Parses resource information from a string to allow change the App appearance.
-			Rc.Parse(filename);
-		}
+			var screen = Gdk.Screen.Default;
 
-		private static bool CheckWindowsGtk()
-		{
-			string location = null;
-			Version version = null;
-			Version minVersion = new Version(2, 12, 22);
+			if (screen == null)
+				return;
 
-			using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Xamarin\GtkSharp\InstallFolder"))
+			if (s_customThemeProvider != null)
 			{
-				if (key != null)
-					location = key.GetValue(null) as string;
-			}
-			using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Xamarin\GtkSharp\Version"))
-			{
-				if (key != null)
-					Version.TryParse(key.GetValue(null) as string, out version);
+				StyleContext.RemoveProviderForScreen(screen, s_customThemeProvider);
+				s_customThemeProvider = null;
 			}
 
-			if (version == null || version < minVersion || location == null || !File.Exists(System.IO.Path.Combine(location, "bin", "libgtk-win32-2.0-0.dll")))
-			{
-				return false;
-			}
+			var provider = new CssProvider();
+			provider.LoadFromPath(filename);
 
-			var path = IOPath.Combine(location, @"bin");
-			try
-			{
-				if (SetDllDirectory(path))
-				{
-					return true;
-				}
-			}
-			catch (EntryPointNotFoundException)
-			{
-			}
-
-			return true;
+			StyleContext.AddProviderForScreen(screen, provider, StyleProviderPriority.Application);
+			s_customThemeProvider = provider;
 		}
 	}
 }

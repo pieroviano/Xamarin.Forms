@@ -327,7 +327,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			public FlyoutPageFlyoutTitleContainer()
 			{
-				_defaultBackgroundColor = Style.Backgrounds[(int)StateType.Normal];
+				_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal);
 
 				_root = new HBox();
 				_hamburguerIcon = new Gtk.Image();
@@ -347,7 +347,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				_hamburguerButton.Clicked += OnHamburguerButtonClicked;
 
 				_titleLabel = new Gtk.Label();
-				_defaultTextColor = _titleLabel.Style.Foregrounds[(int)StateType.Normal];
+				_defaultTextColor = _titleLabel.GetDefaultForegroundColor(Gtk.StateFlags.Normal);
 
 				_root.PackStart(_hamburguerButton, false, false, GtkToolbarConstants.ToolbarItemSpacing);
 				_root.PackStart(_titleLabel, false, false, 25);
@@ -387,11 +387,11 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				{
 					if (titleColor.HasValue)
 					{
-						_titleLabel.ModifyFg(StateType.Normal, titleColor.Value);
+						_titleLabel.SetForegroundColor(titleColor.Value, StateType.Normal);
 					}
 					else
 					{
-						_titleLabel.ModifyFg(StateType.Normal, _defaultTextColor);
+						_titleLabel.SetForegroundColor(_defaultTextColor, StateType.Normal);
 					}
 				}
 			}
@@ -405,13 +405,13 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 				if (backgroundColor.HasValue)
 				{
-					ModifyBg(StateType.Normal, backgroundColor.Value);
-					_root.ModifyBg(StateType.Normal, backgroundColor.Value);
+					StyleExtensions.SetBackgroundColor(this, backgroundColor.Value);
+					_root.SetBackgroundColor(backgroundColor.Value, StateType.Normal);
 				}
 				else
 				{
-					ModifyBg(StateType.Normal, _defaultBackgroundColor);
-					_root.ModifyBg(StateType.Normal, _defaultBackgroundColor);
+					StyleExtensions.SetBackgroundColor(this, _defaultBackgroundColor);
+					_root.SetBackgroundColor(_defaultBackgroundColor, StateType.Normal);
 				}
 			}
 

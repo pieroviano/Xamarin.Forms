@@ -69,7 +69,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 			UpdateBackgroundChild(cell, bgColor);
 
-			tableViewCell.ModifyBg(Gtk.StateType.Normal, bgColor);
+			tableViewCell.SetBackgroundColor(bgColor, Gtk.StateType.Normal);
 		}
 
 		protected virtual void OnForceUpdateSizeRequest(Cell cell, Gtk.Container nativeCell)

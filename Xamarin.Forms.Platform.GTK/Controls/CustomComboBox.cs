@@ -37,14 +37,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			set
 			{
 				_color = value;
-				Entry.ModifyText(Gtk.StateType.Normal, _color);
+				Entry.SetTextColor(_color);
 			}
 		}
 
 		public void SetBackgroundColor(Gdk.Color color)
 		{
-			ModifyBg(Gtk.StateType.Normal, Xamarin.Forms.Color.Red.ToGtkColor());
-			Entry.ModifyBase(Gtk.StateType.Normal, Xamarin.Forms.Color.Blue.ToGtkColor());
+			StyleExtensions.SetBackgroundColor(this, Xamarin.Forms.Color.Red.ToGtkColor());
+			Entry.SetBaseColor(Xamarin.Forms.Color.Blue.ToGtkColor());
 		}
 
 		private void BuildCustomComboBox()

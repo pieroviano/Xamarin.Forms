@@ -1,6 +1,7 @@
 ﻿using System;
 using Gtk;
 using Xamarin.Forms.Platform.GTK.Controls;
+using Xamarin.Forms.Platform.GTK.Extensions;
 
 namespace Xamarin.Forms.Platform.GTK.Cells
 {
@@ -26,7 +27,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			_textLabel = new Gtk.Label();
 			_textLabel.SetAlignment(0, 0);
 			_textLabel.Text = label ?? string.Empty;
-			_textLabel.ModifyFg(StateType.Normal, labelColor);
+			_textLabel.SetForegroundColor(labelColor, StateType.Normal);
 
 			_root.PackStart(_textLabel, false, false, 0);
 
@@ -79,7 +80,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		{
 			if (_textLabel != null)
 			{
-				_textLabel.ModifyFg(StateType.Normal, textColor);
+				_textLabel.SetForegroundColor(textColor, StateType.Normal);
 			}
 		}
 

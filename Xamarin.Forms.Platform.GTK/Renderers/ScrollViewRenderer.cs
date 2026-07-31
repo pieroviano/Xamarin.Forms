@@ -107,12 +107,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			if (Control != null)
 			{
-				Control.ModifyBg(StateType.Normal, backgroundColor.ToGtkColor());
+				Control.SetBackgroundColor(backgroundColor.ToGtkColor(), StateType.Normal);
 			}
 
 			if (_viewPort != null)
 			{
-				_viewPort.ModifyBg(StateType.Normal, backgroundColor.ToGtkColor());
+				_viewPort.SetBackgroundColor(backgroundColor.ToGtkColor(), StateType.Normal);
 			}
 
 			base.UpdateBackgroundColor();

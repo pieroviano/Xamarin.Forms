@@ -23,8 +23,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_borderWidth = 0;
 			_hasShadow = false;
 			_shadowWidth = 2;
-			_defaultBackgroundColor = Style.Backgrounds[(int)StateType.Normal].ToXFColor();
-			_defaultBorderColor = Style.BaseColors[(int)StateType.Active].ToXFColor();
+			_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal).ToXFColor();
+			_defaultBorderColor = this.GetDefaultBaseColor(Gtk.StateFlags.Active).ToXFColor();
 		}
 
 		public void SetBackgroundColor(Color? color)
@@ -75,40 +75,43 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			QueueDraw();
 		}
 
-		protected override bool OnExposeEvent(EventExpose evnt)
+		// GTK3 draw model: cr is supplied by GTK, already translated to this widget's
+		// origin, so all geometry below is widget-local (0,0)-based rather than
+		// Allocation-based as it was under GTK2's expose-event.
+		protected override bool OnDrawn(Cairo.Context cr)
 		{
-			using (var cr = CairoHelper.Create(GdkWindow))
+			double width = AllocatedWidth;
+			double height = AllocatedHeight;
+
+			// Draw Shadow
+			if (_hasShadow)
 			{
-				// Draw Shadow
-				if (_hasShadow)
-				{
-					var color = Color.Black;
-					cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
-					cr.Rectangle(Allocation.Left + _shadowWidth, Allocation.Top + _shadowWidth, Allocation.Width + _shadowWidth, Allocation.Height + _shadowWidth);
-					cr.Fill();
-				}
-
-				// Draw BackgroundColor
-				if (_backgroundColor.HasValue)
-				{
-					var color = _backgroundColor.Value;
-					cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
-					cr.Rectangle(Allocation.Left, Allocation.Top, Allocation.Width, Allocation.Height);
-					cr.FillPreserve();
-				}
-
-				// Draw BorderColor
-				if (_borderColor.HasValue)
-				{
-					cr.LineWidth = _borderWidth;
-					var color = _borderColor.Value;
-					cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
-					cr.Rectangle(Allocation.Left, Allocation.Top, Allocation.Width, Allocation.Height);
-					cr.StrokePreserve();
-				}
+				var color = Color.Black;
+				cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
+				cr.Rectangle(_shadowWidth, _shadowWidth, width + _shadowWidth, height + _shadowWidth);
+				cr.Fill();
 			}
 
-			return base.OnExposeEvent(evnt);
+			// Draw BackgroundColor
+			if (_backgroundColor.HasValue)
+			{
+				var color = _backgroundColor.Value;
+				cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
+				cr.Rectangle(0, 0, width, height);
+				cr.FillPreserve();
+			}
+
+			// Draw BorderColor
+			if (_borderColor.HasValue)
+			{
+				cr.LineWidth = _borderWidth;
+				var color = _borderColor.Value;
+				cr.SetSourceRGBA(color.R, color.G, color.B, color.A);
+				cr.Rectangle(0, 0, width, height);
+				cr.StrokePreserve();
+			}
+
+			return base.OnDrawn(cr);
 		}
 	}
 }

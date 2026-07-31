@@ -41,14 +41,14 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 			_textLabel = new Gtk.Label();
 			_textLabel.SetAlignment(0, 0);
-			_textLabel.ModifyFg(StateType.Normal, textColor);
+			_textLabel.SetForegroundColor(textColor, StateType.Normal);
 			_textLabel.SetTextFromSpan(span);
 
 			_vertical.PackStart(_textLabel, false, false, 0);
 
 			_detailLabel = new Gtk.Label();
 			_detailLabel.SetAlignment(0, 0);
-			_detailLabel.ModifyFg(StateType.Normal, detailColor);
+			_detailLabel.SetForegroundColor(detailColor, StateType.Normal);
 			_detailLabel.Text = detail ?? string.Empty;
 
 			_vertical.PackStart(_detailLabel, true, true, 0);
@@ -114,7 +114,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		{
 			if (_textLabel != null)
 			{
-				_textLabel.ModifyFg(StateType.Normal, textColor);
+				_textLabel.SetForegroundColor(textColor, StateType.Normal);
 			}
 		}
 
@@ -122,7 +122,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		{
 			if (_detailLabel != null)
 			{
-				_detailLabel.ModifyFg(StateType.Normal, detailColor);
+				_detailLabel.SetForegroundColor(detailColor, StateType.Normal);
 			}
 		}
 	}

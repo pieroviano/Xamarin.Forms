@@ -172,7 +172,7 @@ namespace Xamarin.Forms.Platform.GTK
 
 				if (_toolbar != null && _toolbarTitle != null)
 				{
-					_toolbarTitle.ModifyFg(StateType.Normal, textColor);
+					_toolbarTitle.SetForegroundColor(textColor, StateType.Normal);
 				}
 			}
 		}

@@ -67,7 +67,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			if (!Element.BackgroundColor.IsDefaultOrTransparent())
 			{
-				Control.ModifyBase(StateType.Normal, Element.BackgroundColor.ToGtkColor());
+				Control.SetBaseColor(Element.BackgroundColor.ToGtkColor());
 			}
 		}
 

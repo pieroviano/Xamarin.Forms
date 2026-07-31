@@ -1,15 +1,11 @@
 using System;
 using System.ComponentModel;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Gdk;
 using Xamarin.Forms.Platform.GTK.Extensions;
-using DrawingFont = System.Drawing.Font;
 using IOPath = System.IO.Path;
 
 namespace Xamarin.Forms.Platform.GTK.Renderers
@@ -265,52 +261,63 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (!(imageSource is FontImageSource fontImageSource))
 				return null;
 
+			// Ported off System.Drawing (Bitmap/Graphics/PrivateFontCollection): on .NET 7+
+			// System.Drawing.Common throws PlatformNotSupportedException on non-Windows.
+			// The glyph is now rasterised with Cairo + Pango, which is native to GTK.
+			var size = Math.Max(1, (int)fontImageSource.Size);
 			Pixbuf pixbuf = null;
-			using (var bmp = new Bitmap((int)fontImageSource.Size, (int)fontImageSource.Size))
+
+			await Device.InvokeOnMainThreadAsync(() =>
 			{
-				using (var g = Graphics.FromImage(bmp))
+				using (var surface = new Cairo.ImageSurface(Cairo.Format.Argb32, size, size))
+				using (var cr = new Cairo.Context(surface))
+				using (var layout = Pango.CairoHelper.CreateLayout(cr))
 				{
-					var fontFamily = GetFontFamily(fontImageSource);
-					var font = new DrawingFont(fontFamily, (int)fontImageSource.Size * .5f);
+					layout.FontDescription = CreateFontDescription(fontImageSource);
+					layout.SetText(fontImageSource.Glyph ?? string.Empty);
+
 					var fontColor = fontImageSource.Color != Color.Default
 						? fontImageSource.Color
 						: Color.White;
-					g.DrawString(fontImageSource.Glyph, font, new SolidBrush(fontColor), 0, 0);
-				}
+					cr.SetSourceRGBA(fontColor.R, fontColor.G, fontColor.B, fontColor.A);
 
-				using (var stream = new MemoryStream())
-				{
-					bmp.Save(stream, ImageFormat.Jpeg);
-					await Device.InvokeOnMainThreadAsync(() =>
-					{
-						pixbuf = new Pixbuf(stream.ToArray());
-					});
+					// Centre the glyph in the square, matching the sizing intent of the
+					// previous implementation (glyph drawn at half the requested size).
+					layout.GetPixelSize(out var glyphWidth, out var glyphHeight);
+					cr.MoveTo((size - glyphWidth) / 2.0, (size - glyphHeight) / 2.0);
+					Pango.CairoHelper.ShowLayout(cr, layout);
 
+					surface.Flush();
+					pixbuf = new Pixbuf(surface, 0, 0, size, size);
 				}
-			}
+			});
 
 			return pixbuf;
 		}
 
-		static FontFamily GetFontFamily(FontImageSource fontImageSource)
+		static Pango.FontDescription CreateFontDescription(FontImageSource fontImageSource)
 		{
-			var privateFontCollection = new PrivateFontCollection();
-			FontFamily fontFamily;
-			if (fontImageSource.FontFamily.Contains("#"))
+			// Xamarin.Forms allows "path/to/file.ttf#Family Name"; Pango resolves by family
+			// name through fontconfig, so only the family part is meaningful here. A font
+			// shipped as a loose file must be visible to fontconfig (e.g. ~/.local/share/fonts).
+			var family = fontImageSource.FontFamily ?? string.Empty;
+			if (family.Contains("#"))
 			{
-				var fontPathAndFamily = fontImageSource.FontFamily.Split('#');
-				privateFontCollection.AddFontFile(fontPathAndFamily[0]);
-				fontFamily = fontPathAndFamily.Length > 1 ?
-					privateFontCollection.Families.FirstOrDefault(f => f.Name.Equals(fontPathAndFamily[1], StringComparison.InvariantCultureIgnoreCase)) ?? privateFontCollection.Families[0] :
-					privateFontCollection.Families[0];
-			}
-			else
-			{
-				privateFontCollection.AddFontFile(fontImageSource.FontFamily);
-				fontFamily = privateFontCollection.Families[0];
+				var fontPathAndFamily = family.Split('#');
+				family = fontPathAndFamily.Length > 1 && !string.IsNullOrWhiteSpace(fontPathAndFamily[1])
+					? fontPathAndFamily[1]
+					: IOPath.GetFileNameWithoutExtension(fontPathAndFamily[0]);
 			}
 
-			return fontFamily;
+			var description = new Pango.FontDescription();
+
+			if (!string.IsNullOrWhiteSpace(family))
+				description.Family = family;
+
+			// Preserve the previous half-of-requested-size glyph metric.
+			description.Size = (int)(fontImageSource.Size * .5f * Pango.Scale.PangoScale);
+
+			return description;
 		}
 	}
 }

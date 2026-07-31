@@ -83,7 +83,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		private void BuildPage()
 		{
-			_defaultBackgroundColor = Style.Backgrounds[(int)StateType.Normal];
+			_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal);
 
 			_toolbar = new HBox();
 			_content = new GtkFormsContainer();

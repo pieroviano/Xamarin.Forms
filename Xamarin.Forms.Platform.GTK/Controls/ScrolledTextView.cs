@@ -1,4 +1,5 @@
 ﻿using Gtk;
+using Xamarin.Forms.Platform.GTK.Extensions;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
@@ -44,7 +45,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			_placeholderContainer.ButtonPressEvent += PlaceHolderContainerPressed;
 
-			SetBackgroundColor(TextView.Style.BaseColors[(int)StateType.Normal]);
+			SetBackgroundColor(TextView.GetDefaultBaseColor(Gtk.StateFlags.Normal));
 
 			Add(_table);
 
@@ -68,14 +69,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void SetBackgroundColor(Gdk.Color color)
 		{
-			ModifyBg(StateType.Normal, color);
-			TextView.ModifyBase(StateType.Normal, color);
-			_placeholderContainer.ModifyBg(StateType.Normal, color);
+			StyleExtensions.SetBackgroundColor(this, color);
+			TextView.SetBaseColor(color);
+			_placeholderContainer.SetBackgroundColor(color, StateType.Normal);
 		}
 
 		public void SetPlaceholderTextColor(Gdk.Color color)
 		{
-			_placeholder.ModifyFg(StateType.Normal, color);
+			_placeholder.SetForegroundColor(color, StateType.Normal);
 		}
 
 		public void SetMaxLength(int maxLength)
@@ -102,7 +103,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		private void InsertText(object o, InsertTextArgs args)
 		{
-			args.RetVal = args.Length <= _maxLength;
+			args.RetVal = args.NewTextLength <= _maxLength;
 		}
 
 		private void FocusedOut(object o, FocusOutEventArgs args)

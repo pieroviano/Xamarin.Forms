@@ -99,12 +99,16 @@ namespace Xamarin.Forms.Platform.GTK
 			{
 				oldElement.FocusChangeRequested -= OnElementFocusChangeRequested;
 				oldElement.PropertyChanged -= _propertyChangedHandler;
+				oldElement.BatchCommitted -= OnElementBatchCommitted;
 			}
 
 			if (element != null)
 			{
 				element.PropertyChanged += _propertyChangedHandler;
 				element.FocusChangeRequested += OnElementFocusChangeRequested;
+				// Forms raises this once a layout pass has committed new bounds; it is what
+				// gets that geometry onto the GTK widgets. See UpdateElementLayout().
+				element.BatchCommitted += OnElementBatchCommitted;
 
 				if (Tracker == null)
 				{
@@ -149,39 +153,95 @@ namespace Xamarin.Forms.Platform.GTK
 		{
 			base.OnSizeAllocated(allocation);
 
-			double width, height, translationX, translationY;
+			UpdateElementLayout();
+		}
+
+		/// <summary>
+		/// Pushes the Forms-computed geometry of this element (and its logical children)
+		/// onto the native GTK widgets.
+		/// </summary>
+		/// <remarks>
+		/// This used to run only from <see cref="OnSizeAllocated"/>, i.e. only when GTK
+		/// decided to allocate. That is a chicken-and-egg: inside a <see cref="Gtk.Fixed"/>
+		/// a child is allocated at (0,0) at its natural size until something calls
+		/// Move/SetSizeRequest, and a Forms layout pass does not itself queue a GTK resize.
+		/// The result was that Forms computed correct bounds which never reached GTK, so
+		/// every widget stacked at the origin at its natural size.
+		///
+		/// It is therefore also driven from the element's BatchCommitted (see
+		/// <see cref="OnElementBatchCommitted"/>), which Forms raises once a layout pass
+		/// has committed the new bounds.
+		/// </remarks>
+		protected void UpdateElementLayout()
+		{
+			if (_disposed || Element == null || Container == null)
+				return;
+
 			Rectangle bounds = Element.Bounds;
 
-			translationX = Element.TranslationX;
-			translationY = Element.TranslationY;
-
-			width = bounds.Width >= -1 ? bounds.Width : 0;
-			height = bounds.Height >= -1 ? bounds.Height : 0;
+			var width = bounds.Width >= -1 ? bounds.Width : 0;
+			var height = bounds.Height >= -1 ? bounds.Height : 0;
 
 			Container.SetSize(width, height);
-			Container.MoveTo((int)bounds.X + translationX, (int)bounds.Y + translationY);
+			Container.MoveTo((int)bounds.X + Element.TranslationX, (int)bounds.Y + Element.TranslationY);
+
+			if (ElementController == null)
+				return;
 
 			for (var i = 0; i < ElementController.LogicalChildren.Count; i++)
 			{
 				var child = ElementController.LogicalChildren[i] as VisualElement;
 
-				if (child != null)
-				{
-					var renderer = Platform.GetRenderer(child);
+				if (child == null)
+					continue;
 
-					if (renderer != null)
-					{
-						width = child.Bounds.Width >= -1 ? child.Bounds.Width : 0;
-						height = child.Bounds.Height >= -1 ? child.Bounds.Height : 0;
+				var renderer = Platform.GetRenderer(child);
 
-						translationX = child.TranslationX;
-						translationY = child.TranslationY;
+				if (renderer?.Container == null)
+					continue;
 
-						renderer.Container.SetSize(width, height);
-						renderer.Container.MoveTo(child.Bounds.X + translationX, child.Bounds.Y + translationY);
-					}
-				}
+				var childWidth = child.Bounds.Width >= -1 ? child.Bounds.Width : 0;
+				var childHeight = child.Bounds.Height >= -1 ? child.Bounds.Height : 0;
+
+				renderer.Container.SetSize(childWidth, childHeight);
+				renderer.Container.MoveTo(child.Bounds.X + child.TranslationX, child.Bounds.Y + child.TranslationY);
 			}
+		}
+
+		bool _layoutUpdateQueued;
+
+		void OnElementBatchCommitted(object sender, Internals.EventArg<VisualElement> e)
+		{
+			QueueLayoutUpdate();
+		}
+
+		/// <summary>
+		/// Applies the Forms geometry on an idle callback rather than inline.
+		/// </summary>
+		/// <remarks>
+		/// Forms raises BatchCommitted from inside the page's size-allocate cycle, and GTK3
+		/// discards resizes queued while an allocation is in progress. Applying the geometry
+		/// inline therefore set WidthRequest/HeightRequest correctly but never produced a
+		/// second allocation pass, so the widgets kept their natural size on screen.
+		/// Deferring to idle lets the current allocation finish first, so the queued resize
+		/// is honoured.
+		/// </remarks>
+		protected void QueueLayoutUpdate()
+		{
+			if (_layoutUpdateQueued || _disposed)
+				return;
+
+			_layoutUpdateQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutUpdateQueued = false;
+
+				if (!_disposed)
+					UpdateElementLayout();
+
+				return false;
+			});
 		}
 
 		protected virtual void OnRegisterEffect(PlatformEffect effect)
@@ -208,15 +268,19 @@ namespace Xamarin.Forms.Platform.GTK
 			UpdateSensitive();
 		}
 
-		protected virtual void Dispose(bool disposing)
+		// GtkSharp 3 introduces Widget.Dispose(bool); override it so disposal chains
+		// through GTK instead of shadowing it.
+		protected override void Dispose(bool disposing)
 		{
-			if (!disposing || _disposed)
-				return;
+			if (disposing && !_disposed)
+			{
+				_disposed = true;
 
-			_disposed = true;
+				Tracker?.Dispose();
+				Tracker = null;
+			}
 
-			Tracker?.Dispose();
-			Tracker = null;
+			base.Dispose(disposing);
 		}
 
 		protected virtual void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)

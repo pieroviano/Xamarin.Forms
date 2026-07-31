@@ -140,7 +140,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			}
 		}
 
-		protected virtual void Dispose(bool disposing)
+		// GtkSharp 3 introduces Widget.Dispose(bool); override it so disposal chains
+		// through GTK instead of shadowing it.
+		protected override void Dispose(bool disposing)
 		{
 			if (disposing)
 			{
@@ -151,16 +153,21 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				Platform.SetRenderer(Element, null);
 
-				Control.Destroy();
+				Control?.Destroy();
 				Control = null;
 				Element = null;
 			}
+
+			base.Dispose(disposing);
 		}
 
 		protected virtual void OnElementChanged(VisualElementChangedEventArgs e)
 		{
 			if (e.OldElement != null)
+			{
 				e.OldElement.PropertyChanged -= OnElementPropertyChanged;
+				e.OldElement.BatchCommitted -= OnElementBatchCommitted;
+			}
 
 			if (e.NewElement != null)
 			{
@@ -171,11 +178,70 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				}
 
 				e.NewElement.PropertyChanged += OnElementPropertyChanged;
+				// See UpdateChildrenLayout(): a Forms layout pass does not queue a GTK
+				// resize, so the page's content would otherwise keep its natural size.
+				e.NewElement.BatchCommitted += OnElementBatchCommitted;
 			}
 
 			UpdateBackgroundImage();
 
 			ElementChanged?.Invoke(this, e);
+		}
+
+		bool _layoutUpdateQueued;
+
+		void OnElementBatchCommitted(object sender, Internals.EventArg<VisualElement> e)
+		{
+			// Deferred to idle: Forms raises BatchCommitted from inside the size-allocate
+			// cycle, and GTK3 discards resizes queued during allocation. See
+			// VisualElementRenderer.QueueLayoutUpdate for the full explanation.
+			if (_layoutUpdateQueued)
+				return;
+
+			_layoutUpdateQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutUpdateQueued = false;
+				UpdateChildrenLayout();
+				return false;
+			});
+		}
+
+		/// <summary>
+		/// Pushes the Forms-computed geometry of the page's children onto their GTK widgets.
+		/// </summary>
+		/// <remarks>
+		/// This renderer does not derive from <see cref="VisualElementRenderer{TElement,TNativeElement}"/>,
+		/// so it needs its own copy of that propagation. Without it the page's content
+		/// (typically the root layout) keeps its natural size - a StackLayout that Forms
+		/// measured at 500x400 stayed at 182x34 and clipped everything inside it.
+		/// </remarks>
+		protected virtual void UpdateChildrenLayout()
+		{
+			var controller = Element as IElementController;
+
+			if (controller == null)
+				return;
+
+			for (var i = 0; i < controller.LogicalChildren.Count; i++)
+			{
+				var child = controller.LogicalChildren[i] as VisualElement;
+
+				if (child == null)
+					continue;
+
+				var renderer = Platform.GetRenderer(child);
+
+				if (renderer?.Container == null)
+					continue;
+
+				var width = child.Bounds.Width >= -1 ? child.Bounds.Width : 0;
+				var height = child.Bounds.Height >= -1 ? child.Bounds.Height : 0;
+
+				renderer.Container.SetSize(width, height);
+				renderer.Container.MoveTo(child.Bounds.X + child.TranslationX, child.Bounds.Y + child.TranslationY);
+			}
 		}
 
 		protected virtual void UpdateBackgroundColor()

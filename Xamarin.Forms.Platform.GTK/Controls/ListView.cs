@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using GLib;
 using Gtk;
-using OpenTK.Input;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Platform.GTK.Cells;
 using Xamarin.Forms.Platform.GTK.Extensions;
@@ -62,7 +61,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public ListViewSeparator()
 		{
 			HeightRequest = 1;
-			ModifyBg(StateType.Normal, Color.Gray.ToGtkColor());    // Default Color: Gray
+			StyleExtensions.SetBackgroundColor(this, Color.Gray.ToGtkColor());    // Default Color: Gray
 			VisibleWindow = false;
 		}
 	}
@@ -233,17 +232,17 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			if (_root != null)
 			{
-				_root.ModifyBg(StateType.Normal, backgroundColor);
-				_viewPort.ModifyBg(StateType.Normal, backgroundColor);
+				_root.SetBackgroundColor(backgroundColor, StateType.Normal);
+				_viewPort.SetBackgroundColor(backgroundColor, StateType.Normal);
 
 				if (_headerContainer != null && !_headerContainer.Children.Any())
 				{
-					_headerContainer.ModifyBg(StateType.Normal, backgroundColor);
+					_headerContainer.SetBackgroundColor(backgroundColor, StateType.Normal);
 				}
 
 				if (_footerContainer != null && !_footerContainer.Children.Any())
 				{
-					_footerContainer.ModifyBg(StateType.Normal, backgroundColor);
+					_footerContainer.SetBackgroundColor(backgroundColor, StateType.Normal);
 				}
 			}
 		}
@@ -252,7 +251,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			foreach (var separator in _separators)
 			{
-				separator.ModifyBg(StateType.Normal, separatorColor);
+				separator.SetBackgroundColor(separatorColor, StateType.Normal);
 				separator.VisibleWindow = true;
 			}
 		}
@@ -582,7 +581,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				if (isTargetCell)
 				{
 					_selectedCell = childCell;
-					childCell.ModifyBg(StateType.Normal, _selectionColor);
+					childCell.SetBackgroundColor(_selectionColor, StateType.Normal);
 				}
 			}
 		}
@@ -592,7 +591,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_selectedCell == null)
 				return;
 
-			_selectedCell.ModifyBg(StateType.Normal, _selectionColor);
+			_selectedCell.SetBackgroundColor(_selectionColor, StateType.Normal);
 		}
 	}
 }

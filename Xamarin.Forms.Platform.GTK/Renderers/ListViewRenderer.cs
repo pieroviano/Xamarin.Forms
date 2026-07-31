@@ -1,9 +1,9 @@
 ﻿using System;
+using Xamarin.Forms.Platform.GTK.Controls;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using OpenTK.Input;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Platform.GTK.Cells;
 using Xamarin.Forms.Platform.GTK.Extensions;

@@ -33,7 +33,7 @@ namespace Xamarin.Forms.Platform.GTK
 			if (application == null)
 				throw new ArgumentNullException(nameof(application));
 
-			Application.SetCurrentApplication(application);
+			Xamarin.Forms.Application.SetCurrentApplication(application);
 			_application = application;
 
 			application.PropertyChanged += ApplicationOnPropertyChanged;
@@ -59,12 +59,8 @@ namespace Xamarin.Forms.Platform.GTK
 			Icon = appliccationIconPixbuf;
 		}
 
-		public sealed override void Dispose()
-		{
-			base.Dispose();
-
-			Dispose(true);
-		}
+		// GtkSharp 3: GLib.Object.Dispose() is no longer virtual - the disposal hook is
+		// Dispose(bool) (overridden below), which the base Dispose() calls for us.
 
 		protected override bool OnDeleteEvent(Gdk.Event evnt)
 		{
@@ -77,7 +73,7 @@ namespace Xamarin.Forms.Platform.GTK
 
 		private void ApplicationOnPropertyChanged(object sender, PropertyChangedEventArgs args)
 		{
-			if (args.PropertyName == nameof(Application.MainPage))
+			if (args.PropertyName == nameof(Xamarin.Forms.Application.MainPage))
 			{
 				UpdateMainPage();
 			}
@@ -144,13 +140,15 @@ namespace Xamarin.Forms.Platform.GTK
 			}
 		}
 
-		private void Dispose(bool disposing)
+		protected override void Dispose(bool disposing)
 		{
 			if (disposing && _application != null)
 			{
 				WindowStateEvent -= OnWindowStateEvent;
 				_application.PropertyChanged -= ApplicationOnPropertyChanged;
 			}
+
+			base.Dispose(disposing);
 		}
 	}
 }

@@ -3,7 +3,6 @@ using GLib;
 using Xamarin.Forms;
 using Xamarin.Forms.ControlGallery.GTK;
 using Xamarin.Forms.Controls;
-using Xamarin.Forms.Maps.GTK;
 using Xamarin.Forms.Platform.GTK;
 using Xamarin.Forms.Platform.GTK.Renderers;
 
@@ -18,10 +17,11 @@ namespace Xamarin.Forms.ControlGallery.GTK
 		{
 			ExceptionManager.UnhandledException += OnUnhandledException;
 
-			GtkOpenGL.Init();
+			// GtkOpenGL.Init() and FormsMaps.Init() are gone for now: OpenGLView is
+			// quarantined behind EnableGtkOpenGL, and Xamarin.Forms.Maps.GTK is still
+			// GTK#2. Both come back in M6.
 			GtkThemes.Init();
 			Gtk.Application.Init();
-			FormsMaps.Init(string.Empty);
 			Forms.Init();
 			var app = new App();
 			var window = new FormsWindow();

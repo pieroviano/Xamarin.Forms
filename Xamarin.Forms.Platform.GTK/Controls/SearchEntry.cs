@@ -26,7 +26,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_clearButton.ImageWidget.Pixbuf = RenderIcon("gtk-close", IconSize.SmallToolbar, null); // Cancel icon
 
 			_container.PackStart(_searchButton, false, false, 0);
-			_container.PackStart(_entryWrapper);
+			_container.PackStart(_entryWrapper, true, true, 0);
 
 			_entryWrapper.Entry.Changed += EntryChanged;
 			_clearButton.Clicked += CancelButtonClicked;

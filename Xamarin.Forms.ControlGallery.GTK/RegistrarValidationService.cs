@@ -15,6 +15,14 @@ namespace Xamarin.Forms.ControlGallery.GTK
 			if (element == null)
 				return true;
 
+#if !ENABLE_GTK_OPENGL
+			// OpenGLView has no renderer while it is quarantined behind EnableGtkOpenGL in
+			// Xamarin.Forms.Platform.GTK (restored in M6). Without this the gallery aborts
+			// during start-up validation before a single page is shown.
+			if (element is OpenGLView)
+				return true;
+#endif
+
 			var renderer = Platform.GTK.Platform.CreateRenderer(element);
 
 			if (renderer == null

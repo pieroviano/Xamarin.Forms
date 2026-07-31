@@ -1,132 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Xamarin.Forms.ControlGallery.GTK</RootNamespace>
-    <AssemblyName>Xamarin.Forms.ControlGallery.GTK</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
+    <!-- Exe, not WinExe: WinExe is a Windows-subsystem concept and there is no such
+         distinction on Linux; it also suppresses the console output we rely on. -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <!-- Matches Xamarin.Forms.Platform.GTK; see the note on CS0612/CS0618 there. -->
+    <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
+  <!-- HAVE_OPENTK dropped: the OpenGL gallery pages need OpenGLView, which is quarantined
+       behind EnableGtkOpenGL in Xamarin.Forms.Platform.GTK until M6. -->
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;HAVE_OPENTK;__GTK__</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>DEBUG;TRACE;__GTK__</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;HAVE_OPENTK;__GTK__</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
+    <DefineConstants>TRACE;__GTK__</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\atk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\gdk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\glade-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\glib-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gtk-dotnet, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\gtk-dotnet.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\gtk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="pango-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xamarin.Forms.Platform.GTK\Libs\gtk-sharp\gtk-sharp-2.0\pango-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Windows" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="GtkSharp" Version="3.24.24.95" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="OpenTK" Version="3.0.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\xamarin.forms.controls\gallerypages\openglgalleries\AdvancedOpenGLGallery.cs">
-      <Link>GalleryPages\AdvancedOpenGLGallery.cs</Link>
-    </Compile>
-    <Compile Include="..\xamarin.forms.controls\gallerypages\openglgalleries\BasicOpenGLGallery.cs">
-      <Link>GalleryPages\BasicOpenGLGallery.cs</Link>
-    </Compile>
-    <Compile Include="PlatformSpecificCoreGalleryFactory.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="RegistrarValidationService.cs" />
-    <Compile Include="SampleNativeControl.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
     <Content Include="Assets\ionicons.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj">
-      <Project>{cb9c96ce-125c-4a68-b6a1-c3ff1fbf93e1}</Project>
-      <Name>Xamarin.Forms.Controls</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj">
-      <Project>{57b8b73d-c3b5-4c42-869e-7b2f17d354ac}</Project>
-      <Name>Xamarin.Forms.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xamarin.Forms.Maps.GTK\Xamarin.Forms.Maps.GTK.csproj">
-      <Project>{a9772bb1-0e17-42f5-a6db-60bfccbfdb9d}</Project>
-      <Name>Xamarin.Forms.Maps.GTK</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj">
-      <Project>{7d13bac2-c6a4-416a-b07e-c169b199e52b}</Project>
-      <Name>Xamarin.Forms.Maps</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj">
-      <Project>{1f058504-62f9-4279-ac8f-16738e0f4417}</Project>
-      <Name>Xamarin.Forms.Platform.GTK</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj" />
+    <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
+    <!-- Xamarin.Forms.Maps.GTK is still net47/GTK#2 and depends on the checked-in GTK2
+         GMap.NET binaries; it is out of scope until M6. Xamarin.Forms.Maps itself is
+         netstandard2.0 and stays, because Xamarin.Forms.Controls references it. -->
+    <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" />
+    <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\Xamarin.Forms.ControlGallery.iOS\bank.png">
@@ -274,12 +184,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

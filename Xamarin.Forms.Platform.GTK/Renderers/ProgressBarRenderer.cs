@@ -13,8 +13,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (Control == null)
 			{
 				// Use Gtk.ProgressBar, a widget which indicates progress visually.
+				// GTK3 removed ProgressBar.Adjustment; progress is now expressed directly
+				// as Fraction (0.0 - 1.0), which is what Element.Progress already is.
 				var progressBar = new Gtk.ProgressBar();
-				progressBar.Adjustment = new Gtk.Adjustment(0, 0, 1, 0.1, 1, 1); // Default increment: 0.1
+				progressBar.Fraction = 0;
 				SetNativeControl(progressBar);
 			}
 
@@ -37,7 +39,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (Control == null)
 				return;
 
-			Control.Adjustment.Value = Element.Progress;
+			Control.Fraction = Element.Progress;
 			Control.TooltipText = string.Format("{0}%", (Element.Progress * 100));
 		}
 
@@ -45,10 +47,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			var backgroundColor = Element.BackgroundColor;
 
-			if (backgroundColor == null || backgroundColor.IsDefault)
+			if (backgroundColor.IsDefault)
 				return;
 
-			Control.ModifyBg(Gtk.StateType.Normal, backgroundColor.ToGtkColor());
+			Control.SetBackgroundColor(backgroundColor.ToGtkColor(), Gtk.StateType.Normal);
 
 			base.UpdateBackgroundColor();
 		}

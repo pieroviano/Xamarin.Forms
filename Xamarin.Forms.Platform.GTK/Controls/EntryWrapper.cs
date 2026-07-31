@@ -1,4 +1,5 @@
 ﻿using System;
+using Xamarin.Forms.Platform.GTK.Extensions;
 using Gtk;
 using Pango;
 
@@ -25,7 +26,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_placeholderContainer.Add(_placeholder);
 			_placeholderContainer.ButtonPressEvent += PlaceHolderContainerPressed;
 
-			SetBackgroundColor(_entry.Style.BaseColors[(int)StateType.Normal]);
+			SetBackgroundColor(_entry.GetDefaultBaseColor(Gtk.StateFlags.Normal));
 
 			Add(_table);
 
@@ -49,19 +50,19 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void SetBackgroundColor(Gdk.Color color)
 		{
-			ModifyBg(StateType.Normal, color);
-			_entry.ModifyBase(StateType.Normal, color);
-			_placeholderContainer.ModifyBg(StateType.Normal, color);
+			StyleExtensions.SetBackgroundColor(this, color);
+			_entry.SetBaseColor(color);
+			_placeholderContainer.SetBackgroundColor(color, StateType.Normal);
 		}
 
 		public void SetTextColor(Gdk.Color color)
 		{
-			_entry.ModifyText(StateType.Normal, color);
+			_entry.SetTextColor(color);
 		}
 
 		public void SetPlaceholderTextColor(Gdk.Color color)
 		{
-			_placeholder.ModifyFg(StateType.Normal, color);
+			_placeholder.SetForegroundColor(color, StateType.Normal);
 		}
 
 		public void SetAlignment(float aligmentValue)
@@ -72,8 +73,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void SetFont(FontDescription fontDescription)
 		{
-			_entry.ModifyFont(fontDescription);
-			_placeholder.ModifyFont(fontDescription);
+			_entry.SetFont(fontDescription);
+			_placeholder.SetFont(fontDescription);
 		}
 
 		public void SetMaxLength(int maxLength)

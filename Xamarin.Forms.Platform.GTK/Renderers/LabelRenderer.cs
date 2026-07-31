@@ -154,7 +154,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			var textColor = Element.TextColor != Color.Default ? Element.TextColor : Color.Black;
 
-			Control.ModifyFg(StateType.Normal, textColor.ToGtkColor());
+			Control.SetForegroundColor(textColor.ToGtkColor(), StateType.Normal);
 		}
 
 		private void UpdateTextAlignment()

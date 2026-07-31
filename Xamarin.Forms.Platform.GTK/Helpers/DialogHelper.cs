@@ -113,15 +113,15 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 					messageDialog.AddButton(destruction, ResponseType.Reject) as Gtk.Button;
 
 				var destructionColor = Color.Red.ToGtkColor();
-				destructionButton.Child.ModifyFg(StateType.Normal, destructionColor);
-				destructionButton.Child.ModifyFg(StateType.Prelight, destructionColor);
-				destructionButton.Child.ModifyFg(StateType.Active, destructionColor);
+				destructionButton.Child.SetForegroundColor(destructionColor, StateType.Normal);
+				destructionButton.Child.SetForegroundColor(destructionColor, StateType.Prelight);
+				destructionButton.Child.SetForegroundColor(destructionColor, StateType.Active);
 			}
 		}
 
 		private static void AddExtraButtons(ActionSheetArguments arguments, MessageDialog messageDialog)
 		{
-			var vbox = messageDialog.VBox;
+			var vbox = messageDialog.ContentArea;
 
 			// As we are not showing any message in this dialog, we just 
 			// hide default container and avoid it from using space

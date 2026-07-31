@@ -22,8 +22,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public ImageButton()
 		{
-			_defaultBackgroundColor = Style.Backgrounds[(int)StateType.Normal];
-			_defaultBorderColor = Style.BaseColors[(int)StateType.Active];
+			_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal);
+			_defaultBorderColor = this.GetDefaultBaseColor(Gtk.StateFlags.Active);
 
 			Relief = ReliefStyle.None;
 
@@ -40,7 +40,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public Gtk.Image ImageWidget => _image;
 
-		public uint ImageSpacing
+		// Hides Gtk.Button.ImageSpacing (GTK3); this is the Forms spacing, in pixels.
+		public new uint ImageSpacing
 		{
 			get
 			{
@@ -62,15 +63,19 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void ResetBackgroundColor()
 		{
-			_backgroundColor = _defaultBackgroundColor;
+			// GTK3: "default" means paint nothing and let the theme draw the button.
+			// (The GTK2 code restored a colour captured from Gtk.Style; the GTK3 equivalent,
+			// StyleContext.GetBackgroundColor, is deprecated and reports transparent black
+			// under most themes - which rendered every default button as a black slab.)
+			_backgroundColor = null;
 			QueueDraw();
 		}
 
 		public void SetForegroundColor(Gdk.Color color)
 		{
-			_label.ModifyFg(StateType.Normal, color);
-			_label.ModifyFg(StateType.Prelight, color);
-			_label.ModifyFg(StateType.Active, color);
+			_label.SetForegroundColor(color, StateType.Normal);
+			_label.SetForegroundColor(color, StateType.Prelight);
+			_label.SetForegroundColor(color, StateType.Active);
 		}
 
 		public void SetBorderWidth(uint width)
@@ -87,7 +92,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void ResetBorderColor()
 		{
-			_borderColor = _defaultBorderColor;
+			// As above: no explicit border, let the theme draw it.
+			_borderColor = null;
 			QueueDraw();
 		}
 
@@ -106,34 +112,36 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_container = null;
 		}
 
-		protected override bool OnExposeEvent(EventExpose evnt)
+		// GTK3 draw model: GTK supplies the context, already translated to this widget's
+		// origin, so geometry is widget-local rather than Allocation-based.
+		protected override bool OnDrawn(Cairo.Context cr)
 		{
 			double colorMaxValue = 65535;
 
-			using (var cr = CairoHelper.Create(GdkWindow))
+			cr.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
+
+			// Draw BackgroundColor
+			if (_backgroundColor.HasValue)
 			{
-				cr.Rectangle(Allocation.Left, Allocation.Top, Allocation.Width, Allocation.Height);
-
-				// Draw BackgroundColor
-				if (_backgroundColor.HasValue)
-				{
-					var color = _backgroundColor.Value;
-					cr.SetSourceRGBA(color.Red / colorMaxValue, color.Green / colorMaxValue, color.Blue / colorMaxValue, 1.0);
-					cr.FillPreserve();
-				}
-
-				// Draw BorderColor
-				if (_borderColor.HasValue)
-				{
-					cr.LineWidth = _borderWidth;
-
-					var color = _borderColor.Value;
-					cr.SetSourceRGB(color.Red / colorMaxValue, color.Green / colorMaxValue, color.Blue / colorMaxValue);
-					cr.Stroke();
-				}
+				var color = _backgroundColor.Value;
+				cr.SetSourceRGBA(color.Red / colorMaxValue, color.Green / colorMaxValue, color.Blue / colorMaxValue, 1.0);
+				cr.FillPreserve();
 			}
 
-			return base.OnExposeEvent(evnt);
+			// Draw BorderColor
+			if (_borderColor.HasValue)
+			{
+				cr.LineWidth = _borderWidth;
+
+				var color = _borderColor.Value;
+				cr.SetSourceRGB(color.Red / colorMaxValue, color.Green / colorMaxValue, color.Blue / colorMaxValue);
+				cr.Stroke();
+			}
+
+			// The rectangle above is still on the path if neither branch consumed it.
+			cr.NewPath();
+
+			return base.OnDrawn(cr);
 		}
 
 		private void RecreateContainer()

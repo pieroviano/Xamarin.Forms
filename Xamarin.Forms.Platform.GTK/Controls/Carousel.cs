@@ -101,7 +101,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			if (_root != null)
 			{
-				_root.ModifyBg(StateType.Normal, backgroundColor);
+				_root.SetBackgroundColor(backgroundColor, StateType.Normal);
 			}
 		}
 

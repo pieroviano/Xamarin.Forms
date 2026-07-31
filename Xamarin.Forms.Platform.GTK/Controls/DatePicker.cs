@@ -1,4 +1,5 @@
 ﻿using System;
+using Xamarin.Forms.Platform.GTK.Extensions;
 using System.Linq;
 using Gtk;
 
@@ -78,14 +79,21 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public event DateEventHandler OnDateTimeChanged;
 
-		protected override bool OnExposeEvent(Gdk.EventExpose args)
+		protected override bool OnDrawn(Cairo.Context cr)
 		{
-			base.OnExposeEvent(args);
+			base.OnDrawn(cr);
 
 			int winWidth, winHeight;
 			GetSize(out winWidth, out winHeight);
-			GdkWindow.DrawRectangle(
-				Style.ForegroundGC(StateType.Insensitive), false, 0, 0, winWidth - 1, winHeight - 1);
+
+			// GTK3 removed Gdk.GC drawing (Style.ForegroundGC + GdkWindow.DrawRectangle).
+			// Stroke the 1px frame with Cairo instead, using the theme's insensitive
+			// foreground colour. The 0.5 offset keeps the hairline on the pixel grid.
+			var color = StyleContext.GetColor(StateFlags.Insensitive);
+			cr.SetSourceRGBA(color.Red, color.Green, color.Blue, color.Alpha);
+			cr.LineWidth = 1;
+			cr.Rectangle(0.5, 0.5, winWidth - 1, winHeight - 1);
+			cr.Stroke();
 
 			return false;
 		}
@@ -118,7 +126,6 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			WindowPosition = WindowPosition.Mouse;
 			BorderWidth = 1;
 			Resizable = false;
-			AllowGrow = false;
 			Decorated = false;
 			DestroyWithParent = true;
 			SkipPagerHint = true;
@@ -150,7 +157,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_calendar.DaySelectedDoubleClick += new EventHandler(OnCalendarDaySelectedDoubleClick);
 		}
 
-		void Close()
+		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
+		new void Close()
 		{
 			Helpers.GrabHelper.RemoveGrab(this);
 			Destroy();
@@ -242,12 +250,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			CurrentDate = DateTime.Now;
 
-			TextColor = _comboBox.Entry.Style.Text(StateType.Normal);
+			TextColor = _comboBox.Entry.GetDefaultTextColor(Gtk.StateFlags.Normal);
 
 			_comboBox.Entry.CanDefault = false;
 			_comboBox.Entry.CanFocus = false;
 			_comboBox.Entry.IsEditable = false;
-			_comboBox.Entry.State = StateType.Normal;
+			_comboBox.Entry.SetStateFlags(StateFlags.Normal, true);
 			_comboBox.Entry.FocusGrabbed += new EventHandler(OnEntryFocused);
 			_comboBox.PopupButton.Clicked += new EventHandler(OnBtnShowCalendarClicked);
 		}
@@ -327,7 +335,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void ClosePicker()
 		{
-			var windows = Window.ListToplevels();
+			var windows = Gtk.Window.ListToplevels();
 			var window = windows.FirstOrDefault(w => w.GetType() == typeof(DatePickerWindow));
 
 			if (window != null)

@@ -9,7 +9,13 @@
 	    <_DisableStrongNamer Condition=" '$(_DisableStrongNamer)' != 'True' ">False</_DisableStrongNamer>
 	    <AssemblyName>Xamarin.Forms.Build.Tasks</AssemblyName>
       <Description>Xamarin Forms Build Task</Description>
-	    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+	    <!--
+	      net46 dropped: Microsoft.Build 17.x (needed to clear the NU1903 advisory against
+	      Microsoft.Build.Tasks.Core 15.8.166) no longer supports net46, and the .NET 10 /
+	      Linux toolchain only ever loads the netstandard2.0 flavour (Directory.Build.props
+	      selects .nuspec/netstandard2.0 when MSBuildRuntimeType == Core).
+	    -->
+	    <TargetFrameworks>netstandard2.0</TargetFrameworks>
 	    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	    <SignAssembly Condition=" '$(_DisableStrongNamer)' != 'True' ">True</SignAssembly>
 	    <DisableStrongNamer Condition=" '$(_DisableStrongNamer)' == 'True' ">True</DisableStrongNamer>
@@ -19,12 +25,17 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.10.3" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <PackageReference Include="Microsoft.Build" Version="15.8.166" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.8.166" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.8.166" />
+    <!--
+      Only Microsoft.Build.Framework and Microsoft.Build.Utilities are used by this assembly
+      (verified by namespace usage), so the Microsoft.Build engine and Microsoft.Build.Tasks.Core
+      references were dropped - the latter carried advisory GHSA-h4j7-5rxr-p4wc at 15.8.166.
+      ExcludeAssets="runtime" is the standard pattern for MSBuild task assemblies: bind against
+      the API, but never ship/copy MSBuild's own assemblies next to the task.
+    -->
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.14.28" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" ExcludeAssets="runtime" />
     <PackageReference Include="StrongNamer" Version="0.0.8" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
      <PackageReference Include="XliffTasks" Version="1.0.0-beta.20206.1" PrivateAssets="all" />

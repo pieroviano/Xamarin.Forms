@@ -1,4 +1,5 @@
 ﻿using System;
+using Xamarin.Forms.Platform.GTK.Extensions;
 using System.Linq;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
@@ -59,14 +60,21 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public event TimeEventHandler OnTimeChanged;
 
-		protected override bool OnExposeEvent(Gdk.EventExpose args)
+		protected override bool OnDrawn(Cairo.Context cr)
 		{
-			base.OnExposeEvent(args);
+			base.OnDrawn(cr);
 
 			int winWidth, winHeight;
 			GetSize(out winWidth, out winHeight);
-			GdkWindow.DrawRectangle(
-				Style.ForegroundGC(Gtk.StateType.Insensitive), false, 0, 0, winWidth - 1, winHeight - 1);
+
+			// GTK3 removed Gdk.GC drawing (Style.ForegroundGC + GdkWindow.DrawRectangle).
+			// Stroke the 1px frame with Cairo instead, using the theme's insensitive
+			// foreground colour. The 0.5 offset keeps the hairline on the pixel grid.
+			var color = StyleContext.GetColor(Gtk.StateFlags.Insensitive);
+			cr.SetSourceRGBA(color.Red, color.Green, color.Blue, color.Alpha);
+			cr.LineWidth = 1;
+			cr.Rectangle(0.5, 0.5, winWidth - 1, winHeight - 1);
+			cr.Stroke();
 
 			return false;
 		}
@@ -83,7 +91,6 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			WindowPosition = Gtk.WindowPosition.None;
 			BorderWidth = 1;
 			Resizable = false;
-			AllowGrow = false;
 			Decorated = false;
 			DestroyWithParent = true;
 			SkipPagerHint = true;
@@ -173,7 +180,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_txtSec.ButtonPressEvent += new Gtk.ButtonPressEventHandler(OnTxtSecButtonPressEvent);
 		}
 
-		private void Close()
+		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
+		private new void Close()
 		{
 			Helpers.GrabHelper.RemoveGrab(this);
 			Destroy();
@@ -243,7 +251,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			CurrentTime = new TimeSpan(DateTime.Now.Ticks);
 
-			TextColor = _comboBox.Entry.Style.Text(Gtk.StateType.Normal);
+			TextColor = _comboBox.Entry.GetDefaultTextColor(Gtk.StateFlags.Normal);
 
 			_comboBox.Entry.Changed += new EventHandler(OnTxtTimeChanged);
 			_comboBox.PopupButton.Clicked += new EventHandler(OnBtnShowTimePickerClicked);
@@ -311,7 +319,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		protected virtual void OnTxtTimeChanged(object sender, EventArgs e)
 		{
-			_comboBox.Entry.ModifyText(Gtk.StateType.Normal, TextColor);
+			_comboBox.Entry.SetTextColor(TextColor);
 
 			TimeChanged?.Invoke(this, e);
 		}

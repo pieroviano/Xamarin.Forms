@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Gtk;
-using OpenTK.Input;
 using Xamarin.Forms.Platform.GTK.Cells;
 using Xamarin.Forms.Platform.GTK.Extensions;
 
@@ -36,7 +35,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void SetBackgroundColor(Gdk.Color backgroundColor)
 		{
-			Child?.ModifyBg(StateType.Normal, backgroundColor);
+			Child?.SetBackgroundColor(backgroundColor, StateType.Normal);
 		}
 
 		public void SetRowHeight(int rowHeight)
@@ -159,7 +158,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 						HeightRequest = 1
 					};
 
-					separator.ModifyBg(StateType.Normal, Color.Black.ToGtkColor());
+					separator.SetBackgroundColor(Color.Black.ToGtkColor(), StateType.Normal);
 					_root.PackStart(separator, false, false, 0);
 
 					// Cells

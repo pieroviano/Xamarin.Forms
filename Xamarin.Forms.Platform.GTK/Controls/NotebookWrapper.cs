@@ -57,8 +57,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (tabbedPageHeader != null)
 			{
-				tabbedPageHeader.ModifyBg(StateType.Normal, color);
-				tabbedPageHeader.ModifyBg(StateType.Active, color);
+				tabbedPageHeader.SetBackgroundColor(color, StateType.Normal);
+				tabbedPageHeader.SetBackgroundColor(color, StateType.Active);
 			}
 		}
 
@@ -69,8 +69,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (tabbedPageHeader != null)
 			{
-				tabbedPageHeader.Label.ModifyFg(StateType.Normal, color);
-				tabbedPageHeader.Label.ModifyFg(StateType.Active, color);
+				tabbedPageHeader.Label.SetForegroundColor(color, StateType.Normal);
+				tabbedPageHeader.Label.SetForegroundColor(color, StateType.Active);
 			}
 		}
 
