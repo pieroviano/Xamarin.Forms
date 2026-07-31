@@ -15,8 +15,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void xStringInResourcesDictionaries(bool useCompiledXaml)

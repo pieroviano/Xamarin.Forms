@@ -35,7 +35,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -47,11 +47,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void AssignContentWithNoContentAttributeDoesNotThrow(bool useCompiledXaml)
 			{
 				var layout = new Gh3260(useCompiledXaml);
-				Assert.Equal(1, layout.mylayout.Children.Count);
+				Assert.Single(layout.mylayout.Children);
 				Assert.Equal(layout.label, layout.mylayout.Children[0]);
 			}
 		}

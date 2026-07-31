@@ -44,12 +44,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			listview.LoadFromXaml(xaml);
 
 			ViewCell cell0 = null;
-			Assert.DoesNotThrow(() =>
+			AssertEx.DoesNotThrow(() =>
 			{
 				cell0 = (ViewCell)listview.TemplatedItems.GetOrCreateContent(0, items[0]);
 			});
 			ViewCell cell1 = null;
-			Assert.DoesNotThrow(() =>
+			AssertEx.DoesNotThrow(() =>
 			{
 				cell1 = (ViewCell)listview.TemplatedItems.GetOrCreateContent(1, items[1]);
 			});

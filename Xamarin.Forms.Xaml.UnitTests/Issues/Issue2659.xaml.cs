@@ -86,6 +86,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetUnsetStyleFromResource(bool useCompiledXaml)
@@ -112,6 +113,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetUnsetLocalProperties(bool useCompiledXaml)

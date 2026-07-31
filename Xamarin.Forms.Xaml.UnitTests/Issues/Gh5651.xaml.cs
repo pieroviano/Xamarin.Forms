@@ -36,7 +36,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -48,11 +48,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void GenericBaseInterfaceResolution(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5651)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5651)));
 				var layout = new Gh5651(useCompiledXaml) { BindingContext = new Gh5651VM() };
 				Assert.Equal("test", layout.label.Text);
 			}

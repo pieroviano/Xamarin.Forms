@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using Xunit;
 using Xamarin.Forms.Xaml;
 
@@ -40,7 +41,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			rootNode.Accept(new CreateValuesVisitor(context), null);
 			rootNode.Accept(new ApplyPropertiesVisitor(context), null);
 
-			Assert.Equal(new[] { "provided value", "provided value" }, rootElement.ArrayList);
+			Assert.Equal(new[] { "provided value", "provided value" }, rootElement.ArrayList.Cast<string>());
 		}
 	}
 }

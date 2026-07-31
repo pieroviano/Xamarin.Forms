@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
@@ -17,12 +18,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public static Color Color => Color.Black;
 		public static double Size = 50d;
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void FontImageExtension_Positive(bool useCompiledXaml)
 			{
 				var layout = new FontImageExtension(useCompiledXaml);
@@ -51,7 +53,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				}
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void FontImageExtension_Negative(bool useCompiledXaml)
 			{
 				var layout = new FontImageExtension(useCompiledXaml);
@@ -63,7 +66,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					if (myTab == null)
 						continue;
 
-					Assert.That(myTab.Icon, Is.Not.TypeOf<ImageSource>());
+					// ImageSource is abstract: exactMatch:false is the analyzer-sanctioned form
+					Assert.IsNotType<ImageSource>(myTab.Icon, exactMatch: false);
 				}
 			}
 		}

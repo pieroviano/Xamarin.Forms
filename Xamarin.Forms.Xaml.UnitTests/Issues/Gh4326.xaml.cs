@@ -21,7 +21,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -33,11 +33,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void FindStaticInternal(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4326)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4326)));
 				var layout = new Gh4326(useCompiledXaml);
 
 				Assert.Equal("Foo", layout.labelfoo.Text);

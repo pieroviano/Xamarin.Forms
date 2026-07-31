@@ -8,15 +8,14 @@ using Xamarin.Forms.Xaml.UnitTests;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	public class MethodDefinitionExtensionsTests
+	public class MethodDefinitionExtensionsTests : IDisposable
 	{
 		public class NonGenericClass
 		{
 			public object Property { get; set; }
 		}
 
-		public class GenericClass<T, U, V>
-		: IDisposable{
+		public class GenericClass<T, U, V>{
 			public object NonGeneric() => default(object);
 			public T GenericT() => default(T);
 			public U GenericU() => default(U);
@@ -27,8 +26,8 @@ namespace Xamarin.Forms.XamlcUnitTests
 
 		ModuleDefinition module;
 
-		public GenericClass()
-{
+		public MethodDefinitionExtensionsTests()
+		{
 			module = ModuleDefinition.CreateModule("foo", new ModuleParameters()
 			{
 				AssemblyResolver = new MockAssemblyResolver(),

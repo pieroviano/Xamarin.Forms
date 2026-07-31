@@ -34,7 +34,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -46,11 +46,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void FindMemberOnInterfaces(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4227)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4227)));
 				var layout = new Gh4227(useCompiledXaml) { BindingContext = new Gh4227VM() };
 				Assert.Equal("level0", layout.label0.Text);
 				Assert.Equal("level1", layout.label1.Text);

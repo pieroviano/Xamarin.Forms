@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -12,12 +13,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public static class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public static void ThrowXamlParseException(bool useCompiledXaml)
 			{
 				Assert.Throws<XamlParseException>(useCompiledXaml ?
-					(TestDelegate)(() => MockCompiler.Compile(typeof(DuplicatePropertyElements))) :
+					(Action)(() => MockCompiler.Compile(typeof(DuplicatePropertyElements))) :
 					() => new DuplicatePropertyElements(useCompiledXaml));
 			}
 		}

@@ -47,6 +47,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void I8AreConverted(bool useCompiledXaml)
@@ -62,10 +63,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal((long)256, p.l7);
 				Assert.Equal((long)-256, p.l8);
 				Assert.Equal((long)127, p.l9);
-				Assert.Equal(0L, p.ul0);
-				Assert.Equal((long)int.MaxValue, p.ul1);
-				Assert.Equal((long)uint.MaxValue, p.ul2);
-				Assert.Equal(long.MaxValue, p.ul3);
+				Assert.Equal(0UL, p.ul0);
+				Assert.Equal((ulong)int.MaxValue, p.ul1);
+				Assert.Equal((ulong)uint.MaxValue, p.ul2);
+				Assert.Equal((ulong)long.MaxValue, p.ul3);
 				Assert.Equal(ulong.MaxValue, p.ul4);
 				Assert.Equal((ulong)256, p.ul5);
 			}

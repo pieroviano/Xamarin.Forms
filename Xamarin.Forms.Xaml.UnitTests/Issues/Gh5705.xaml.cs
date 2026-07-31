@@ -14,7 +14,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 
 			public Tests()
@@ -27,8 +27,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[Fact]
-			public void SearchHandlerIneritBC([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void SearchHandlerIneritBC(bool useCompiledXaml)
 			{
 				var vm = new object();
 				var shell = new Gh5705(useCompiledXaml) { BindingContext = vm };

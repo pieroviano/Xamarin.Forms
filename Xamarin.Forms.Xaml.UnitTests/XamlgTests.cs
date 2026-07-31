@@ -1,4 +1,5 @@
-﻿using System.CodeDom;
+﻿using System;
+using System.CodeDom;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Framework;
@@ -26,10 +27,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+							AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+							AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 					);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -42,7 +43,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			Assert.Equal("CustomView", generator.RootType);
 			Assert.Equal("Xamarin.Forms.Xaml.UnitTests", generator.RootClrNamespace);
 			Assert.Equal("Xamarin.Forms.View", generator.BaseType.BaseType);
-			Assert.Equal(1, generator.NamedFields.Count());
+			Assert.Single(generator.NamedFields);
 			Assert.Equal("label0", generator.NamedFields.First().Name);
 			Assert.Equal("Xamarin.Forms.Label", generator.NamedFields.First().Type.BaseType);
 		}
@@ -62,10 +63,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -78,7 +79,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			Assert.Equal("CustomView", generator.RootType);
 			Assert.Equal("Xamarin.Forms.Xaml.UnitTests", generator.RootClrNamespace);
 			Assert.Equal("Xamarin.Forms.View", generator.BaseType.BaseType);
-			Assert.Equal(1, generator.NamedFields.Count());
+			Assert.Single(generator.NamedFields);
 			Assert.Equal("label0", generator.NamedFields.First().Name);
 			Assert.Equal("Xamarin.Forms.Label", generator.NamedFields.First().Type.BaseType);
 		}
@@ -108,10 +109,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -147,18 +148,18 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
 			generator.ParseXaml(reader);
 
 			Assert.Contains("included", generator.NamedFields.Select(cmf => cmf.Name).ToList());
-			Assert.False(generator.NamedFields.Select(cmf => cmf.Name).Contains("notincluded"));
-			Assert.Equal(1, generator.NamedFields.Count());
+			Assert.DoesNotContain("notincluded", generator.NamedFields.Select(cmf => cmf.Name));
+			Assert.Single(generator.NamedFields);
 		}
 
 		[Fact]
@@ -185,17 +186,17 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
 			generator.ParseXaml(reader);
 
-			Assert.False(generator.NamedFields.Select(cmf => cmf.Name).Contains("notincluded"));
-			Assert.Equal(0, generator.NamedFields.Count());
+			Assert.DoesNotContain("notincluded", generator.NamedFields.Select(cmf => cmf.Name));
+			Assert.Empty(generator.NamedFields);
 		}
 
 		[Fact]
@@ -212,10 +213,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -223,7 +224,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 			Assert.Equal("FooBar", generator.RootType);
 			Assert.Equal("Xamarin.Forms.Layout`1", generator.BaseType.BaseType);
-			Assert.Equal(1, generator.BaseType.TypeArguments.Count);
+			Assert.Single(generator.BaseType.TypeArguments);
 			Assert.Equal("System.String", generator.BaseType.TypeArguments[0].BaseType);
 		}
 
@@ -241,10 +242,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -271,10 +272,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -304,10 +305,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -337,10 +338,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -369,10 +370,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				var references = string.Join(";",
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+							AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+							AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 					);
 
 				var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -403,10 +404,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				var references = string.Join(";",
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+							AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+							AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 					);
 
 				var generator = new XamlGenerator(null, null, null, null, null, null, references);
@@ -432,16 +433,16 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var references = string.Join(";",
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+										AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 								IOPath.GetFullPath(
 									IOPath.Combine(
-										TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+										AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 								);
 
 			var generator = new XamlGenerator(null, null, null, null, null, null, references);
 			generator.ParseXaml(new StringReader(xaml));
 
-			Assert.Equal(1, generator.NamedFields.Count());
+			Assert.Single(generator.NamedFields);
 			Assert.Equal("bar", generator.NamedFields.First().Name);
 			Assert.Equal("Xamarin.Forms.ContentPage", generator.NamedFields.First().Type.BaseType);
 		}
@@ -460,7 +461,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			};
 
 			Assert.False(generator.Execute(), "XamlGTask.Execute() should fail.");
-			Assert.Equal(1, engine.Errors.Count, "XamlGTask should have 1 error.");
+			Assert.Single(engine.Errors);
 			var error = engine.Errors.First();
 			Assert.Equal("\"XamlFiles\" refers to 1 item(s), and \"OutputFiles\" refers to 2 item(s). They must have the same number of items.", error.Message);
 		}

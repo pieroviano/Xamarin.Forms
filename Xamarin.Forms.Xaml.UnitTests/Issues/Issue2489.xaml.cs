@@ -26,6 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void DataTriggerTargetType(bool useCompiledXaml)

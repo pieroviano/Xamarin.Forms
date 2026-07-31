@@ -33,10 +33,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		void OnTextChanged(object sender, EventArgs e)
 		{
-			Assert.Pass();
+			return;
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -48,7 +48,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void NonGenericEventHanlders(bool useCompiledXaml)
 			{
 				var layout = new Gh4130(useCompiledXaml);

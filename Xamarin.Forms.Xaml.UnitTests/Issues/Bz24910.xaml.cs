@@ -17,9 +17,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AllowNullableIntProperties(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -27,7 +28,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, control.NullableInt);
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AllowNullableDoubleProperties(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -35,7 +37,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2.2d, control.NullableDouble);
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void ConversionForNullable(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -43,7 +46,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2d, control.NullableDouble);
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AllowNull(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -51,7 +55,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Null(control.NullableInt);
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AllowBindingToNullable(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -62,7 +67,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2, control.NullableInt);
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void NullableAttachedBPs(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);
@@ -70,7 +76,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(3, Bz24910Control.GetAttachedNullableInt(control));
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AllowNonBindableNullable(bool useCompiledXaml)
 			{
 				var page = new Bz24910(useCompiledXaml);

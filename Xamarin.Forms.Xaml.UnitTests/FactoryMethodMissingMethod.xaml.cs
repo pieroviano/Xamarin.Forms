@@ -24,12 +24,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Throw(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(8, 4), () => MockCompiler.Compile(typeof(FactoryMethodMissingMethod)));
+					new BuildExceptionConstraint(8, 4).Verify(() => MockCompiler.Compile(typeof(FactoryMethodMissingMethod)));
 				else
 					Assert.Throws<MissingMemberException>(() => new FactoryMethodMissingMethod(useCompiledXaml));
 			}

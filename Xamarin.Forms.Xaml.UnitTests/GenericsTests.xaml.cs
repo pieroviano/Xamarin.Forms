@@ -35,9 +35,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 						</ResourceDictionary>
 					</ContentPage.Resources>
 				</ContentPage>";
-				Assert.Throws(new XamlParseExceptionConstraint(8, 9), () => new ContentPage().LoadFromXaml(xaml));
+				new XamlParseExceptionConstraint(8, 9).Verify(() => new ContentPage().LoadFromXaml(xaml));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void GenericSupportOnXaml2009(bool useCompiledXaml)
@@ -49,6 +50,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2, ((List<Button>)list).Count);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void FindGenericByName(bool useCompiledXaml)
@@ -60,11 +62,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				var nestedGenericList = layout.TestListMember;
 				Assert.NotNull(nestedGenericList);
-				Assert.That(nestedGenericList, Is.TypeOf<List<KeyValuePair<string, string>>>());
+				Assert.IsType<List<KeyValuePair<string, string>>>(nestedGenericList);
 
-				Assert.Equal(1, nestedGenericList.Count);
+				Assert.Single(nestedGenericList);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestGenericParsing(bool useCompiledXaml)
@@ -79,13 +82,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				var dict = layout.Resources["dict"];
 				Assert.NotNull(dict);
-				Assert.That(dict, Is.TypeOf<Dictionary<string, string>>());
+				Assert.IsType<Dictionary<string, string>>(dict);
 
 				var queue = layout.Resources["genericsquaredlist"];
 				Assert.NotNull(dict);
-				Assert.That(queue, Is.TypeOf<List<KeyValuePair<string, string>>>());
+				Assert.IsType<List<KeyValuePair<string, string>>>(queue);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestXamlPrimitives(bool useCompiledXaml)

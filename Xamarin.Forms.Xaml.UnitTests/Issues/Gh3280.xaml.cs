@@ -21,7 +21,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -33,11 +33,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void SizeHasConverter(bool useCompiledXaml)
 			{
 				Gh3280 layout = null;
-				Assert.DoesNotThrow(() => layout = new Gh3280(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => layout = new Gh3280(useCompiledXaml));
 				Assert.Equal(new Size(15, 25), layout.Foo);
 			}
 		}

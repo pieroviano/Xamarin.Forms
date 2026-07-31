@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!-- Sample/support project: not shipped as a package. -->
+    <IsPackable>false</IsPackable>
+
     <ProjectGuid>{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}</ProjectGuid>
     <!-- Exe, not WinExe: WinExe is a Windows-subsystem concept and there is no such
          distinction on Linux; it also suppresses the console output we rely on. -->

@@ -108,6 +108,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetValueToBP(bool useCompiledXaml)
@@ -116,6 +117,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Foo", page.label0.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetBindingToBP(bool useCompiledXaml)
@@ -127,6 +129,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Foo", page.label1.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetBindingWithImplicitPath(bool useCompiledXaml)
@@ -138,6 +141,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Foo", page.label11.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetEvent(bool useCompiledXaml)
@@ -148,6 +152,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(page.fired);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetBoolValue(bool useCompiledXaml)
@@ -158,6 +163,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			//TODO test all value conversions
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetAttachedBP(bool useCompiledXaml)
@@ -167,6 +173,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2, Grid.GetRow(page.label2));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetContent(bool useCompiledXaml)
@@ -175,6 +182,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Same(page.label3, page.contentview0.Content);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetImplicitContent(bool useCompiledXaml)
@@ -183,6 +191,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Same(page.label4, page.contentview1.Content);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetCollectionContent(bool useCompiledXaml)
@@ -192,6 +201,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(page.stack0.Children.Contains(page.label6));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetImplicitCollectionContent(bool useCompiledXaml)
@@ -201,6 +211,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(page.stack1.Children.Contains(page.label8));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetSingleCollectionContent(bool useCompiledXaml)
@@ -209,6 +220,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(page.stack2.Children.Contains(page.label9));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetImplicitSingleCollectionContent(bool useCompiledXaml)
@@ -217,6 +229,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(page.stack3.Children.Contains(page.label10));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetPropertyDefinedOnGenericType(bool useCompiledXaml)
@@ -225,6 +238,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2, page.listView.ItemsSource.Cast<object>().Count());
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetConvertibleProperties(bool useCompiledXaml)
@@ -233,6 +247,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Red, page.label12.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetValueTypeProperties(bool useCompiledXaml)
@@ -241,6 +256,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Pink, page.label13.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void CreateValueTypes(bool useCompiledXaml)
@@ -249,15 +265,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Purple, page.Resources["purple"]);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void DefCollections(bool useCompiledXaml)
 			{
 				var page = new SetValue(useCompiledXaml);
 				Assert.Equal(2, page.grid0.RowDefinitions.Count);
-				Assert.Equal(1, page.grid0.ColumnDefinitions.Count);
+				Assert.Single(page.grid0.ColumnDefinitions);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void FlagsAreApplied(bool useCompiledXaml)
@@ -266,6 +284,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(AbsoluteLayoutFlags.PositionProportional | AbsoluteLayoutFlags.WidthProportional, AbsoluteLayout.GetLayoutFlags(page.label14));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ConversionsAreAppliedOnSet(bool useCompiledXaml)
@@ -274,6 +293,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.IsType<Button>(page.content0.Content);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ConversionsAreAppliedOnAdd(bool useCompiledXaml)
@@ -282,6 +302,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.IsType<Button>(page.stack4.Children[0]);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ListsAreSimplified(bool useCompiledXaml)
@@ -290,6 +311,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.IsType<Label>(page.contentview2.Content);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void MorePrimitiveTypes(bool useCompiledXaml)
@@ -303,6 +325,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal((decimal)42, page.mockView0.ADecimal);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void NonIntEnums(bool useCompiledXaml)
@@ -312,12 +335,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(ByteEnum.Bar, page.enums.ByteEnum);
 			}
 
-			public void SetValueWithImplicitOperatorOnSource(bool useCompiledXaml)
+			// Not a test: it carried no [Test]/[TestCase] before the migration either, so NUnit
+			// never ran it. Kept, but non-public so the xUnit analyzer does not treat it as one.
+			internal void SetValueWithImplicitOperatorOnSource(bool useCompiledXaml)
 			{
 				var page = new SetValue(useCompiledXaml);
 				Assert.Equal("Bar", page.implicit0.GetValue(MockViewWithValues.BPBarProperty));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetValueWithImplicitOperatorOnTarget(bool useCompiledXaml)
@@ -326,6 +352,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Foo", ((SV_Foo)page.implicit1.GetValue(MockViewWithValues.BPFooProperty)).Value);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetWithImplicitOperatorOnSource(bool useCompiledXaml)
@@ -334,6 +361,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Bar", page.implicit2.Bar);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SetWithImplicitOperatorOnTarget(bool useCompiledXaml)

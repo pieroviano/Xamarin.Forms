@@ -18,6 +18,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class FindByNameTests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestRootName(bool useCompiledXaml)
@@ -27,6 +28,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Same(page, page.FindByName<FindByName>("root"));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestName(bool useCompiledXaml)

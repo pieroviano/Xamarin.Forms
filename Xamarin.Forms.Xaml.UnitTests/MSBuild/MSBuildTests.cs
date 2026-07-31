@@ -13,7 +13,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 {
 	//This set of tests is for validating Xamarin.Forms.targets
 	[Trait("Category", "LongRunning")]
-	public class MSBuildTests
+	public class MSBuildTests : IDisposable
 	{
 		static readonly string[] references = {
 			"mscorlib",
@@ -44,8 +44,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				</ContentView>";
 		}
 
-		class Css
-		: IDisposable{
+		class Css{
 			public const string Foo = @"
 				label {
 					color: azure;
@@ -57,10 +56,17 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		string tempDirectory;
 		string intermediateDirectory;
 
-		public Css()
-{
-			testDirectory = TestContext.CurrentContext.TestDirectory;
-			tempDirectory = IOPath.Combine(testDirectory, "temp", TestContext.CurrentContext.Test.Name);
+		public MSBuildTests()
+		{
+			testDirectory = AppContext.BaseDirectory;
+			// xUnit v3 exposes the running test through TestContext.Current; the display name
+			// is qualified, so take the last segment to keep the old short directory names.
+			var testName = TestContext.Current.Test?.TestDisplayName ?? Guid.NewGuid().ToString("N");
+			testName = testName.Substring(testName.LastIndexOf('.') + 1);
+			foreach (var c in IOPath.GetInvalidFileNameChars())
+				testName = testName.Replace(c, '_');
+
+			tempDirectory = IOPath.Combine(testDirectory, "temp", testName);
 			intermediateDirectory = IOPath.Combine(tempDirectory, "obj", "Debug");
 			Directory.CreateDirectory(tempDirectory);
 
@@ -97,8 +103,9 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 		public void Dispose()
 {
-			// Leave log files behind on test failures
-			if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+			// Leave log files behind on test failures (xUnit v3 equivalent of the old
+			// TestContext.CurrentContext.Result.Outcome.Status check).
+			if (TestContext.Current.TestState?.Result == TestResult.Failed)
 				return;
 
 			//NOTE: Windows can throw IOException: The process cannot access the file XYZ because it is being used by another process.
@@ -244,9 +251,9 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				p.BeginOutputReadLine();
 				p.WaitForExit();
 				if (shouldSucceed)
-					Assert.Equal(0, p.ExitCode, "MSBuild exited with {0}", p.ExitCode);
+					Assert.Equal(0, p.ExitCode);
 				else
-					Assert.NotEqual(0, p.ExitCode, "MSBuild exited with {0}", p.ExitCode);
+					Assert.NotEqual(0, p.ExitCode);
 
 				return builder.ToString();
 			}
@@ -267,8 +274,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				Assert.Fail($"{path} should *not* exist!");
 		}
 
-		[Fact]
-		public void BuildAProject([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void BuildAProject(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -284,8 +293,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		}
 
 		// Tests the XFXamlCValidateOnly=True MSBuild property
-		[Fact]
-		public void ValidateOnly([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void ValidateOnly(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -300,12 +311,14 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			{
 				// XAML files should remain as EmbeddedResource
 				var resources = assembly.MainModule.Resources.OfType<EmbeddedResource>().Select(e => e.Name).ToArray();
-				Assert.Contains(resources, "test.MainPage.xaml");
+				Assert.Contains("test.MainPage.xaml", resources);
 			}
 		}
 
-		[Fact]
-		public void ValidateOnly_WithErrors([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void ValidateOnly_WithErrors(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage.Replace("</ContentPage>", "<NotARealThing/></ContentPage>")));
@@ -320,8 +333,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		/// <summary>
 		/// Tests that XamlG and XamlC targets skip, as well as checking IncrementalClean doesn't delete generated files
 		/// </summary>
-		[Fact]
-		public void TargetsShouldSkip([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void TargetsShouldSkip(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -349,16 +364,18 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var actualXamlG = new FileInfo(mainPageXamlG).LastWriteTimeUtc;
 			var actualCssG = new FileInfo(fooCssG).LastWriteTimeUtc;
 			var actualXamlC = new FileInfo(xamlCStamp).LastWriteTimeUtc;
-			Assert.Equal(expectedXamlG, actualXamlG, $"Timestamps should match for {mainPageXamlG}.");
-			Assert.Equal(expectdCssG, actualCssG, $"Timestamps should match for {fooCssG}.");
-			Assert.Equal(expectedXamlC, actualXamlC, $"Timestamps should match for {xamlCStamp}.");
+			Assert.Equal(expectedXamlG, actualXamlG);
+			Assert.Equal(expectdCssG, actualCssG);
+			Assert.Equal(expectedXamlC, actualXamlC);
 		}
 
 		/// <summary>
 		/// Checks that XamlG and XamlC files are cleaned
 		/// </summary>
-		[Fact]
-		public void Clean([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void Clean(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -381,8 +398,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertDoesNotExist(xamlCStamp);
 		}
 
-		[Fact]
-		public void LinkedFile([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void LinkedFile(bool sdkStyle)
 		{
 			var folder = IOPath.Combine(tempDirectory, "A", "B");
 			Directory.CreateDirectory(folder);
@@ -406,8 +425,9 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 		//https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md
 		//https://daveaglick.com/posts/running-a-design-time-build-with-msbuild-apis
-		[Fact]
-		public void DesignTimeBuild([Values(false/*, true */)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		public void DesignTimeBuild(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile(@"Pages\MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -442,13 +462,15 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 			var actualXamlG = new FileInfo(mainPageXamlG).LastWriteTimeUtc;
 			var actualCssG = new FileInfo(fooCssG).LastWriteTimeUtc;
-			Assert.Equal(expectedXamlG, actualXamlG, $"Timestamps should match for {mainPageXamlG}.");
-			Assert.Equal(expectedCssG, actualCssG, $"Timestamps should match for {fooCssG}.");
+			Assert.Equal(expectedXamlG, actualXamlG);
+			Assert.Equal(expectedCssG, actualCssG);
 		}
 
 		//I believe the designer might invoke this target manually
-		[Fact]
-		public void UpdateDesignTimeXaml([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void UpdateDesignTimeXaml(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile(@"Pages\MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -462,8 +484,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertDoesNotExist(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 
-		[Fact]
-		public void AddNewFile([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void AddNewFile(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -495,14 +519,16 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var actualCssG = new FileInfo(fooCssG).LastWriteTimeUtc;
 			var actualXamlC = new FileInfo(xamlCStamp).LastWriteTimeUtc;
 			var actualNewFile = new FileInfo(customViewXamlG).LastAccessTimeUtc;
-			Assert.NotEqual(expectedXamlG, actualXamlG, $"Timestamps should *not* match for {mainPageXamlG}.");
-			Assert.NotEqual(expectedXamlG, actualNewFile, $"Timestamps should *not* match for {customViewXamlG}.");
-			Assert.Equal(expectedCssG, actualCssG, $"Timestamps should match for {fooCssG}.");
-			Assert.NotEqual(expectedXamlC, actualXamlC, $"Timestamps should *not* match for {xamlCStamp}.");
+			Assert.NotEqual(expectedXamlG, actualXamlG);
+			Assert.NotEqual(expectedXamlG, actualNewFile);
+			Assert.Equal(expectedCssG, actualCssG);
+			Assert.NotEqual(expectedXamlC, actualXamlC);
 		}
 
-		[Fact]
-		public void TouchXamlFile([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void TouchXamlFile(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -535,13 +561,15 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var actualMainPageXamlG = new FileInfo(mainPageXamlG).LastWriteTimeUtc;
 			var actualCustomViewXamlG = new FileInfo(customViewXamlG).LastAccessTimeUtc;
 			var actualXamlC = new FileInfo(xamlCStamp).LastWriteTimeUtc;
-			Assert.Equal(expectedMainPageXamlG, actualMainPageXamlG, $"Timestamps should match for {mainPageXamlG}.");
-			Assert.NotEqual(expectedMainPageXamlG, actualCustomViewXamlG, $"Timestamps should *not* match for {actualCustomViewXamlG}.");
-			Assert.NotEqual(expectedXamlC, actualXamlC, $"Timestamps should *not* match for {xamlCStamp}.");
+			Assert.Equal(expectedMainPageXamlG, actualMainPageXamlG);
+			Assert.NotEqual(expectedMainPageXamlG, actualCustomViewXamlG);
+			Assert.NotEqual(expectedXamlC, actualXamlC);
 		}
 
-		[Fact]
-		public void RandomXml([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void RandomXml(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", "<xml></xml>"));
@@ -555,19 +583,23 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertExists(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 
-		[Fact]
-		public void InvalidXml([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void InvalidXml(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", "notxmlatall"));
 			var projectFile = IOPath.Combine(tempDirectory, "test.csproj");
 			project.Save(projectFile);
 			RestoreIfNeeded(projectFile, sdkStyle);
-			Assert.Throws<AssertionException>(() => Build(projectFile));
+			Assert.Throws<Xunit.Sdk.XunitException>(() => Build(projectFile));
 		}
 
-		[Fact]
-		public void RandomEmbeddedResource([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void RandomEmbeddedResource(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
@@ -582,8 +614,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertExists(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 
-		[Fact]
-		public void NoXamlFiles([Values(false, true)] bool sdkStyle)
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void NoXamlFiles(bool sdkStyle)
 		{
 			var project = NewProject(sdkStyle);
 			var projectFile = IOPath.Combine(tempDirectory, "test.csproj");

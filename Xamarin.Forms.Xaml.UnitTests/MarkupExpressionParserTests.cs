@@ -82,8 +82,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			}
 		}
 
-		public MockElementNode()
-{
+		public MarkupExpressionParserTests()
+		{
 			var nsManager = new XmlNamespaceManager(new NameTable());
 			nsManager.AddNamespace("local", "clr-namespace:Xamarin.Forms.Xaml.UnitTests;assembly=Xamarin.Forms.Xaml.UnitTests");
 			nsManager.AddNamespace("x", "http://schemas.microsoft.com/winfx/2009/xaml");
@@ -102,6 +102,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Equal(Binding.SelfPath, ((Binding)binding).Path);
 		}
 
+		[Theory]
 		[InlineData("{Binding Foo}")]
 		[InlineData("{Binding {x:Static local:MarkupExpressionParserTests.Foo}}")]
 		public void BindingWithImplicitPath(string bindingString)
@@ -343,6 +344,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public int FontSize { get; set; }
 
+		[Theory]
 		[InlineData("{OnPlatform 20, Android=23}", Device.Android, 23)]
 		[InlineData("{OnPlatform Android=20, iOS=25}", Device.iOS, 25)]
 		[InlineData("{OnPlatform Android=20, GTK=25}", Device.GTK, 25)]
@@ -378,6 +380,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Equal(expected, actual);
 		}
 
+		[Theory]
 		[InlineData("{OnIdiom Phone=23, Tablet=25, Default=20}", TargetIdiom.Phone, 23)]
 		[InlineData("{OnIdiom Phone=23, Tablet=25, Default=20}", TargetIdiom.Tablet, 25)]
 		[InlineData("{OnIdiom 20, Phone=23, Tablet=25}", TargetIdiom.Desktop, 20)]
@@ -400,6 +403,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Equal(expected, actual);
 		}
 
+		[Theory]
 		[InlineData("{Binding")]
 		[InlineData("{Binding 'Foo}")]
 		[InlineData("{Binding Foo, Converter={StaticResource Bar}")]

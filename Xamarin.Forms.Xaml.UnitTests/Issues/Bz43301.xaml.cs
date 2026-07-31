@@ -15,15 +15,16 @@ namespace Foo.Xamarin.Bar
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
-			//No need for any actual [Fact]. If this compiles, the bug is fixed.
+			//No need for any actual [Theory]. If this compiles, the bug is fixed.
 			public void DoesCompile(bool useCompiledXaml)
 			{
 				var layout = new Bz43301(useCompiledXaml);
-				Assert.Pass();
+				return;
 			}
 		}
 	}

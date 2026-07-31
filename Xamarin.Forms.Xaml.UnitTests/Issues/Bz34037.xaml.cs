@@ -67,7 +67,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -83,6 +83,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			}
 
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void ConverterParameterOrderDoesNotMatters(bool useCompiledXaml)

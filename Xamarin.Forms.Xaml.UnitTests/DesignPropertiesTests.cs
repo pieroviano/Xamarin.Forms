@@ -4,10 +4,10 @@ using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	public class DesignPropertiesTests
+	public class DesignPropertiesTests: IDisposable
 	{
-		[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-		[TearDown] public void TearDown() => Device.PlatformServices = null;
+		public DesignPropertiesTests() => Device.PlatformServices = new MockPlatformServices();
+		public void Dispose() => Device.PlatformServices = null;
 
 		[Fact]
 		public void DesignProperties()

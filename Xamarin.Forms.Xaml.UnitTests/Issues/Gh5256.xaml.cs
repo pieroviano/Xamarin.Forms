@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows.Input;
 using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -29,17 +30,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void EventOverriding([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void EventOverriding(bool useCompiledXaml)
 			{
-				var layout = new Gh5256(useCompiledXaml) { BindingContext = new { CompletedCommand = new Command(() => Assert.Pass()) } };
+				var completed = false;
+				var layout = new Gh5256(useCompiledXaml) { BindingContext = new { CompletedCommand = new Command(() => completed = true) } };
 				layout.entry.SendCompleted();
-				Assert.Fail();
+				Assert.True(completed, "the Completed event should have invoked CompletedCommand");
 			}
 		}
 

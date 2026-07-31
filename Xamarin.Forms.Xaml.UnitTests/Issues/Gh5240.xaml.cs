@@ -15,16 +15,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void FailOnUnresolvedDataType([Values(true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			public void FailOnUnresolvedDataType(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5240)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5240)));
 			}
 		}
 	}

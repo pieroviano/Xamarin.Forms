@@ -34,7 +34,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -46,11 +46,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void GenericBaseClassResolution(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4438)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4438)));
 				var layout = new Gh4438(useCompiledXaml) { BindingContext = new Gh4438VM() };
 				Assert.Equal("test", layout.label.Text);
 			}

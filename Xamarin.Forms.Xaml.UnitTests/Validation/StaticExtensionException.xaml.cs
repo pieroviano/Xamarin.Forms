@@ -20,10 +20,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Issue2115
 		{
+			[Theory]
 			[InlineData(false)]
 			public void xStaticThrowsMeaningfullException(bool useCompiledXaml)
 			{
-				Assert.Throws(new XamlParseExceptionConstraint(6, 34), () => new StaticExtensionException(useCompiledXaml));
+				new XamlParseExceptionConstraint(6, 34).Verify(() => new StaticExtensionException(useCompiledXaml));
 			}
 		}
 	}

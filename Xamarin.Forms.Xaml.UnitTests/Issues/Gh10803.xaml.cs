@@ -15,7 +15,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			bool debuggerinitialstate;
 			int failures = 0;
@@ -36,13 +36,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				failures = 0;
 			}
 
-			[Fact]
-			public void SourceInfoForElementsInDT([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void SourceInfoForElementsInDT(bool useCompiledXaml)
 			{
 				var layout = new Gh10803(useCompiledXaml);
 				var listview = layout.listview;
 				var cell = listview.TemplatedItems.GetOrCreateContent(0, null);
-				Assert.That(failures, Is.EqualTo(0), "one or more element without source info, or with invalid ChildIndex");
+				Assert.Equal(0, failures);
 			}
 
 			void VTChanged(object sender, VisualTreeChangeEventArgs e)

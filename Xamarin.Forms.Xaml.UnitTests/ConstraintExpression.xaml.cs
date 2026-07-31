@@ -25,6 +25,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ConstantConstraint(bool useCompiledXaml)
@@ -36,6 +37,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(42, constraint.Compute(null));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ConstraintRelativeToParent(bool useCompiledXaml)
@@ -48,6 +50,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(102, constraint.Compute(layout.relativeLayout));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ContraintRelativeToView(bool useCompiledXaml)

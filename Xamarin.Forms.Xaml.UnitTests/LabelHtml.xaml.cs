@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -11,13 +12,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void HtmlInCDATA([Values(true, false)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			[InlineData(false)]
+			public void HtmlInCDATA(bool useCompiledXaml)
 			{
 				var html = "<h1>Hello World!</h1><br/>SecondLine";
 				var layout = new LabelHtml(useCompiledXaml);

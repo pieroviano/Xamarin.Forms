@@ -29,6 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Datetime(bool useCompiledXaml)
@@ -39,6 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(new DateTime(2015, 01, 16), layout.datetime1.Date);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void String(bool useCompiledXaml)

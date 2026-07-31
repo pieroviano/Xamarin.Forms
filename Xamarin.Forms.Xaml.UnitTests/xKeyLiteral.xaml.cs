@@ -18,14 +18,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
 			//this requirement might change, see https://github.com/xamarin/Xamarin.Forms/issues/12425
-			public void xKeyRequireStringLiteral([Values(false, true)] bool useCompiledXaml)
+			public void xKeyRequireStringLiteral(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.Throws<BuildException>(() => MockCompiler.Compile(typeof(xKeyLiteral)));

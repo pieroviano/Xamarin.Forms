@@ -29,7 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					    </Grid>";
 
 			var grid = new Grid().LoadFromXaml(xaml);
-			Assert.Equal(1, grid.ColumnDefinitions.Count);
+			Assert.Single(grid.ColumnDefinitions);
 			Assert.True(grid.ColumnDefinitions[0].Width.IsStar);
 		}
 	}

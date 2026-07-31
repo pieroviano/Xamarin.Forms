@@ -19,6 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void EmptyTextCell(bool useCompiledXaml)
@@ -36,6 +37,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotSame(cell0, cell1);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TextCell(bool useCompiledXaml)
@@ -56,6 +58,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotSame(cell0, cell1);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void FromResource(bool useCompiledXaml)
@@ -76,6 +79,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotSame(cell0, cell1);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TextCellAccessResources(bool useCompiledXaml)
@@ -96,6 +100,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotSame(cell0, cell1);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ViewCellAccessResources(bool useCompiledXaml)

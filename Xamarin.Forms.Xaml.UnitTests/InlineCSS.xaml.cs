@@ -29,14 +29,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void InlineCSSParsed(bool useCompiledXaml)
 			{
 				var layout = new InlineCSS(useCompiledXaml);
 				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void InitialValue(bool useCompiledXaml)
 			{
 				var layout = new InlineCSS(useCompiledXaml);

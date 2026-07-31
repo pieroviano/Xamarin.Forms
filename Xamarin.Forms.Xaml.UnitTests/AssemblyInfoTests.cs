@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -18,46 +20,52 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			"Xamarin.Forms.Platform",
 		};
 
+		public static IEnumerable<object[]> ReferencesData => references.Select(r => new object[] { r });
+
 		const string s_productName = "Xamarin.Forms";
 
 		const string s_company = "Microsoft";
 
 		const string s_gitInfoFile = "GitInfo.txt";
 
-		[Test, TestCaseSource(nameof(references))]
+		[Theory]
+		[MemberData(nameof(ReferencesData))]
 		public void AssemblyTitle(string assemblyName)
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			Assert.Equal(assemblyName, testAssembly.GetName().Name);
 		}
 
-		[Test, TestCaseSource(nameof(references))]
+		[Theory]
+		[MemberData(nameof(ReferencesData))]
 		public void AssemblyVersion(string assemblyName)
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			Version actual = testAssembly.GetName().Version;
-			Assert.Equal(2, actual.Major, actual.ToString());
-			Assert.Equal(0, actual.Minor, actual.ToString());
-			Assert.Equal(0, actual.Build, actual.ToString());
+			Assert.Equal(2, actual.Major);
+			Assert.Equal(0, actual.Minor);
+			Assert.Equal(0, actual.Build);
 		}
 
-		[Test, TestCaseSource(nameof(references))]
+		[Theory]
+		[MemberData(nameof(ReferencesData))]
 		public void FileVersion(string assemblyName)
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			FileVersionInfo actual = FileVersionInfo.GetVersionInfo(testAssembly.Location);
 			Version expected = Version.Parse(GetFileFromRoot(s_gitInfoFile));
-			Assert.Equal(expected.Major, actual.FileMajorPart, $"FileMajorPart is wrong. {actual.ToString()}");
-			Assert.Equal(expected.Minor, actual.FileMinorPart, $"FileMinorPart is wrong. {actual.ToString()}");
+			Assert.Equal(expected.Major, actual.FileMajorPart);
+			Assert.Equal(expected.Minor, actual.FileMinorPart);
 			// Fails locally
-			//Assert.Equal(expected.Build, actual.FileBuildPart, $"FileBuildPart is wrong. {actual.ToString()}");
+			//Assert.Equal(expected.Build, actual.FileBuildPart);
 			//We need to enable this
 			//	Assert.Equal(ThisAssembly.Git.Commits, version.FilePrivatePart);
 			Assert.Equal(s_productName, actual.ProductName);
 			Assert.Equal(s_company, actual.CompanyName);
 		}
 
-		[Test, TestCaseSource(nameof(references))]
+		[Theory]
+		[MemberData(nameof(ReferencesData))]
 		public void ProductAndCompany(string assemblyName)
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
@@ -68,7 +76,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 		static string GetFileFromRoot(string file)
 		{
-			var gitInfoFile = IOPath.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", file);
+			var gitInfoFile = IOPath.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", file);
 			if (!File.Exists(gitInfoFile))
 			{
 				//NOTE: VSTS may be running tests in a staging directory, so we can use an environment variable to find the source

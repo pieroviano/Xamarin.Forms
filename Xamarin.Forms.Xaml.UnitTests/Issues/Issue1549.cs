@@ -184,8 +184,8 @@ xmlns=""http://xamarin.com/schemas/2014/forms""
 			Assert.Equal("Show Is Locked", label00.Text);
 			Assert.Equal("Show Is Not locked", label01.Text);
 
-			Assert.Equal(true, label00.IsVisible);
-			Assert.Equal(false, label01.IsVisible);
+			Assert.True(label00.IsVisible);
+			Assert.False(label01.IsVisible);
 
 			Assert.Equal(4, InvertBoolenConverter.count);
 

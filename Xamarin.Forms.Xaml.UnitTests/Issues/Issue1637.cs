@@ -15,8 +15,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			        </Grid.RowDefinitions>
 				</Grid>";
 			var grid = new Grid();
-			Assert.DoesNotThrow(() => grid.LoadFromXaml<Grid>(xaml));
-			Assert.Equal(1, grid.RowDefinitions.Count);
+			AssertEx.DoesNotThrow(() => grid.LoadFromXaml<Grid>(xaml));
+			Assert.Single(grid.RowDefinitions);
 			Assert.True(grid.RowDefinitions[0].Height.IsStar);
 		}
 	}

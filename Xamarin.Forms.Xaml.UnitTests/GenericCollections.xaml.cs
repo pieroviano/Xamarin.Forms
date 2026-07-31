@@ -38,6 +38,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsCrookedGenericScenarios(bool useCompiledXaml)

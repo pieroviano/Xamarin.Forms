@@ -19,6 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXReference(bool useCompiledXaml)
@@ -27,6 +28,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Same(layout.image, layout.imageView.Content);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void XReferenceAsCommandParameterToSelf(bool useCompiledXaml)
@@ -39,13 +41,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					ButtonClickCommand = new Command(o =>
 					{
 						if (o == button)
-							Assert.Pass();
+							return;
 					})
 				};
 				((IButtonController)button).SendClicked();
 				Assert.Fail();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void XReferenceAsBindingSource(bool useCompiledXaml)
@@ -56,6 +59,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("bar", layout.entry.Placeholder);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void CrossXReference(bool useCompiledXaml)

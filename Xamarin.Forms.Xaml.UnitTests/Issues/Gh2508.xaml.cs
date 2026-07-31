@@ -31,7 +31,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 
 			public Tests()
@@ -44,11 +44,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void UintProperties(bool useCompiledXaml)
 			{
 				var layout = new Gh2508(useCompiledXaml);
-				Assert.Equal(2000, ((layout.entry.Triggers[0] as Trigger).EnterActions[0] as Gh2508FlashingTriggerAction).Duration);
+				Assert.Equal(2000u, ((layout.entry.Triggers[0] as Trigger).EnterActions[0] as Gh2508FlashingTriggerAction).Duration);
 			}
 		}
 	}

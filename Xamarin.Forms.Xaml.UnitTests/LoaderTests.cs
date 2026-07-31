@@ -139,7 +139,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			    />";
 
 			var label = new Label();
-			Assert.Throws(new XamlParseExceptionConstraint(5, 5), () => label.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(5, 5).Verify(() => label.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -189,7 +189,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				/>";
 
 			var view = new CustomView();
-			Assert.Throws(new XamlParseExceptionConstraint(6, 5), () => view.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(6, 5).Verify(() => view.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -295,7 +295,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</StackLayout>";
 
 			var stacklayout = new StackLayout();
-			Assert.Throws(new XamlParseExceptionConstraint(6, 8), () => stacklayout.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(6, 8).Verify(() => stacklayout.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -334,7 +334,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</Label.Resources>
 				</Label>";
 			var label = new Label();
-			Assert.Throws(new XamlParseExceptionConstraint(8, 9), () => label.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(8, 9).Verify(() => label.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -363,7 +363,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		{
 			var xaml = @"<Label xmlns=""http://xamarin.com/schemas/2014/forms"" Text=""{StaticResource foo}""/>";
 			var label = new Label();
-			Assert.Throws(new XamlParseExceptionConstraint(1, 54), () => label.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(1, 54).Verify(() => label.LoadFromXaml(xaml));
 		}
 
 		public class CustView : Button
@@ -448,7 +448,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				x:Class=""Xamarin.Forms.Xaml.UnitTests.CustView"" Activated=""missingMethod"" />
 				</View>";
 			var view = new CustView();
-			Assert.Throws(new XamlParseExceptionConstraint(5, 53), () => view.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(5, 53).Verify(() => view.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -462,7 +462,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</View>";
 			var view = new CustView();
 
-			Assert.Throws(new XamlParseExceptionConstraint(5, 53), () => view.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(5, 53).Verify(() => view.LoadFromXaml(xaml));
 		}
 
 
@@ -519,7 +519,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var image = new Image();
 			Assert.Equal(Image.IsOpaqueProperty.DefaultValue, image.IsOpaque);
 			image.LoadFromXaml(xaml);
-			Assert.Equal(true, image.IsOpaque);
+			Assert.True(image.IsOpaque);
 		}
 
 		[Fact]
@@ -576,7 +576,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					<Label x:Name=""contentview""/>
 				</local:CustomView>";
 			CustomView customView = null;
-			Assert.DoesNotThrow(() => customView = new CustomView().LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => customView = new CustomView().LoadFromXaml(xaml));
 			Assert.NotNull(customView.Content);
 			Assert.Same(customView.Content, ((Forms.Internals.INameScope)customView).FindByName("contentview"));
 		}
@@ -603,7 +603,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					<Label Text=""Foo""/>
 				</StackLayout>";
 			var layout = new StackLayout().LoadFromXaml(xaml);
-			Assert.Equal(1, layout.Children.Count);
+			Assert.Single(layout.Children);
 			Assert.Equal("Foo", ((Label)(layout.Children[0])).Text);
 		}
 
@@ -626,7 +626,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public void LoadFromXamlResource()
 		{
 			ContentView view = null;
-			Assert.DoesNotThrow(() => view = new CustomXamlView());
+			AssertEx.DoesNotThrow(() => view = new CustomXamlView());
 			Assert.NotNull(view);
 			Assert.IsType<Label>(view.Content);
 			Assert.Equal("foobar", ((Label)view.Content).Text);
@@ -636,7 +636,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public void ThrowOnMissingXamlResource()
 		{
 			var view = new CustomView();
-			Assert.Throws(new XamlParseExceptionConstraint(), () => view.LoadFromXaml(typeof(CustomView)));
+			new XamlParseExceptionConstraint().Verify(() => view.LoadFromXaml(typeof(CustomView)));
 		}
 
 		[Fact]
@@ -655,7 +655,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</local:ViewWithChildrenContent.Children>
 				</local:ViewWithChildrenContent>";
 			ViewWithChildrenContent layout = null;
-			Assert.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
 			Assert.NotNull(layout);
 			Assert.NotSame(layout.DefaultChildren, layout.Children);
 			Assert.Contains(((Forms.Internals.INameScope)layout).FindByName("child0"), layout.Children);
@@ -674,7 +674,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					<Label x:Name=""child1""/>
 				</local:ViewWithChildrenContent>";
 			ViewWithChildrenContent layout = null;
-			Assert.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
 			Assert.NotNull(layout);
 			Assert.Same(layout.DefaultChildren, layout.Children);
 			Assert.Contains(((Forms.Internals.INameScope)layout).FindByName("child0"), layout.Children);
@@ -695,7 +695,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</local:ViewWithChildrenContent.Children>
 				</local:ViewWithChildrenContent>";
 			ViewWithChildrenContent layout = null;
-			Assert.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
 			Assert.NotNull(layout);
 			Assert.Same(layout.DefaultChildren, layout.Children);
 			Assert.Contains(((Forms.Internals.INameScope)layout).FindByName("child0"), layout.Children);
@@ -714,7 +714,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					<Label x:Name=""child0""/>
 				</local:ViewWithChildrenContent>";
 			ViewWithChildrenContent layout = null;
-			Assert.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => layout = new ViewWithChildrenContent().LoadFromXaml(xaml));
 			Assert.NotNull(layout);
 			Assert.Same(layout.DefaultChildren, layout.Children);
 			Assert.Contains(((Forms.Internals.INameScope)layout).FindByName("child0"), layout.Children);
@@ -784,7 +784,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</Label.Style>
 				</Label>";
 			var label = new Label();
-			Assert.Throws(new XamlParseExceptionConstraint(4, 8), () => label.LoadFromXaml(xaml));
+			new XamlParseExceptionConstraint(4, 8).Verify(() => label.LoadFromXaml(xaml));
 		}
 
 		[Fact]

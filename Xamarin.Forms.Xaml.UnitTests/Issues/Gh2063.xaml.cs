@@ -16,9 +16,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void DetailedErrorMessageOnMissingXmlnsDeclaration(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

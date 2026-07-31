@@ -5,6 +5,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 {
 	public class FontConverterTests : BaseTestFixture
 	{
+		[Theory]
 		[InlineData("Bold", Forms.FontAttributes.Bold)]
 		[InlineData("Italic", Forms.FontAttributes.Italic)]
 		[InlineData("Bold, Italic", Forms.FontAttributes.Bold | Forms.FontAttributes.Italic)]

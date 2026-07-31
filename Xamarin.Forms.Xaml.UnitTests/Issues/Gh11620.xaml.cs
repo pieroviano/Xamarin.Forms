@@ -14,13 +14,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void BoxOnAdd([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void BoxOnAdd(bool useCompiledXaml)
 			{
 				var layout = new Gh11620(useCompiledXaml);
 				var arr = layout.Resources["myArray"];

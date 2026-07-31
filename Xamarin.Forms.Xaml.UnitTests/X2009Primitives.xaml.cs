@@ -32,6 +32,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXString(bool useCompiledXaml)
@@ -45,6 +46,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXObject(bool useCompiledXaml)
@@ -56,6 +58,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.IsType<object>(value);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXBoolean(bool useCompiledXaml)
@@ -66,13 +69,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var falsebool = layout.Resources["falsebool"];
 				Assert.NotNull(falsebool);
 				Assert.IsType<bool>(falsebool);
-				Assert.Equal(false, (bool)falsebool);
+				Assert.False((bool)falsebool);
 
 				Assert.True(layout.Resources.ContainsKey("truebool"));
 				var truebool = layout.Resources["truebool"];
 				Assert.NotNull(truebool);
 				Assert.IsType<bool>(truebool);
-				Assert.Equal(true, (bool)truebool);
+				Assert.True((bool)truebool);
 
 				Assert.True(layout.Resources.ContainsKey("defaultbool"));
 				var defaultbool = layout.Resources["defaultbool"];
@@ -81,6 +84,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(default(bool), (bool)defaultbool);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXChar(bool useCompiledXaml)
@@ -106,6 +110,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(default(char), (char)defaultChar);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXNumbers(bool useCompiledXaml)
@@ -200,7 +205,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var aUInt32 = layout.Resources["aUInt32"];
 				Assert.NotNull(aUInt32);
 				Assert.IsType<uint>(aUInt32);
-				Assert.Equal(44, (uint)aUInt32);
+				Assert.Equal(44u, (uint)aUInt32);
 
 				Assert.True(layout.Resources.ContainsKey("defaultInt32"));
 				var defaultInt32 = layout.Resources["defaultInt32"];
@@ -218,7 +223,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var aUInt64 = layout.Resources["aUInt64"];
 				Assert.NotNull(aUInt64);
 				Assert.IsType<ulong>(aUInt64);
-				Assert.Equal(45, (ulong)aUInt64);
+				Assert.Equal(45UL, (ulong)aUInt64);
 
 				Assert.True(layout.Resources.ContainsKey("defaultInt64"));
 				var defaultInt64 = layout.Resources["defaultInt64"];
@@ -227,6 +232,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(default(long), (long)defaultInt64);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXTimeSpan(bool useCompiledXaml)
@@ -246,6 +252,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(default(TimeSpan), (TimeSpan)defaultTimeSpan);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SupportsXUri(bool useCompiledXaml)

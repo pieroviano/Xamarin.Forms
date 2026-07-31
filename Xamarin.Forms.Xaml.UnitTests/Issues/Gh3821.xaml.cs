@@ -30,7 +30,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			}
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -42,7 +42,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void NoConflictsInNamescopes(bool useCompiledXaml)
 			{
 				var layout = new Gh3821(useCompiledXaml) { Text = "root" };

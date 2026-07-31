@@ -25,14 +25,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void MultipleTriggers(bool useCompiledXaml)
 			{
 				Issue2578 layout = null;
-				Assert.DoesNotThrow(() => layout = new Issue2578(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => layout = new Issue2578(useCompiledXaml));
 
-				Assert.Equal(null, layout.label.Text);
+				Assert.Null(layout.label.Text);
 				Assert.Equal(Color.Default, layout.label.BackgroundColor);
 				Assert.Equal(Color.Olive, layout.label.TextColor);
 				layout.label.Text = "Foo";

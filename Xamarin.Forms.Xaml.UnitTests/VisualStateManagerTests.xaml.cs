@@ -31,6 +31,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void VisualStatesFromStyleXaml(bool useCompiledXaml)
@@ -68,6 +69,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Default, entry0.PlaceholderColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void UnapplyVisualState(bool useCompiledXaml)
@@ -94,6 +96,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Default, entry1.PlaceholderColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void VisualStateGroupsDirectlyOnElement(bool useCompiledXaml)
@@ -108,6 +111,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(2, groups.Count);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void EmptyGroupDirectlyOnElement(bool useCompiledXaml)
@@ -122,6 +126,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.True(groups.Count == 1);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void VisualStateGroupsFromStylesAreDistinct(bool useCompiledXaml)
@@ -148,6 +153,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Normal", groups2[0].CurrentState.Name);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void SettersAreAddedToCorrectState(bool useCompiledXaml)
@@ -158,17 +164,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				var groups = VisualStateManager.GetVisualStateGroups(entry);
 
-				Assert.Equal(1, groups.Count);
+				Assert.Single(groups);
 
 				var common = groups[0];
 
 				var normal = common.States.Single(state => state.Name == "Normal");
 				var disabled = common.States.Single(state => state.Name == "Disabled");
 
-				Assert.Equal(0, normal.Setters.Count);
+				Assert.Empty(normal.Setters);
 				Assert.Equal(2, disabled.Setters.Count);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void VisualElementGoesToCorrectStateWhenAvailable(bool useCompiledXaml)
@@ -180,6 +187,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Lime, button.BackgroundColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TargetedVisualElementGoesToCorrectState(bool useCompiledXaml)

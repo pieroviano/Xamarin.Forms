@@ -64,7 +64,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			set { SetValue(Collection2Property, value); }
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -76,7 +76,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void CollectionProperties(bool useCompiledXaml)
 			{
 				var layout = new Bz60575(useCompiledXaml);
@@ -87,13 +88,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				//attached BP with a single element
 				col = layout.GetValue(Bz60575Helpers.Collection2Property) as IList<string>;
-				Assert.Equal(1, col.Count);
+				Assert.Single(col);
 
 				//normal BP
 				Assert.Equal(3, layout.Collection.Count);
 
 				//normal BP with a single element
-				Assert.Equal(1, layout.Collection2.Count);
+				Assert.Single(layout.Collection2);
 			}
 		}
 	}

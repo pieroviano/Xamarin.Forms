@@ -14,18 +14,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		public class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void ThrowsOnMismatchingType([Values(true, false)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			[InlineData(false)]
+			public void ThrowsOnMismatchingType(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(7, 16, m => m.Contains("No property, BindableProperty")), () => MockCompiler.Compile(typeof(TypeMismatch)));
+					new BuildExceptionConstraint(7, 16, m => m.Contains("No property, BindableProperty")).Verify(() => MockCompiler.Compile(typeof(TypeMismatch)));
 				else
-					Assert.Throws(new XamlParseExceptionConstraint(7, 16, m => m.StartsWith("Cannot assign property", StringComparison.Ordinal)), () => new TypeMismatch(useCompiledXaml));
+					new XamlParseExceptionConstraint(7, 16, m => m.StartsWith("Cannot assign property", StringComparison.Ordinal)).Verify(() => new TypeMismatch(useCompiledXaml));
 			}
 		}
 	}

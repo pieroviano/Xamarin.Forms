@@ -20,7 +20,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			InitializeComponent();
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {

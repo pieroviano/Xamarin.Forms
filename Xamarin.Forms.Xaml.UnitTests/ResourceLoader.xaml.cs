@@ -31,7 +31,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 #pragma warning restore CS0618 // Type or member is obsolete
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void XamlLoadingUsesResourceLoader(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
@@ -56,8 +57,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[Fact]
-			public void XamlLoadingUsesResourceProvider2([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void XamlLoadingUsesResourceProvider2(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
 				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
@@ -91,8 +94,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[Fact]
-			public void XamlLoadingUsesResourceProvider2WithDesignProperties([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void XamlLoadingUsesResourceProvider2WithDesignProperties(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
 				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
@@ -123,7 +128,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.HotPink, layout.label.TextColor);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RDLoadingUsesResourceLoader(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);

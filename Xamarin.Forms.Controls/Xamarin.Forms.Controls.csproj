@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!-- Sample/support project: not shipped as a package. -->
+    <IsPackable>false</IsPackable>
+
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
@@ -33,6 +36,16 @@
     <ProjectReference Include="..\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj" />
+    <!--
+      Build-order only (ReferenceOutputAssembly=false): this project's XAML is compiled by
+      XamlGTask/XamlCTask, which are now loaded from Build.Tasks' own output, so Build.Tasks
+      must be built first. There is otherwise no dependency edge between them, and a
+      solution build is free to compile this project first. The old .nuspec copy masked
+      that by leaving task DLLs behind from a previous build.
+    -->
+    <ProjectReference Include="..\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Condition="$(FromSource) == 'false'">
     <ProjectReference Include="..\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" />

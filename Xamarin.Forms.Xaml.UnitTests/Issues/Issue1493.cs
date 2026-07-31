@@ -21,7 +21,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			System.Threading.Thread.CurrentThread.CurrentCulture = _defaultCulture;
 		}
 
-		[InlineData("en-US"), TestCase("tr-TR"), TestCase("fr-FR")]
+		[Theory]
+		[InlineData("en-US"), InlineData("tr-TR"), InlineData("fr-FR")]
 		//mostly happens in european cultures
 		public void CultureInvariantNumberParsing(string culture)
 		{
@@ -35,7 +36,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 							RelativeLayout.WidthConstraint=""{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.6}""/>";
 			View view = new View();
 			view.LoadFromXaml(xaml);
-			Assert.DoesNotThrow(() => view.LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => view.LoadFromXaml(xaml));
 		}
 	}
 }

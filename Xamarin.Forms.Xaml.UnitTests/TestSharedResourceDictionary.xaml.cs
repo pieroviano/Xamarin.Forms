@@ -37,6 +37,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void MergedResourcesAreFound(bool useCompiledXaml)
@@ -45,6 +46,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void NoConflictsBetweenSharedRDs(bool useCompiledXaml)
@@ -54,6 +56,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Purple, layout.label2.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ImplicitStyleCanBeSharedFromSharedRD(bool useCompiledXaml)
@@ -71,6 +74,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				}
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void MergedRDAtAppLevel(bool useCompiledXaml)

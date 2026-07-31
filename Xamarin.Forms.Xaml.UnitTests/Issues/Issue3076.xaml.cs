@@ -29,6 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void CanUseBindableObjectDefinedInThisAssembly(bool useCompiledXaml)
@@ -39,6 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(TextAlignment.Start, layout.local.VerticalContentAlignment);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void CanUseBindableObjectDefinedInOtherAssembly(bool useCompiledXaml)

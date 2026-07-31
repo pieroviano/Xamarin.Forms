@@ -19,11 +19,12 @@ namespace Xamarin.Forms.Xaml.UnitTests.A
 
 		public class Tests
 		{
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void ShouldPass(bool useCompiledXaml)
 			{
 				new Bz31234(useCompiledXaml);
-				Assert.Pass();
+				return;
 			}
 		}
 	}

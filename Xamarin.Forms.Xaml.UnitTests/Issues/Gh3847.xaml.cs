@@ -19,7 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -31,7 +31,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RelativeSourceSelfBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);
@@ -39,7 +40,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(label.Text, label.StyleId);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RelativeSourceAncestorLevelBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);
@@ -56,7 +58,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Null(level3Label.Text);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RelativeSourceTemplatedParentBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);

@@ -16,7 +16,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -29,6 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void Foo(bool useCompiledXaml)
@@ -41,7 +42,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					}
 				};
 				var layout = new Bz54717(useCompiledXaml);
-				Assert.Equal(1, layout.Resources.Count);
+				Assert.Single(layout.Resources);
 				var array = layout.Resources["SomeColors"] as Color[];
 				Assert.Equal(Color.Red, array[0]);
 				Assert.Equal(Color.Blue, array[1]);

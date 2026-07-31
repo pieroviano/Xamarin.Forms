@@ -56,6 +56,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void NestedMarkupExtensionInsideDataTemplate(bool useCompiledXaml)
@@ -73,6 +74,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(button.Command);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			//https://bugzilla.xamarin.com/show_bug.cgi?id=55027

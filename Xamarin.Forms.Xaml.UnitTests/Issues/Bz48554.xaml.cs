@@ -56,14 +56,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void XStaticWithXamlC(bool useCompiledXaml)
 			{
 				Bz48554 page = null;
-				Assert.DoesNotThrow(() => page = new Bz48554(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => page = new Bz48554(useCompiledXaml));
 				Assert.NotNull(page.SliderGrades);
 				Assert.Equal(5, page.SliderGrades.Values.Count);
 			}

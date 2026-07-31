@@ -23,14 +23,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class SetterOnNonBPTests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ShouldThrow(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(10, 13), () => MockCompiler.Compile(typeof(SetterOnNonBP)));
+					new BuildExceptionConstraint(10, 13).Verify(() => MockCompiler.Compile(typeof(SetterOnNonBP)));
 				else
-					Assert.Throws(new XamlParseExceptionConstraint(10, 13), () => new SetterOnNonBP(useCompiledXaml));
+					new XamlParseExceptionConstraint(10, 13).Verify(() => new SetterOnNonBP(useCompiledXaml));
 			}
 		}
 	}

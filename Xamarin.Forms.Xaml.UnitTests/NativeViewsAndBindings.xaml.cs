@@ -262,6 +262,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				}
 			}
 
+			[Theory]
 			[InlineData(false, Device.iOS)]
 			[InlineData(false, Device.Android)]
 			//[InlineData(true)]

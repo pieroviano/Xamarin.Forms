@@ -6,6 +6,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 {
 	public class TextTransformTests : BaseTestFixture
 	{
+		[Theory]
 		[InlineData(TextTransform.None)]
 		[InlineData(TextTransform.Lowercase)]
 		[InlineData(TextTransform.Uppercase)]

@@ -59,6 +59,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				GH2691.Init();  // only to make sure compiler pulls in Controls assembly
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestXamlParserAndGenerator(bool useCompiledXaml)
@@ -90,13 +91,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(label3);
 			}
 
-			[TestCase]
+			[Fact]
 			public void TestXamlCompiler()
 			{
 				MockCompiler.Compile(typeof(Gh2691));
 			}
 
-			[TestCase]
+			[Fact]
 			public void TestXamlGenerator()
 			{
 				string xamlInputFile = CreateXamlInputFile();
@@ -114,10 +115,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var references = string.Join(";",
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Controls.dll")),
+							AppContext.BaseDirectory, "Xamarin.Forms.Controls.dll")),
 					IOPath.GetFullPath(
 						IOPath.Combine(
-							TestContext.CurrentContext.TestDirectory, "Xamarin.Forms.Core.dll"))
+							AppContext.BaseDirectory, "Xamarin.Forms.Core.dll"))
 					);
 				var xamlg = new XamlGTask()
 				{

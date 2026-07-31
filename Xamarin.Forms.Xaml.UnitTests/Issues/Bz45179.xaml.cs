@@ -27,7 +27,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -39,12 +39,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void DTDoNotInstantiateTheirContent(bool useCompiledXaml)
 			{
 				Bz45179_0.creator_count = 0;
-				Assume.That(Bz45179_0.creator_count, Is.EqualTo(0));
+				Assert.SkipWhen(Bz45179_0.creator_count != 0, "precondition not met");
 				var page = new Bz45179(useCompiledXaml);
 				Assert.Equal(0, Bz45179_0.creator_count);
 			}

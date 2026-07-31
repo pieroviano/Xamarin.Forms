@@ -27,12 +27,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Current = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void StaticResourceOnApplication(bool useCompiledXaml)
 			{
 				Issue2114 app;
-				Assert.DoesNotThrow(() => app = new Issue2114(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => app = new Issue2114(useCompiledXaml));
 
 				Assert.True(Current.Resources.ContainsKey("ButtonStyle"));
 				Assert.True(Current.Resources.ContainsKey("NavButtonBlueStyle"));

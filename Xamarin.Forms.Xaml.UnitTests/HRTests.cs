@@ -43,11 +43,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var mockApplication = new MockApplication();
 			var rd = XamlLoader.LoadResources(app, mockApplication);
 			Assert.IsType<ResourceDictionary>(rd);
-			Assert.Equal(1, ((ResourceDictionary)rd).Count);
+			Assert.Single(((ResourceDictionary)rd));
 
 			//check that the live app hasn't ben modified
 			Assert.Equal(mockApplication, Application.Current);
-			Assert.Equal(0, Application.Current.Resources.Count);
+			Assert.Empty(Application.Current.Resources);
 		}
 
 		[Fact]
@@ -71,7 +71,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			//check that the live app hasn't ben modified
 			Assert.Equal(mockApplication, Application.Current);
-			Assert.Equal(0, Application.Current.Resources.Count);
+			Assert.Empty(Application.Current.Resources);
 		}
 
 		[Fact]
@@ -90,11 +90,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var mockApplication = new MockApplication();
 			var rd = XamlLoader.LoadResources(app, mockApplication);
 			Assert.IsType<ResourceDictionary>(rd);
-			Assert.Equal(1, ((ResourceDictionary)rd).Count);
+			Assert.Single(((ResourceDictionary)rd));
 
 			//check that the live app hasn't ben modified
 			Assert.Equal(mockApplication, Application.Current);
-			Assert.Equal(0, Application.Current.Resources.Count);
+			Assert.Empty(Application.Current.Resources);
 		}
 	}
 }

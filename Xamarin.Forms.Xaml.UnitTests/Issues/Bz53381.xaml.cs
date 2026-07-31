@@ -18,7 +18,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -31,6 +31,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void ControlTemplateAsImplicitAppLevelStyles(bool useCompiledXaml)
@@ -39,7 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var view = new Bz53381(useCompiledXaml);
 				Application.Current.MainPage = new ContentPage { Content = view };
 				var presenter = ((StackLayout)view.InternalChildren[0]).Children[1] as ContentPresenter;
-				Assume.That(presenter, Is.Not.Null);
+				Assert.SkipWhen(presenter is null, "precondition not met");
 				var grid = presenter.Content as Grid;
 				Assert.NotNull(grid);
 				Assert.Equal(Color.Green, grid.BackgroundColor);

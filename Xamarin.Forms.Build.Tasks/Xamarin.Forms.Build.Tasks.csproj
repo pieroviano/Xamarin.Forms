@@ -6,22 +6,38 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
+    <PackageId>Xamarin.Forms.Build.Tasks</PackageId>
+    <Description>MSBuild tasks and targets for Xamarin.Forms XAML compilation.</Description>
+    <IsPackable>true</IsPackable>
+
 	    <_DisableStrongNamer Condition=" '$(_DisableStrongNamer)' != 'True' ">False</_DisableStrongNamer>
 	    <AssemblyName>Xamarin.Forms.Build.Tasks</AssemblyName>
-      <Description>Xamarin Forms Build Task</Description>
 	    <!--
 	      net46 dropped: Microsoft.Build 17.x (needed to clear the NU1903 advisory against
-	      Microsoft.Build.Tasks.Core 15.8.166) no longer supports net46, and the .NET 10 /
-	      Linux toolchain only ever loads the netstandard2.0 flavour (Directory.Build.props
-	      selects .nuspec/netstandard2.0 when MSBuildRuntimeType == Core).
+	      Microsoft.Build.Tasks.Core 15.8.166) no longer supports net46, and one
+	      netstandard2.0 flavour serves both MSBuild runtimes.
 	    -->
-	    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+	    <TargetFramework>netstandard2.0</TargetFramework>
 	    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	    <SignAssembly Condition=" '$(_DisableStrongNamer)' != 'True' ">True</SignAssembly>
 	    <DisableStrongNamer Condition=" '$(_DisableStrongNamer)' == 'True' ">True</DisableStrongNamer>
 	    <DelaySign>true</DelaySign>
 	    <AssemblyOriginatorKeyFile>..\xamarin.forms.snk</AssemblyOriginatorKeyFile>
 	    <StrongNamerKeyFile>..\xamarin.forms.snk</StrongNamerKeyFile>
+	</PropertyGroup>
+
+	<!--
+	  No strong-naming under .NET Core MSBuild. StrongNamer (which signed the referenced
+	  assemblies) cannot load there, so signing this assembly while its references stay
+	  unsigned produces CS8002 - an error here because of TreatWarningsAsErrors. Signed
+	  builds therefore require .NET Framework MSBuild, matching _SetSnExe above.
+	  Placed after the groups above so it wins regardless of Configuration/Platform.
+	-->
+	<PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+	    <SignAssembly>false</SignAssembly>
+	    <DelaySign>false</DelaySign>
+	    <_DisableStrongNamer>True</_DisableStrongNamer>
+	    <DisableStrongNamer>True</DisableStrongNamer>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -36,7 +52,13 @@
     -->
     <PackageReference Include="Microsoft.Build.Framework" Version="17.14.28" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" ExcludeAssets="runtime" />
-    <PackageReference Include="StrongNamer" Version="0.0.8" />
+    <!--
+      StrongNamer 0.0.8 hosts an MSBuild task built against Microsoft.Build.Utilities.v4.0,
+      which does not exist in .NET Core MSBuild - it fails to load under `dotnet build`/`pack`
+      (MSB4062). Restricted to .NET Framework MSBuild, where strong-naming of dependencies
+      still works; `dotnet` builds simply skip it.
+    -->
+    <PackageReference Include="StrongNamer" Version="0.0.8" Condition="'$(MSBuildRuntimeType)' != 'Core'" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
      <PackageReference Include="XliffTasks" Version="1.0.0-beta.20206.1" PrivateAssets="all" />
   </ItemGroup>
@@ -69,7 +91,15 @@
 		<SnExe>sn</SnExe>
 	</PropertyGroup>
 
-	<Target Name="_SetSnExe" Condition="'$(SnExe)' == '' And '$(OS)' == 'Windows_NT'">
+	<!--
+	  Only locate sn.exe when the assembly is actually going to be signed, and only under
+	  .NET Framework MSBuild: GetFrameworkSdkPath does not exist in the .NET Core version
+	  (MSB4803), so `dotnet build` on Windows failed here even though Debug sets
+	  SignAssembly=false and the signing Exec below is skipped. On Linux the OS condition
+	  meant this target never ran at all, which is why it only ever broke on Windows.
+	-->
+	<Target Name="_SetSnExe"
+	        Condition="'$(SnExe)' == '' And '$(OS)' == 'Windows_NT' And '$(SignAssembly)' == 'true' And '$(MSBuildRuntimeType)' != 'Core'">
 		<GetFrameworkSdkPath>
 			<Output TaskParameter="Path" PropertyName="WindowsSdkPath" />
 		</GetFrameworkSdkPath>
@@ -82,13 +112,24 @@
 	</Target>
 
   <Target Name="_StrongName" AfterTargets="Build" DependsOnTargets="_SetSnExe" Condition="'$(TargetPath)' != ''" Inputs="$(TargetPath)" Outputs="$(IntermediateOutputPath)Sn.stamp">
-  	<Exec Command='"$(SnExe)" -R $(TargetPath) ..\xamarin.forms.snk' Condition=" '$(SignAssembly)' == 'true' " />
+  	<!--
+  	  SnExe can legitimately be empty now (see _SetSnExe): signing is skipped rather than
+  	  invoking an empty command. Strong-naming a Release build therefore needs .NET Framework
+  	  MSBuild (msbuild.exe) on Windows, or `sn` on PATH elsewhere.
+  	-->
+  	<Exec Command='"$(SnExe)" -R $(TargetPath) ..\xamarin.forms.snk' Condition=" '$(SignAssembly)' == 'true' And '$(SnExe)' != '' " />
   </Target>
 
-  <Target Name="_CopyToNuspecDir" AfterTargets="_StrongName;Build">
-    <ItemGroup>
-      <_CopyItems Include="$(TargetDir)*.dll" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_CopyItems)" DestinationFolder="..\.nuspec\$(TargetFramework)\" ContinueOnError="true" Retries="0" />
-  </Target>
+  <!--
+    _CopyToNuspecDir removed: consumers now load the tasks directly from this project's
+    output (see __XFBuildTasksLocation in Directory.Build.props). The copy ran with
+    ContinueOnError="true", so a locked destination silently left a stale task assembly
+    behind - which is exactly how an XamlCTask crash and the Windows MSB3021 warnings arose.
+  -->
+
+  <!-- The MSBuild integration that consumers import, shipped in the package's build/ folder. -->
+  <ItemGroup>
+    <None Include="build\**" Pack="true" PackagePath="build\" />
+  </ItemGroup>
+
 </Project>

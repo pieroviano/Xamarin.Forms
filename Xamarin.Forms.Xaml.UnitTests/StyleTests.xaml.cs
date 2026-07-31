@@ -26,6 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = new MockApplication();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestStyle(bool useCompiledXaml)
@@ -36,6 +37,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("FooBar", layout.label0.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestConversionOnSetters(bool useCompiledXaml)
@@ -60,6 +62,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("foo.png", ((FileImageSource)setter.Value).File);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ImplicitStyleAreApplied(bool useCompiledXaml)
@@ -68,6 +71,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Red, layout.label1.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void PropertyDoesNotNeedTypes(bool useCompiledXaml)
@@ -81,6 +85,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Red, s1.Value);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			//issue #2406
@@ -95,6 +100,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Red, label.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			//issue #2406

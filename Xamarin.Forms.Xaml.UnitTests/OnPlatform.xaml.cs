@@ -30,19 +30,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void BoolToVisibility(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.Equal(true, layout.label0.IsVisible);
+				Assert.True(layout.label0.IsVisible);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.Equal(false, layout.label0.IsVisible);
+				Assert.False(layout.label0.IsVisible);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void DoubleToWidth(bool useCompiledXaml)
@@ -56,6 +58,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(30, layout.label0.WidthRequest);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void StringToText(bool useCompiledXaml)
@@ -69,6 +72,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Bar", layout.label0.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void OnPlatformAsResource(bool useCompiledXaml)
@@ -83,6 +87,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void OnPlatformAsResourceAreApplied(bool useCompiledXaml)
@@ -100,6 +105,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(FontAttributes.Italic, layout.label0.FontAttributes);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void OnPlatform2Syntax(bool useCompiledXaml)
@@ -118,6 +124,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(42, layout.label0.HeightRequest);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void OnPlatformDefault(bool useCompiledXaml)

@@ -30,6 +30,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ValueIsConverted(bool useCompiledXaml)
@@ -42,9 +43,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotEmpty(triggers);
 				var pwTrigger = triggers[0] as Trigger;
 				Assert.Equal(Entry.IsPasswordProperty, pwTrigger.Property);
-				Assert.Equal(true, pwTrigger.Value);
+				Assert.True((bool)pwTrigger.Value);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ValueIsConvertedWithPropertyCondition(bool useCompiledXaml)
@@ -58,7 +60,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var pwTrigger = triggers[0] as MultiTrigger;
 				var pwCondition = pwTrigger.Conditions[0] as PropertyCondition;
 				Assert.Equal(Entry.IsPasswordProperty, pwCondition.Property);
-				Assert.Equal(true, pwCondition.Value);
+				Assert.True((bool)pwCondition.Value);
 			}
 		}
 	}

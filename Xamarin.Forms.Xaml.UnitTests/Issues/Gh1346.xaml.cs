@@ -17,7 +17,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 
 			public Tests()
@@ -30,7 +30,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void xStaticInStyle(bool useCompiledXaml)
 			{
 				var layout = new Gh1346(useCompiledXaml);

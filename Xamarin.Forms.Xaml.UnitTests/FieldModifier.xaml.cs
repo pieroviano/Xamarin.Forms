@@ -18,6 +18,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class FindByNameTests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestFieldModifier(bool useCompiledXaml)

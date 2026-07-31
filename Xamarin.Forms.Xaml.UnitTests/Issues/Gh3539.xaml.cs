@@ -216,7 +216,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -228,6 +228,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			public void CompiledBindingCodeIsValid(bool useCompiledXaml)
 			{

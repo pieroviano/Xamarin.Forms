@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,7 +17,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		public class Tests
+		public class Tests: IDisposable
 		{
 			//{x:Static Member=prefix:typeName.staticMemberName}
 			//{x:Static prefix:typeName.staticMemberName}
@@ -28,17 +29,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			// - An enumeration value
 			// All other cases should throw
 
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void ThrowOnInstanceProperty(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(7, 6), () => MockCompiler.Compile(typeof(XStaticException)));
+					new BuildExceptionConstraint(7, 6).Verify(() => MockCompiler.Compile(typeof(XStaticException)));
 				else
-					Assert.Throws(new XamlParseExceptionConstraint(7, 6), () => new XStaticException(useCompiledXaml));
+					new XamlParseExceptionConstraint(7, 6).Verify(() => new XStaticException(useCompiledXaml));
 			}
 		}
 	}

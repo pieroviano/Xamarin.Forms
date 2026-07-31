@@ -29,7 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</BoxView>";
 
 			BoxView1501 layout = null;
-			Assert.DoesNotThrow(() => { layout = new BoxView1501().LoadFromXaml(xaml); });
+			AssertEx.DoesNotThrow(() => { layout = new BoxView1501().LoadFromXaml(xaml); });
 
 			Assert.False(layout.Fired);
 			var tgr = layout.GestureRecognizers[0] as TapGestureRecognizer;

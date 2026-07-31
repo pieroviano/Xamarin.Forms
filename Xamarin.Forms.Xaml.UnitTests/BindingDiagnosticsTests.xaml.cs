@@ -18,12 +18,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		public class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
 
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public void Dispose() => Device.PlatformServices = null;
 
+			[Theory]
 			[InlineData(false)]
 			//[InlineData(true)]
 			public void Test(bool useCompiledXaml)
@@ -31,7 +32,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				List<BindingBaseErrorEventArgs> failures = new List<BindingBaseErrorEventArgs>();
 				BindingDiagnostics.BindingFailed += (o, e) => failures.Add(e);
 				var layout = new BindingDiagnosticsTests(useCompiledXaml) { BindingContext = new { foo = "bar" } };
-				Assert.That(failures.Count, Is.GreaterThan(0));
+				Assert.True(failures.Count > 0);
 				var failure = failures[0] as BindingErrorEventArgs;
 				Assert.Equal("foobar", ((Binding)failure.Binding).Path);
 				Assert.Equal(7, failure.XamlSourceInfo.LineNumber);

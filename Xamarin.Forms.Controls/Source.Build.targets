@@ -1,6 +1,6 @@
-<Project>
-  <Import Project="..\.nuspec\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true' AND Exists('$(__XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll')" />
-  <Import Project="..\.nuspec\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
+﻿<Project>
+  <Import Project="..\Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true' AND Exists('$(__XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll')" />
+  <Import Project="..\Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
   <ItemGroup>
     <!-- A reference to the entire .NET Framework is automatically included -->
     <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />

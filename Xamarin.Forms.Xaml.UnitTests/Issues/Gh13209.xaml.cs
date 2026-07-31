@@ -14,20 +14,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
 
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
 
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public void Dispose() => Device.PlatformServices = null;
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void RdWithSource(bool useCompiledXaml)
 			{
 				var layout = new Gh13209(useCompiledXaml);
 				Assert.Equal(Color.Chartreuse, layout.MyRect.BackgroundColor);
-				Assert.Equal(1, layout.Root.Resources.Count);
-				Assert.Equal(0, layout.Root.Resources.MergedDictionaries.Count);
+				Assert.Single(layout.Root.Resources);
+				Assert.Empty(layout.Root.Resources.MergedDictionaries);
 
 				Assert.NotNull(layout.Root.Resources["Color1"]);
 				Assert.True(layout.Root.Resources.Remove("Color1"));

@@ -39,10 +39,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			return (View)bindable.GetValue(InnerViewProperty);
 		}
 
+#pragma warning disable xUnit1013 // BindableProperty accessor, not a test method
 		public static void SetInnerView(BindableObject bindable, View value)
 		{
 			bindable.SetValue(InnerViewProperty, value);
 		}
+#pragma warning restore xUnit1013
 
 		[Fact]
 		public void TestCase001()
@@ -145,7 +147,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var listview = page.FindByName<ListView>("listview");
 			Cell cell = null;
-			Assert.DoesNotThrow(() => { cell = listview.TemplatedItems[0]; });
+			AssertEx.DoesNotThrow(() => { cell = listview.TemplatedItems[0]; });
 			Assert.NotNull(cell);
 			Assert.IsType<ViewCell>(cell);
 			Assert.Same(model[0], cell.BindingContext);
@@ -178,7 +180,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = new ContentPage();
-			Assert.DoesNotThrow(() => page.LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => page.LoadFromXaml(xaml));
 		}
 
 		[Fact]
@@ -198,7 +200,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Equal("oof", label.Text);
 		}
 
-		[InlineData("en-US"), TestCase("tr-TR"), TestCase("fr-FR")]
+		[Theory]
+		[InlineData("en-US"), InlineData("tr-TR"), InlineData("fr-FR")]
 		//only happens in european cultures
 		public void Issue1493(string culture)
 		{
@@ -212,7 +215,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 							RelativeLayout.WidthConstraint=""{ConstraintExpression Type=RelativeToParent, Property=Width, Factor=0.6}""/>";
 			View view = new View();
 			view.LoadFromXaml(xaml);
-			Assert.DoesNotThrow(() => view.LoadFromXaml(xaml));
+			AssertEx.DoesNotThrow(() => view.LoadFromXaml(xaml));
 		}
 	}
 }

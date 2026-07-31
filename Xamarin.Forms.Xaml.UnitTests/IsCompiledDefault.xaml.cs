@@ -19,12 +19,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void IsCompiled(bool useCompiledXaml)
 			{
 				var layout = new IsCompiledDefault(useCompiledXaml);
-				Assert.Equal(true, typeof(IsCompiledDefault).IsCompiled());
+				Assert.True(typeof(IsCompiledDefault).IsCompiled());
 			}
 		}
 	}

@@ -59,6 +59,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void BindProperties(bool useCompiledXaml)

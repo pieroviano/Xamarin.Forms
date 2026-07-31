@@ -23,9 +23,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public static readonly BindableProperty GenericPropertyProperty =
 			BindableProperty.Create(nameof(GenericProperty), typeof(Layout<View>), typeof(Unreported006));
 
-		class Tests
+		public class Tests
 		{
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void CanAssignGenericBP(bool useCompiledXaml)
 			{
 				var page = new Unreported006();

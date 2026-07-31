@@ -30,6 +30,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void EscapedStringsAreTreatedAsLiterals(bool useCompiledXaml)

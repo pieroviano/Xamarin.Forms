@@ -1,8 +1,20 @@
 <Project>
   <PropertyGroup>
+    <!--
+      Source builds load the XAML build tasks straight from Build.Tasks' own output.
+      This must set _XFBuildTasksLocation (ONE underscore): that is the property
+      Xamarin.Forms.targets feeds to its <UsingTask AssemblyFile=...>. Its own default is
+      $(MSBuildThisFileDirectory)<tfm>\, which is correct for the packaged layout
+      (build/Xamarin.Forms.targets next to build/netstandard2.0/) but wrong in-tree.
+
+      Previously the tasks were copied into .nuspec/<tfm>/ and loaded from there; a failed
+      or skipped copy silently left a STALE task assembly in place, which is how an
+      XamlCTask crash and the Windows MSB3021 warnings arose.
+
+      Build.Tasks is netstandard2.0-only now, so one path serves both MSBuild runtimes.
+    -->
+    <_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)Xamarin.Forms.Build.Tasks\bin\$(Configuration)\netstandard2.0\</_XFBuildTasksLocation>
     <__XFBuildTasksLocation>$(_XFBuildTasksLocation)</__XFBuildTasksLocation>
-    <__XFBuildTasksLocation Condition="'$(__XFBuildTasksLocation)' == '' AND '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory).nuspec\netstandard2.0\</__XFBuildTasksLocation>
-    <__XFBuildTasksLocation Condition="'$(__XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory).nuspec\net46\</__XFBuildTasksLocation>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>portable</DebugType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -16,6 +28,29 @@
   <PropertyGroup>
     <GitDefaultBranch>main</GitDefaultBranch>
   </PropertyGroup>
+
+  <!--
+    NuGet metadata for SDK-style packing, replacing the hand-written .nuspec files.
+    Each shipping project now packs itself (`dotnet pack Xamarin.Forms.Gtk.sln`); the old
+    single Xamarin.Forms metapackage bundled Core + Xaml + Platform + the build tasks and
+    is no longer produced from this solution.
+  -->
+  <PropertyGroup>
+    <Authors>Microsoft</Authors>
+    <Copyright>Microsoft</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/xamarin/Xamarin.Forms</PackageProjectUrl>
+    <PackageIcon>xamarin_128x128.png</PackageIcon>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- Files every package carries. Condition keeps them out of non-packable projects. -->
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)Assets\xamarin_128x128.png" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
   <Import Condition="'$(SampleProject)' != 'True'" Project="SourceLink.Build.props" />
   <!-- This target is replaced by GitInfo when restored. Allows Version.targets to rely on it before restore. -->
   <Target Name="GitVersion" />

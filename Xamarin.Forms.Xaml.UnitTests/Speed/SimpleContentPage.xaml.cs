@@ -42,8 +42,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[Fact]
-			[Ignore(nameof(XamlCIs20TimesFasterThanXaml))]
+			[Fact(Skip = nameof(XamlCIs20TimesFasterThanXaml))]
 			public void XamlCIs20TimesFasterThanXaml()
 			{
 				var swXamlC = new Stopwatch();
@@ -59,11 +58,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					new SimpleContentPage(false);
 				swXaml.Stop();
 
-				Assert.Less(swXamlC.ElapsedMilliseconds * 20, swXaml.ElapsedMilliseconds);
+				Assert.True(swXamlC.ElapsedMilliseconds * 20 < swXaml.ElapsedMilliseconds);
 			}
 
-			[Fact]
-			[Ignore(nameof(XamlCIsNotMuchSlowerThanCode))]
+			[Fact(Skip = nameof(XamlCIsNotMuchSlowerThanCode))]
 			public void XamlCIsNotMuchSlowerThanCode()
 			{
 				var swXamlC = new Stopwatch();
@@ -79,7 +77,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					new SimpleContentPageCode(false);
 				swCode.Stop();
 
-				Assert.LessOrEqual(swXamlC.ElapsedMilliseconds * .2, swCode.ElapsedMilliseconds);
+				Assert.True(swXamlC.ElapsedMilliseconds * .2 <= swCode.ElapsedMilliseconds);
 			}
 		}
 	}

@@ -24,7 +24,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -36,11 +36,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void GenericsIssue(bool useCompiledXaml)
 			{
 				var layout = new Gh1497(useCompiledXaml);
-				Assert.That(layout.entry.Behaviors[0], Is.TypeOf(typeof(Gh1497EntryValidationBehavior<Entry>)));
+				Assert.IsType<Gh1497EntryValidationBehavior<Entry>>(layout.entry.Behaviors[0]);
 			}
 		}
 	}

@@ -39,7 +39,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			notification = args.Message;
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -52,12 +52,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void EventWithGenericEventHandlers(bool useCompiledXaml)
 			{
 				var layout = new Bz57574(useCompiledXaml);
-				Assume.That(layout.notification, Is.Null);
+				Assert.SkipWhen(layout.notification is not null, "precondition not met");
 				layout.notificator.Notify("Foo");
 				Assert.Equal("Foo", layout.notification);
 			}

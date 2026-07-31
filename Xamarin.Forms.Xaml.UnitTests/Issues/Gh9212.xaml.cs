@@ -23,13 +23,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void SingleQuoteAndTrailingSpaceInMarkupValue([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void SingleQuoteAndTrailingSpaceInMarkupValue(bool useCompiledXaml)
 			{
 				var layout = new Gh9212(useCompiledXaml);
 				Assert.Equal("Foo, Bar", layout.label.Text);

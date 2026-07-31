@@ -88,6 +88,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests
 		{
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestClicked(bool useCompiledXaml)
@@ -98,6 +99,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, layout.clicked);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestGenericClicked(bool useCompiledXaml)
@@ -108,6 +110,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, layout.genericClicked);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestHandlerOnBase(bool useCompiledXaml)
@@ -118,6 +121,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, layout.baseClicked);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestAsyncPrivateHandler(bool useCompiledXaml)
@@ -128,6 +132,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, layout.asyncPrivateClicked);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestVirtualHandler(bool useCompiledXaml)
@@ -140,6 +145,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(1, layout.overrideClicked);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestStaticHandler(bool useCompiledXaml)

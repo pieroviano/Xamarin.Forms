@@ -37,9 +37,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		class Tests
+		public class Tests
 		{
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void MultipleGetMethodsAllowed(bool useCompiledXaml)
 			{
 				var page = new Unreported004(useCompiledXaml);

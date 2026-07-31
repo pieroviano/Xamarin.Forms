@@ -51,7 +51,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var list = layout.FindByName<ListView>("listView");
 			var item0 = list.TemplatedItems.GetOrCreateContent(0, null);
 			var item1 = list.TemplatedItems.GetOrCreateContent(1, null);
-			Assert.Pass();
+			return;
 		}
 	}
 }

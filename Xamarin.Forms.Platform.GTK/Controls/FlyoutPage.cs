@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Markup;
 using Gdk;
 using Gtk;
 using Xamarin.Forms.Platform.GTK.Animations;

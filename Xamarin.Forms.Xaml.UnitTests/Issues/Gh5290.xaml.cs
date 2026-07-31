@@ -26,13 +26,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void TwoWayBindingToNullable([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void TwoWayBindingToNullable(bool useCompiledXaml)
 			{
 				var vm = new Gh5290VM { Time = TimeSpan.FromMinutes(42) };
 				var layout = new Gh5290(useCompiledXaml) { BindingContext = vm };

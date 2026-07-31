@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
@@ -12,16 +13,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void BindingAsElement(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4572)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4572)));
 				var layout = new Gh4572(useCompiledXaml) { BindingContext = new { labeltext = "Foo" } };
 				Assert.Equal("Foo", layout.label.Text);
 			}

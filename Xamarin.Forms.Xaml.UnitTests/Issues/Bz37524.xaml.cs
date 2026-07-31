@@ -17,14 +17,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void MultiTriggerConditionNotApplied(bool useCompiledXaml)
 			{
 				var layout = new Bz37524(useCompiledXaml);
-				Assert.Equal(false, layout.TheButton.IsEnabled);
+				Assert.False(layout.TheButton.IsEnabled);
 			}
 		}
 	}

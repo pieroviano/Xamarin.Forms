@@ -44,7 +44,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</Button>";
 
 			Button button = null;
-			Assert.DoesNotThrow(() => button = XamlLoader.Create(xaml, true) as Button);
+			AssertEx.DoesNotThrow(() => button = XamlLoader.Create(xaml, true) as Button);
 			Assert.NotNull(button);
 		}
 	}

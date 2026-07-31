@@ -1,71 +1,62 @@
 ﻿using System;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	public class XamlParseExceptionConstraint : ExceptionTypeConstraint
+	/// <summary>
+	/// xUnit replacement for the former NUnit ExceptionTypeConstraint.
+	/// </summary>
+	/// <remarks>
+	/// NUnit allowed a custom constraint to be passed to Assert.Throws; xUnit has no
+	/// constraint model, so the same checks are kept here and invoked explicitly:
+	///
+	///     new XamlParseExceptionConstraint(8, 9).Verify(() =&gt; ...);
+	///
+	/// Keeping the class - rather than collapsing each call site to a bare
+	/// Assert.Throws&lt;XamlParseException&gt; - preserves the line/position/message
+	/// assertions. Dropping them would have quietly weakened 22 tests.
+	/// </remarks>
+	public class XamlParseExceptionConstraint
 	{
-		bool haslineinfo;
-		int linenumber;
-		int lineposition;
-		Func<string, bool> messagePredicate;
+		readonly bool _hasLineInfo;
+		readonly int _lineNumber;
+		readonly int _linePosition;
+		readonly Func<string, bool> _messagePredicate;
 
-		XamlParseExceptionConstraint(bool haslineinfo) : base(typeof(XamlParseException))
+		XamlParseExceptionConstraint(bool hasLineInfo)
 		{
-			this.haslineinfo = haslineinfo;
+			_hasLineInfo = hasLineInfo;
 		}
-
-		public override string DisplayName => "xamlparse";
 
 		public XamlParseExceptionConstraint() : this(false)
 		{
 		}
 
-		public XamlParseExceptionConstraint(int linenumber, int lineposition, Func<string, bool> messagePredicate = null) : this(true)
+		public XamlParseExceptionConstraint(int lineNumber, int linePosition, Func<string, bool> messagePredicate = null)
+			: this(true)
 		{
-			this.linenumber = linenumber;
-			this.lineposition = lineposition;
-			this.messagePredicate = messagePredicate;
+			_lineNumber = lineNumber;
+			_linePosition = linePosition;
+			_messagePredicate = messagePredicate;
 		}
 
-		protected override bool Matches(object actual)
+		public XamlParseException Verify(Action action)
 		{
-			if (!base.Matches(actual))
-				return false;
-			var xmlInfo = ((XamlParseException)actual).XmlInfo;
-			if (!haslineinfo)
-				return true;
-			if (xmlInfo == null || !xmlInfo.HasLineInfo())
-				return false;
-			if (messagePredicate != null)
-				if (!messagePredicate(((XamlParseException)actual).UnformattedMessage))
-					return false;
-			return xmlInfo.LineNumber == linenumber && xmlInfo.LinePosition == lineposition;
-		}
+			var ex = Assert.Throws<XamlParseException>(action);
 
-		public override string Description
-		{
-			get
-			{
-				if (haslineinfo)
-				{
-					return string.Format($"{base.Description} line {linenumber}, position {lineposition}");
-				}
-				return base.Description;
-			}
-		}
+			if (!_hasLineInfo)
+				return ex;
 
-		//public override void WriteActualValueTo (MessageWriter writer)
-		//{
-		//	var ex = actual as XamlParseException;
-		//	writer.WriteActualValue ((actual == null) ? null : actual.GetType ());
-		//	if (ex != null) {
-		//		if (ex.XmlInfo != null && ex.XmlInfo.HasLineInfo ())
-		//			writer.Write (" line {0}, position {1}", ex.XmlInfo.LineNumber, ex.XmlInfo.LinePosition);
-		//		else 
-		//			writer.Write (" no line info");
-		//		writer.WriteLine (" ({0})", ex.Message);
-		//		writer.Write (ex.StackTrace);
-		//	}
-		//}
+			var xmlInfo = ex.XmlInfo;
+			Assert.True(xmlInfo != null && xmlInfo.HasLineInfo(), "expected the exception to carry XML line info");
+
+			if (_messagePredicate != null)
+				Assert.True(_messagePredicate(ex.UnformattedMessage), $"unexpected message: {ex.UnformattedMessage}");
+
+			Assert.Equal(_lineNumber, xmlInfo.LineNumber);
+			Assert.Equal(_linePosition, xmlInfo.LinePosition);
+
+			return ex;
+		}
 	}
 }

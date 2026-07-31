@@ -33,6 +33,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Test(bool useCompiledXaml)
@@ -108,7 +109,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				//testing invalid bindingcontext type
 				layout.BindingContext = new object();
-				Assert.Equal(null, layout.label0.Text);
+				Assert.Null(layout.label0.Text);
 			}
 		}
 	}

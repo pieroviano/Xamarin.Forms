@@ -26,7 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -38,11 +38,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void AvoidAmbiguousMatch(bool useCompiledXaml)
 			{
 				var layout = new Gh4215(useCompiledXaml);
-				Assert.DoesNotThrow(() => layout.BindingContext = new Gh4215VM());
+				AssertEx.DoesNotThrow(() => layout.BindingContext = new Gh4215VM());
 				Assert.Equal("foo", layout.l0.Text);
 			}
 		}

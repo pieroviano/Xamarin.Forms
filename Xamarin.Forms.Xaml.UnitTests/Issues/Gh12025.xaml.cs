@@ -21,16 +21,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void FindMostDerivedABP([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void FindMostDerivedABP(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh12025)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh12025)));
 				var layout = new Gh12025(useCompiledXaml);
 				Assert.Equal(NavigationPage.IconColorProperty.DefaultValue, NavigationPage.GetIconColor(layout));
 				Assert.Equal(Color.HotPink, Gh12025NavPage.GetIconColor(layout));

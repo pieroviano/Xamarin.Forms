@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -11,20 +12,22 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void DoesntFailOnxType([Values(true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			public void DoesntFailOnxType(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5330)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh5330)));
 			}
 
-			[Fact]
-			public void CompiledBindingWithxType([Values(true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			public void CompiledBindingWithxType(bool useCompiledXaml)
 			{
 				var layout = new Gh5330(useCompiledXaml) { BindingContext = new Button { Text = "Foo" } };
 				Assert.Equal("Foo", layout.label.Text);

@@ -16,7 +16,6 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixtureAttribute]
 		public class Tests
 		: IDisposable{
 			public Tests()
@@ -29,13 +28,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void InvalidSourceThrows(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(8, 33), () => MockCompiler.Compile(typeof(ResourceDictionaryWithInvalidSource)));
+					new BuildExceptionConstraint(8, 33).Verify(() => MockCompiler.Compile(typeof(ResourceDictionaryWithInvalidSource)));
 				else
-					Assert.Throws(new XamlParseExceptionConstraint(8, 33), () => new ResourceDictionaryWithInvalidSource(useCompiledXaml));
+					new XamlParseExceptionConstraint(8, 33).Verify(() => new ResourceDictionaryWithInvalidSource(useCompiledXaml));
 			}
 		}
 	}

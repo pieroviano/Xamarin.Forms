@@ -18,15 +18,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
+			[Theory]
 			[InlineData(true)]
 			public void Compiles(bool useCompiledXaml)
 			{
 				if (!useCompiledXaml)
 					return;
 				MockCompiler.Compile(typeof(Gh2034));
-				Assert.Pass();
+				return;
 			}
 		}
 	}

@@ -18,7 +18,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			IReadOnlyList<string> _flags;
 
@@ -36,6 +36,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.SetFlags(_flags);
 			}
 
+			[Theory]
 			[InlineData(true, "xamlDoubleImplicitOpHack")]
 			[InlineData(false, "xamlDoubleImplicitOpHack")]
 			[InlineData(true, null)]

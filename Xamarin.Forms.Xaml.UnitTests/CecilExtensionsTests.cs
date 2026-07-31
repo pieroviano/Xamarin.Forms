@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Xunit;
 using Xamarin.Forms.Build.Tasks;
@@ -13,16 +14,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		readonly List<AssemblyDefinition> assemblies = new List<AssemblyDefinition>();
 		readonly ReaderParameters readerParameters;
 
+		// The former [SetUp] body is merged in here: the class already had a constructor, and
+		// xUnit's per-test instance means the constructor IS the setup step.
 		public CecilExtensionsTests()
 		{
 			readerParameters = new ReaderParameters
 			{
 				AssemblyResolver = this,
 			};
-		}
 
-		public CecilExtensionsTests()
-{
 			assembly = AssemblyDefinition.ReadAssembly(GetType().Assembly.Location, readerParameters);
 			assemblies.Add(assembly);
 		}
@@ -70,7 +70,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			"X2009Primitives",
 		};
 
-		[Test, TestCaseSource(nameof(IsXamlTrueSource))]
+		public static IEnumerable<object[]> IsXamlTrueData => IsXamlTrueSource.Select(x => new object[] { x });
+
+		[Theory]
+		[MemberData(nameof(IsXamlTrueData))]
 		public void IsXamlTrue(string name)
 		{
 			var resource = GetResource(name);
@@ -84,7 +87,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			"Validation.NotXaml",
 		};
 
-		[Test, TestCaseSource(nameof(IsXamlFalseSource))]
+		public static IEnumerable<object[]> IsXamlFalseData => IsXamlFalseSource.Select(x => new object[] { x });
+
+		[Theory]
+		[MemberData(nameof(IsXamlFalseData))]
 		public void IsXamlFalse(string name)
 		{
 			var resource = GetResource(name);

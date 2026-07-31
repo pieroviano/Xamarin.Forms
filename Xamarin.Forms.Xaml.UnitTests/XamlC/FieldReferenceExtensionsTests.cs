@@ -7,7 +7,7 @@ using Xamarin.Forms.Xaml.UnitTests;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	public class FieldReferenceExtensionsTests
+	public class FieldReferenceExtensionsTests : IDisposable
 	{
 		public class NonGenericClass
 		{
@@ -21,13 +21,13 @@ namespace Xamarin.Forms.XamlcUnitTests
 			public T2 GenericField2;
 		}
 
-		public class Inheritor : GenericClass<string, double>, IDisposable{
+		public class Inheritor : GenericClass<string, double>{
 		}
 
 		ModuleDefinition module;
 
-		public Inheritor()
-{
+		public FieldReferenceExtensionsTests()
+		{
 			module = ModuleDefinition.CreateModule("foo", new ModuleParameters()
 			{
 				AssemblyResolver = new MockAssemblyResolver(),
@@ -46,7 +46,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 			var type = module.ImportReference(typeof(NonGenericClass));
 			TypeReference declaringTypeReference;
 			FieldDefinition field = type.GetField(fd => fd.Name == "Field", out declaringTypeReference);
-			Assert.DoesNotThrow(() => field.ResolveGenericParameters(declaringTypeReference));
+			AssertEx.DoesNotThrow(() => field.ResolveGenericParameters(declaringTypeReference));
 		}
 
 		[Fact]

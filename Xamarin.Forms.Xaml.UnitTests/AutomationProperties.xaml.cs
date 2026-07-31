@@ -30,6 +30,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void AutomationPropertiesName(bool useCompiledXaml)
@@ -39,6 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Name", (string)layout.entry.GetValue(Xamarin.Forms.AutomationProperties.NameProperty));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void AutomationPropertiesHelpText(bool useCompiledXaml)
@@ -48,6 +50,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Sets your name", (string)layout.entry.GetValue(Xamarin.Forms.AutomationProperties.HelpTextProperty));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void AutomationPropertiesIsInAccessibleTree(bool useCompiledXaml)
@@ -55,9 +58,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var layout = new AutomationProperties(useCompiledXaml);
 				Application.Current.MainPage = layout;
 
-				Assert.Equal(true, (bool)layout.entry.GetValue(Xamarin.Forms.AutomationProperties.IsInAccessibleTreeProperty));
+				Assert.True((bool)layout.entry.GetValue(Xamarin.Forms.AutomationProperties.IsInAccessibleTreeProperty));
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void AutomationPropertiesLabeledBy(bool useCompiledXaml)

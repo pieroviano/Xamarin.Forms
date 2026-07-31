@@ -44,7 +44,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			string xamlOutputFile = generator.OutputFiles.First().ItemSpec;
 			File.Delete(xamlOutputFile);
 
-			Assert.DoesNotThrow(() => File.Delete(xamlInputFile));
+			AssertEx.DoesNotThrow(() => File.Delete(xamlInputFile));
 		}
 	}
 }

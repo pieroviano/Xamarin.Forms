@@ -28,7 +28,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			set { SetValue(ListProperty, value); }
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -40,6 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void LookForInheritanceOnOpImplicit(bool useCompiledXaml)

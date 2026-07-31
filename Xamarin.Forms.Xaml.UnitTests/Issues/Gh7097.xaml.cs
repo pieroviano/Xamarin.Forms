@@ -15,7 +15,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			IReadOnlyList<string> _flags;
 			public Tests()
@@ -31,8 +31,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.SetFlags(_flags);
 			}
 
-			[Fact]
-			public void CanXReferenceRoot([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void CanXReferenceRoot(bool useCompiledXaml)
 			{
 				var layout = new Gh7097(useCompiledXaml)
 				{
@@ -48,9 +50,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.IsType<MockCommand>(btn1.Command);
 			}
 
-			[Fact]
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
 			//this was later reported as https://github.com/xamarin/Xamarin.Forms/issues/7286
-			public void RegisteringXNameOnSubPages([Values(false, true)] bool useCompiledXaml)
+			public void RegisteringXNameOnSubPages(bool useCompiledXaml)
 			{
 				var layout = new Gh7097(useCompiledXaml);
 				var s = layout.FindByName("self");

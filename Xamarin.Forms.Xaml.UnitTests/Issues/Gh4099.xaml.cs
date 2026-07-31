@@ -22,7 +22,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -34,6 +34,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			public void BetterExceptionReport(bool useCompiledXaml)
 			{
@@ -46,7 +47,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					catch (BuildException xpe)
 					{
 						Assert.Equal(5, xpe.XmlInfo.LineNumber);
-						Assert.Pass();
+						return;
 					}
 					Assert.Fail();
 				}

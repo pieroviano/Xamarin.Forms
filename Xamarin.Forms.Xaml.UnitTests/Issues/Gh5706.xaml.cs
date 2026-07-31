@@ -26,7 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -38,8 +38,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
-			[Fact]
-			public void ReportSyntaxError([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void ReportSyntaxError(bool useCompiledXaml)
 			{
 				var layout = new Gh5706(useCompiledXaml);
 				layout.searchHandler.BindingContext = new VM();

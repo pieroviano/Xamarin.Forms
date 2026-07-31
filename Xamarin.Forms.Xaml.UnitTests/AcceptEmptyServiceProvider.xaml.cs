@@ -34,7 +34,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public IServiceProvider ServiceProvider { get; set; }
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -46,6 +46,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void ServiceProviderIsNullOnAttributedExtensions(bool useCompiledXaml)

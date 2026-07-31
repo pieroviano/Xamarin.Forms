@@ -8,7 +8,22 @@
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>0672;0219;0414;CS0436</NoWarn>
+    <!--
+      xUnit analyzer rules suppressed here are ADVISORY, and both flag pre-existing
+      characteristics of the NUnit suite rather than anything the migration introduced:
+
+        xUnit1026  a [Theory] parameter is unused. These are the useCompiledXaml cases
+                   where the test body happens not to reference the flag; NUnit ran them
+                   the same way.
+        xUnit2000  literal should be the 'expected' argument. NUnit's Assert.AreEqual had
+                   the same (expected, actual) order, so these were already "wrong" - the
+                   analyzer simply surfaces them now.
+
+      The correctness-critical rules stay ON and were fixed properly, notably xUnit1008
+      (data attributes on a [Fact]), which silently ignores the data and would have made
+      309 converted tests run once with default arguments.
+    -->
+    <NoWarn>0672;0219;0414;CS0436;xUnit1026;xUnit2000</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

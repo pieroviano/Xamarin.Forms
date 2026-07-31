@@ -24,14 +24,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void EmbeddedStyleSheetsAreLoaded(bool useCompiledXaml)
 			{
 				var layout = new StyleSheet(useCompiledXaml);
-				Assert.That(layout.Resources.StyleSheets[0].Styles.Count, Is.GreaterThanOrEqualTo(1));
+				Assert.True(layout.Resources.StyleSheets[0].Styles.Count >= 1);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void StyleSheetsAreApplied(bool useCompiledXaml)
 			{
 				var layout = new StyleSheet(useCompiledXaml);

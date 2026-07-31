@@ -19,7 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -31,6 +31,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void RDInDataTemplates(bool useCompiledXaml)
@@ -42,7 +43,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var template = lv.ItemTemplate;
 				var cell = template.CreateContent(null, lv) as ViewCell;
 				var sl = cell.View as StackLayout;
-				Assert.Equal(1, sl.Resources.Count);
+				Assert.Single(sl.Resources);
 				var label = sl.Children[0] as Label;
 				Assert.Equal(LayoutOptions.Center, label.HorizontalOptions);
 			}

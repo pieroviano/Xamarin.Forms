@@ -5,10 +5,9 @@ using Xamarin.Forms.Build.Tasks;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	public class ModuleDefinitionExtensionsTests
+	public class ModuleDefinitionExtensionsTests : IDisposable
 	{
-		class WithGenericInstanceCtorParameter
-		: IDisposable{
+		class WithGenericInstanceCtorParameter{
 			public WithGenericInstanceCtorParameter(Tuple<byte> argument)
 			{
 			}
@@ -21,8 +20,8 @@ namespace Xamarin.Forms.XamlcUnitTests
 		ModuleDefinition module;
 		XamlCAssemblyResolver resolver;
 
-		public WithGenericInstanceCtorParameter()
-{
+		public ModuleDefinitionExtensionsTests()
+		{
 			resolver = new XamlCAssemblyResolver();
 			resolver.AddAssembly(typeof(ModuleDefinitionExtensionsTests).Assembly.Location);
 			resolver.AddAssembly(typeof(byte).Assembly.Location);

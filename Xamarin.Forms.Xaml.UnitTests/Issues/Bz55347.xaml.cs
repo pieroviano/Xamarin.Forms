@@ -15,7 +15,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -28,6 +28,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void PaddingThicknessResource(bool useCompiledXaml)

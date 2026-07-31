@@ -65,6 +65,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void StaticProperty(bool useCompiledXaml)
@@ -73,6 +74,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Property", layout.staticproperty.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void MemberOptional(bool useCompiledXaml)
@@ -81,6 +83,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Property", layout.memberisoptional.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void FieldColor(bool useCompiledXaml)
@@ -89,6 +92,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(Color.Fuchsia, layout.color.TextColor);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Constant(bool useCompiledXaml)
@@ -97,6 +101,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Constant", layout.constant.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			//https://bugzilla.xamarin.com/show_bug.cgi?id=49228
@@ -106,6 +111,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("XamarinFormsControls", layout.remoteConstant.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Field(bool useCompiledXaml)
@@ -114,6 +120,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("Field", layout.field.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void Enum(bool useCompiledXaml)
@@ -122,6 +129,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal(ScrollOrientation.Both, layout.enuM.Orientation);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void FieldRef(bool useCompiledXaml)
@@ -130,6 +138,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("ic_close.png", layout.field2.Text);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			// https://bugzilla.xamarin.com/show_bug.cgi?id=48242
@@ -139,6 +148,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Equal("ic_close.png", (layout.ToolbarItems[0].IconImageSource as FileImageSource).File);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			// https://bugzilla.xamarin.com/show_bug.cgi?id=55096

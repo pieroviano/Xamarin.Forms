@@ -64,9 +64,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
-			[InlineData(true), TestCase(false)]
+			[Theory]
+			[InlineData(true), InlineData(false)]
 			public void CustomMarkupExtensionWorks(bool useCompiledXaml)
 			{
 				var page = new Unreported005(useCompiledXaml);

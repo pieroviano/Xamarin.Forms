@@ -18,28 +18,29 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		{
 			public Tests()
 {
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void TestSwitches(bool useCompiledXaml)
 			{
 				var page = new Issue2016(useCompiledXaml);
-				Assert.Equal(false, page.a0.IsToggled);
-				Assert.Equal(false, page.b0.IsToggled);
-				Assert.Equal(false, page.s0.IsToggled);
-				Assert.Equal(false, page.t0.IsToggled);
+				Assert.False(page.a0.IsToggled);
+				Assert.False(page.b0.IsToggled);
+				Assert.False(page.s0.IsToggled);
+				Assert.False(page.t0.IsToggled);
 
 				page.a0.IsToggled = true;
 				page.b0.IsToggled = true;
 
-				Assert.Equal(true, page.s0.IsToggled);
-				Assert.Equal(true, page.t0.IsToggled);
+				Assert.True(page.s0.IsToggled);
+				Assert.True(page.t0.IsToggled);
 			}
 		}
 	}

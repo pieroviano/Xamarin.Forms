@@ -16,19 +16,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		public class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RDWithSourceAreFound(bool useCompiledXaml)
 			{
 				var layout = new ResourceDictionaryWithSource(useCompiledXaml);
 				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void RelativeAndAbsoluteURI(bool useCompiledXaml)
 			{
 				var layout = new ResourceDictionaryWithSource(useCompiledXaml);
@@ -64,7 +66,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(rd as ResourceDictionary);
 			}
 
-			[InlineData(false), TestCase(true)]
+			[Theory]
+			[InlineData(false), InlineData(true)]
 			public void LoadResourcesWithAssembly(bool useCompiledXaml)
 			{
 				var layout = new ResourceDictionaryWithSource(useCompiledXaml);

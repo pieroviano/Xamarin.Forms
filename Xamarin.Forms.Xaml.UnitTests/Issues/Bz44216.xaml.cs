@@ -30,7 +30,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -42,14 +42,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void DonSetValueOnPrivateBP(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.Throws(new BuildExceptionConstraint(7, 26, s => s.Contains("No property,")), () => MockCompiler.Compile(typeof(Bz44216)));
+					new BuildExceptionConstraint(7, 26, s => s.Contains("No property,")).Verify(() => MockCompiler.Compile(typeof(Bz44216)));
 				else
-					Assert.Throws(new XamlParseExceptionConstraint(7, 26, s => s.StartsWith("Cannot assign property", StringComparison.Ordinal)), () => new Bz44216(useCompiledXaml));
+					new XamlParseExceptionConstraint(7, 26, s => s.StartsWith("Cannot assign property", StringComparison.Ordinal)).Verify(() => new Bz44216(useCompiledXaml));
 			}
 		}
 	}

@@ -41,6 +41,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void XamlContentIsReplaced(bool useCompiledXaml)

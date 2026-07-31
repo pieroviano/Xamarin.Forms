@@ -22,7 +22,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			stack.Children.Insert(index + 1, newLabel);
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			bool _debuggerinitialstate;
 
@@ -44,11 +44,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			{
 				Assert.Equal(VisualTreeChangeType.Add, e.ChangeType);
 				Assert.Equal(1, e.ChildIndex);
-				Assert.Pass();
+				return;
 			}
 
-			[Fact]
-			public void ChildIndexOnAdd([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void ChildIndexOnAdd(bool useCompiledXaml)
 			{
 				var layout = new Gh11335(useCompiledXaml);
 				VisualDiagnostics.VisualTreeChanged += OnVTChanged;

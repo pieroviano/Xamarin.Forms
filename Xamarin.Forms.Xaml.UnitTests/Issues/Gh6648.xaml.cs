@@ -14,20 +14,23 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void DoesntFailOnNullDataType([Values(true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			public void DoesntFailOnNullDataType(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
-					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh6648)));
+					AssertEx.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh6648)));
 			}
 
-			[Fact]
-			public void BindingsOnxNullDataTypeWorks([Values(true, false)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(true)]
+			[InlineData(false)]
+			public void BindingsOnxNullDataTypeWorks(bool useCompiledXaml)
 			{
 				var layout = new Gh6648(useCompiledXaml);
 				layout.stack.BindingContext = new { foo = "Foo" };

@@ -8,19 +8,18 @@ using Xamarin.Forms.Xaml.UnitTests;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	public class MethodReferenceExtensionsTests
+	public class MethodReferenceExtensionsTests : IDisposable
 	{
 		ModuleDefinition module;
 
-		abstract class TestClass<T>
-		: IDisposable{
+		abstract class TestClass<T>{
 			public abstract T UnresolvedGenericReturnType();
 			public abstract void CustmAttributeParameterMethod([Parameter("Parameter")] int parameter);
 			public abstract void UnresolvedGenericInstanceTypeMethod(TestClass<T> unresolved);
 		}
 
-		public TestClass()
-{
+		public MethodReferenceExtensionsTests()
+		{
 			module = ModuleDefinition.CreateModule("foo", new ModuleParameters()
 			{
 				AssemblyResolver = new MockAssemblyResolver(),

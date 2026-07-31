@@ -26,22 +26,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Application.Current = new MockApplication();
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void LoadTypeFromXmlns(bool useCompiledXaml)
 			{
 				TypeLoader layout = null;
-				Assert.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
 				Assert.NotNull(layout.customview0);
 				Assert.IsType<CustomView>(layout.customview0);
 			}
 
+			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
 			public void LoadTypeFromXmlnsWithoutAssembly(bool useCompiledXaml)
 			{
 				TypeLoader layout = null;
-				Assert.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
+				AssertEx.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
 				Assert.NotNull(layout.customview1);
 				Assert.IsType<CustomView>(layout.customview1);
 			}

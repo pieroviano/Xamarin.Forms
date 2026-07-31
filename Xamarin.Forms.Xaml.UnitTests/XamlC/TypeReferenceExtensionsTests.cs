@@ -12,7 +12,11 @@ namespace Xamarin.Forms
 }
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	public class TypeReferenceExtensionsTests
+	// NUnit's [OneTimeSetUp]/[OneTimeTearDown] became the ctor/Dispose: xUnit builds one
+	// instance per test, so the Cecil resolver and module are now created per test rather
+	// than once per class. Slightly slower, but correct and consistent with the rest of the
+	// suite; use IClassFixture<T> if the cost ever matters.
+	public class TypeReferenceExtensionsTests : IDisposable
 	{
 		class Foo
 		{
@@ -80,8 +84,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 		XamlCAssemblyResolver resolver;
 		ModuleDefinition module;
 
-		[OneTimeSetUp]
-		public void OneTimeSetUp()
+		public TypeReferenceExtensionsTests()
 		{
 			resolver = new XamlCAssemblyResolver();
 			resolver.AddAssembly(typeof(TypeReferenceExtensionsTests).Assembly.Location);
@@ -97,77 +100,80 @@ namespace Xamarin.Forms.XamlcUnitTests
 			});
 		}
 
-		[OneTimeTearDown]
-		public void OneTimeTearDown()
+		public void Dispose()
 		{
 			resolver?.Dispose();
 			module?.Dispose();
 		}
 
-		[InlineData(typeof(bool), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(Dictionary<string, string>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(List<string>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(List<string>), typeof(IEnumerable<string>), ExpectedResult = true)]
-		[InlineData(typeof(List<Button>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(Queue<KeyValuePair<string, string>>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(double), typeof(double), ExpectedResult = true)]
-		[InlineData(typeof(object), typeof(IList<TriggerBase>), ExpectedResult = false)]
-		[InlineData(typeof(object), typeof(double), ExpectedResult = false)]
-		[InlineData(typeof(object), typeof(int?), ExpectedResult = false)]
-		[InlineData(typeof(object), typeof(object), ExpectedResult = true)]
-		[InlineData(typeof(sbyte), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(string[]), typeof(System.Collections.IEnumerable), ExpectedResult = true)]
-		[InlineData(typeof(string[]), typeof(object), ExpectedResult = true)]
-		[InlineData(typeof(string[]), typeof(string), ExpectedResult = false)]
-		[InlineData(typeof(string[]), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(string[]), typeof(IEnumerable<string>), ExpectedResult = true)]
-		[InlineData(typeof(Type), typeof(object), ExpectedResult = true)]
-		[InlineData(typeof(Type), typeof(Type), ExpectedResult = true)]
-		[InlineData(typeof(Type), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(System.Windows.Input.ICommand), typeof(System.Windows.Input.ICommand), ExpectedResult = true)]
-		[InlineData(typeof(System.Windows.Input.ICommand), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(BindingBase), typeof(BindingBase), ExpectedResult = true)]
-		[InlineData(typeof(BindingCondition), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(Button), typeof(BindableObject), ExpectedResult = true)]
-		[InlineData(typeof(Button), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(Button), typeof(View), ExpectedResult = true)]
-		[InlineData(typeof(Color), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(Color), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(Color), typeof(Color), ExpectedResult = true)]
-		[InlineData(typeof(ColumnDefinition), typeof(BindableObject), ExpectedResult = true)]
-		[InlineData(typeof(ColumnDefinition), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(ColumnDefinition), typeof(ColumnDefinitionCollection), ExpectedResult = false)]
-		[InlineData(typeof(Constraint), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(Constraint), typeof(Constraint), ExpectedResult = true)]
-		[InlineData(typeof(ConstraintExpression), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(ContentPage), typeof(BindableObject), ExpectedResult = true)]
-		[InlineData(typeof(ContentPage), typeof(Page), ExpectedResult = true)]
-		[InlineData(typeof(ContentView), typeof(BindableObject), ExpectedResult = true)]
-		[InlineData(typeof(ContentView[]), typeof(IList<ContentView>), ExpectedResult = true)]
-		[InlineData(typeof(MultiTrigger), typeof(IList<TriggerBase>), ExpectedResult = false)]
-		[InlineData(typeof(OnIdiom<double>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(OnPlatform<string>), typeof(string), ExpectedResult = false)]
-		[InlineData(typeof(OnPlatform<string>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(OnPlatform<string>), typeof(BindingBase), ExpectedResult = false)]
-		[InlineData(typeof(OnPlatform<FontAttributes>), typeof(BindableObject), ExpectedResult = false)]
-		[InlineData(typeof(StackLayout), typeof(Layout<View>), ExpectedResult = true)]
-		[InlineData(typeof(StackLayout), typeof(View), ExpectedResult = true)]
-		[InlineData(typeof(Foo<string>), typeof(Foo), ExpectedResult = true)]
-		[InlineData(typeof(Bar<string>), typeof(Foo), ExpectedResult = true)]
-		[InlineData(typeof(Bar<string>), typeof(Foo<bool>), ExpectedResult = false)]
-		[InlineData(typeof(Bar<string>), typeof(Foo<string>), ExpectedResult = true)]
-		[InlineData(typeof(Qux<string>), typeof(double), ExpectedResult = false)] //https://github.com/xamarin/Xamarin.Forms/issues/1497
-		[InlineData(typeof(IGrault<object>), typeof(IGrault<string>), ExpectedResult = false)]
-		[InlineData(typeof(IGrault<string>), typeof(IGrault<object>), ExpectedResult = false)]
-		[InlineData(typeof(ICovariant<object>), typeof(ICovariant<string>), ExpectedResult = false)]
-		[InlineData(typeof(ICovariant<string>), typeof(ICovariant<object>), ExpectedResult = true)]
-		[InlineData(typeof(IContravariant<object>), typeof(IContravariant<string>), ExpectedResult = true)]
-		[InlineData(typeof(IContravariant<string>), typeof(IContravariant<object>), ExpectedResult = false)]
-		[InlineData(typeof(Covariant<object>), typeof(ICovariant<string>), ExpectedResult = false)]
-		[InlineData(typeof(Covariant<string>), typeof(ICovariant<object>), ExpectedResult = true)]
-		public bool TestInheritsFromOrImplements(Type typeRef, Type baseClass)
+		[Theory]
+		[InlineData(typeof(bool), typeof(BindableObject), false)]
+		[InlineData(typeof(Dictionary<string, string>), typeof(BindableObject), false)]
+		[InlineData(typeof(List<string>), typeof(BindableObject), false)]
+		[InlineData(typeof(List<string>), typeof(IEnumerable<string>), true)]
+		[InlineData(typeof(List<Button>), typeof(BindableObject), false)]
+		[InlineData(typeof(Queue<KeyValuePair<string, string>>), typeof(BindableObject), false)]
+		[InlineData(typeof(double), typeof(double), true)]
+		[InlineData(typeof(object), typeof(IList<TriggerBase>), false)]
+		[InlineData(typeof(object), typeof(double), false)]
+		[InlineData(typeof(object), typeof(int?), false)]
+		[InlineData(typeof(object), typeof(object), true)]
+		[InlineData(typeof(sbyte), typeof(BindableObject), false)]
+		[InlineData(typeof(string[]), typeof(System.Collections.IEnumerable), true)]
+		[InlineData(typeof(string[]), typeof(object), true)]
+		[InlineData(typeof(string[]), typeof(string), false)]
+		[InlineData(typeof(string[]), typeof(BindingBase), false)]
+		[InlineData(typeof(string[]), typeof(IEnumerable<string>), true)]
+		[InlineData(typeof(Type), typeof(object), true)]
+		[InlineData(typeof(Type), typeof(Type), true)]
+		[InlineData(typeof(Type), typeof(BindableObject), false)]
+		[InlineData(typeof(System.Windows.Input.ICommand), typeof(System.Windows.Input.ICommand), true)]
+		[InlineData(typeof(System.Windows.Input.ICommand), typeof(BindingBase), false)]
+		[InlineData(typeof(BindingBase), typeof(BindingBase), true)]
+		[InlineData(typeof(BindingCondition), typeof(BindableObject), false)]
+		[InlineData(typeof(Button), typeof(BindableObject), true)]
+		[InlineData(typeof(Button), typeof(BindingBase), false)]
+		[InlineData(typeof(Button), typeof(View), true)]
+		[InlineData(typeof(Color), typeof(BindableObject), false)]
+		[InlineData(typeof(Color), typeof(BindingBase), false)]
+		[InlineData(typeof(Color), typeof(Color), true)]
+		[InlineData(typeof(ColumnDefinition), typeof(BindableObject), true)]
+		[InlineData(typeof(ColumnDefinition), typeof(BindingBase), false)]
+		[InlineData(typeof(ColumnDefinition), typeof(ColumnDefinitionCollection), false)]
+		[InlineData(typeof(Constraint), typeof(BindingBase), false)]
+		[InlineData(typeof(Constraint), typeof(Constraint), true)]
+		[InlineData(typeof(ConstraintExpression), typeof(BindableObject), false)]
+		[InlineData(typeof(ContentPage), typeof(BindableObject), true)]
+		[InlineData(typeof(ContentPage), typeof(Page), true)]
+		[InlineData(typeof(ContentView), typeof(BindableObject), true)]
+		[InlineData(typeof(ContentView[]), typeof(IList<ContentView>), true)]
+		[InlineData(typeof(MultiTrigger), typeof(IList<TriggerBase>), false)]
+		[InlineData(typeof(OnIdiom<double>), typeof(BindableObject), false)]
+		[InlineData(typeof(OnPlatform<string>), typeof(string), false)]
+		[InlineData(typeof(OnPlatform<string>), typeof(BindableObject), false)]
+		[InlineData(typeof(OnPlatform<string>), typeof(BindingBase), false)]
+		[InlineData(typeof(OnPlatform<FontAttributes>), typeof(BindableObject), false)]
+		[InlineData(typeof(StackLayout), typeof(Layout<View>), true)]
+		[InlineData(typeof(StackLayout), typeof(View), true)]
+		[InlineData(typeof(Foo<string>), typeof(Foo), true)]
+		[InlineData(typeof(Bar<string>), typeof(Foo), true)]
+		[InlineData(typeof(Bar<string>), typeof(Foo<bool>), false)]
+		[InlineData(typeof(Bar<string>), typeof(Foo<string>), true)]
+		[InlineData(typeof(Qux<string>), typeof(double), false)] //https://github.com/xamarin/Xamarin.Forms/issues/1497
+		[InlineData(typeof(IGrault<object>), typeof(IGrault<string>), false)]
+		[InlineData(typeof(IGrault<string>), typeof(IGrault<object>), false)]
+		[InlineData(typeof(ICovariant<object>), typeof(ICovariant<string>), false)]
+		[InlineData(typeof(ICovariant<string>), typeof(ICovariant<object>), true)]
+		[InlineData(typeof(IContravariant<object>), typeof(IContravariant<string>), true)]
+		[InlineData(typeof(IContravariant<string>), typeof(IContravariant<object>), false)]
+		[InlineData(typeof(Covariant<object>), typeof(ICovariant<string>), false)]
+		[InlineData(typeof(Covariant<string>), typeof(ICovariant<object>), true)]
+		public void TestInheritsFromOrImplements(Type typeRef, Type baseClass, bool expected)
 		{
-			return TypeReferenceExtensions.InheritsFromOrImplements(module.ImportReference(typeRef), module.ImportReference(baseClass));
+			// NUnit expressed this via [TestCase(..., ExpectedResult = x)], where the return
+			// value WAS the assertion. xUnit has no equivalent, so the expectation becomes a
+			// trailing [InlineData] argument and an explicit assert.
+			Assert.Equal(expected, TypeReferenceExtensions.InheritsFromOrImplements(module.ImportReference(typeRef), module.ImportReference(baseClass)));
 		}
 
 		[Fact]
@@ -176,7 +182,9 @@ namespace Xamarin.Forms.XamlcUnitTests
 			var core = typeof(BindableObject).Assembly;
 			var test = typeof(TypeReferenceExtensionsTests).Assembly;
 
-			Assert.False(TestInheritsFromOrImplements(test.GetType("Xamarin.Forms.Effect"), core.GetType("Xamarin.Forms.Effect")));
+			Assert.False(TypeReferenceExtensions.InheritsFromOrImplements(
+				module.ImportReference(test.GetType("Xamarin.Forms.Effect")),
+				module.ImportReference(core.GetType("Xamarin.Forms.Effect"))));
 		}
 
 		[Fact]
@@ -190,6 +198,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 			Assert.Equal("Byte", resolvedType.Name);
 		}
 
+		[Theory]
 		[InlineData(typeof(Bar<byte>), 1)]
 		[InlineData(typeof(Quux<byte>), 2)]
 		[InlineData(typeof(Corge<byte>), 3)]
@@ -207,7 +216,8 @@ namespace Xamarin.Forms.XamlcUnitTests
 			Assert.Equal("Byte", resolvedType.Name);
 		}
 
-		public void TestResolveGenericParametersOfGenericMethod()
+		// Not a test: no [Test] attribute before the migration either.
+		internal void TestResolveGenericParametersOfGenericMethod()
 		{
 			var method = new GenericInstanceMethod(module.ImportReference(typeof(Grault)).Resolve().Methods[0]);
 			method.GenericArguments.Add(module.TypeSystem.Byte);
@@ -216,6 +226,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 			Assert.True(TypeRefComparer.Default.Equals(module.TypeSystem.Byte, resolved));
 		}
 
+		[Theory]
 		[InlineData(typeof(Garply<byte>), typeof(byte))]
 		[InlineData(typeof(Waldo<byte>), typeof(Foo<byte>))]
 		public void TestResolveGenericParametersOfMethodOfGeneric(Type typeRef, Type returnType)

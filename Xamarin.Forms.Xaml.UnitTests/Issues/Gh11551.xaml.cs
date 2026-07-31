@@ -14,18 +14,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests: IDisposable
 		{
-			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
+			public Tests() => Device.PlatformServices = new MockPlatformServices();
 
-			[TearDown] public void TearDown() => Device.PlatformServices = null;
+			public void Dispose() => Device.PlatformServices = null;
 
-			[Fact]
-			public void RectBoundsDoesntThrow([Values(false, true)] bool useCompiledXaml)
+			[Theory]
+			[InlineData(false)]
+			[InlineData(true)]
+			public void RectBoundsDoesntThrow(bool useCompiledXaml)
 			{
 				var layout = new Gh11551(useCompiledXaml);
 				var bounds = AbsoluteLayout.GetLayoutBounds(layout.label);
-				Assert.Equal(new Rect(1, .5, -1, 22), bounds);
+				Assert.Equal(new Rect(1, .5, -1, 22), (Rect)bounds);
 			}
 		}
 	}

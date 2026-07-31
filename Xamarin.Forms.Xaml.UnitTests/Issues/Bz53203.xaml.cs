@@ -39,7 +39,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		class Tests
+		public class Tests
 		: IDisposable{
 			public Tests()
 {
@@ -51,12 +51,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Device.PlatformServices = null;
 			}
 
+			[Theory]
 			[InlineData(true)]
 			public void MarkupOnAttachedBPDoesNotThrowAtCompileTime(bool useCompiledXaml)
 			{
 				MockCompiler.Compile(typeof(Bz53203));
 			}
 
+			[Theory]
 			[InlineData(true)]
 			[InlineData(false)]
 			public void MarkupOnAttachedBP(bool useCompiledXaml)
