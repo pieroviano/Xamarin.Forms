@@ -133,12 +133,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void UpdateText()
 		{
+			// NOT GLib.Markup.EscapeText here: SetTextFromSpan -> GenerateMarkupText
+			// (Extensions/LabelExtensions.cs) already escapes with SecurityElement.Escape, so an
+			// outer escape runs the text through twice and "Save & Close" reaches the screen as
+			// "Save &amp; Close". Same bug, same fix as LabelRenderer (upstream #8473).
 			var span = new Span()
 			{
 				FontAttributes = Element.FontAttributes,
 				FontFamily = Element.FontFamily,
 				FontSize = Element.FontSize,
-				Text = GLib.Markup.EscapeText(Element.UpdateFormsText(Element.Text ?? string.Empty, Element.TextTransform)) ?? string.Empty
+				Text = Element.UpdateFormsText(Element.Text ?? string.Empty, Element.TextTransform) ?? string.Empty
 			};
 
 			Control.LabelWidget.SetTextFromSpan(span);

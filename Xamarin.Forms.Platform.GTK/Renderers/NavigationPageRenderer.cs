@@ -108,19 +108,77 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			base.OnSizeAllocated(allocation);
 
-			if (_lastAllocation != allocation)
+			if (_lastAllocation == allocation)
+				return;
+
+			_lastAllocation = allocation;
+
+			// Deferred, never inline. SetSizeRequest queues a resize and GTK3 discards a resize
+			// queued from inside size-allocate, so applied inline the request was raised but the
+			// child page was never re-allocated: it kept the natural size a Gtk.Fixed gives an
+			// unconstrained child (measured 194x302 for the ControlGallery's detail page inside a
+			// 500x600 NavigationPage). AbstractPageRenderer.SetPageSize then wrote that natural
+			// size straight back into Forms, so the page laid its content out at 194x230 and the
+			// AbsoluteLayout's proportional children overlapped each other. See UpdateChildrenLayout.
+			if (_childSizeQueued)
+				return;
+
+			_childSizeQueued = true;
+
+			GLib.Idle.Add(() =>
 			{
-				_lastAllocation = allocation;
+				_childSizeQueued = false;
+				ApplyChildPageSizes();
 
-				Widget.SetSizeRequest(allocation.Width, allocation.Height);
+				return false;
+			});
+		}
 
-				foreach (var child in Widget.Children)
-				{
-					child.SetSizeRequest(
-						allocation.Width,
-						allocation.Height);
-				}
-			}
+		bool _childSizeQueued;
+
+		/// <summary>
+		/// Sizes the navigation host and every page in the stack to this renderer's allocation.
+		/// </summary>
+		/// <remarks>
+		/// A page in a navigation stack always fills its NavigationPage, so its container's size is
+		/// a fact of THIS renderer's allocation - it is not something to be read back off the child.
+		/// </remarks>
+		void ApplyChildPageSizes()
+		{
+			if (_disposed || Widget == null)
+				return;
+
+			// An un-allocated widget reports 1x1; stamping that on the children would pin them at
+			// their natural size for good, because nothing re-asserts a request that never changes.
+			if (_lastAllocation.Width <= 1 || _lastAllocation.Height <= 1)
+				return;
+
+			Widget.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+			foreach (var child in Widget.Children)
+				child.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+		}
+
+		/// <summary>
+		/// Overrides the generic page-child propagation, which is wrong for a navigation stack.
+		/// </summary>
+		/// <remarks>
+		/// <see cref="AbstractPageRenderer{TWidget,TPage}.UpdateChildrenLayout"/> sizes each child
+		/// container to the CHILD's Forms bounds. For a page hosted here that is wrong twice over:
+		/// <list type="bullet">
+		/// <item>the container holds the native toolbar as well as the page content, so the child's
+		/// Forms bounds are short by exactly <c>GtkToolbarConstants.ToolbarHeight</c>;</item>
+		/// <item>the child's Forms bounds are themselves derived from this container's allocation by
+		/// <c>SetPageSize</c>, so pushing them back onto the container closes a feedback loop. Once
+		/// a bogus allocation had been written into Forms it was re-asserted on every batch commit
+		/// and the page never recovered - not on a window resize, not ever.</item>
+		/// </list>
+		/// The allocation is the single source of truth in this direction; Forms is downstream of it.
+		/// Positions are deliberately not touched here: push/pop own them while an animation runs.
+		/// </remarks>
+		protected override void UpdateChildrenLayout()
+		{
+			ApplyChildPageSizes();
 		}
 
 		protected override void OnElementChanged(VisualElementChangedEventArgs e)
@@ -326,9 +384,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var pageRenderer = Platform.GetRenderer(page);
 			Widget.Add(pageRenderer.Container);
 
-			pageRenderer.Container.SetSizeRequest(
-				  Allocation.Width,
-				  Allocation.Height);
+			// Not `Allocation` directly: the root page is pushed from Init(), i.e. from inside
+			// OnElementChanged, long before this renderer has ever been allocated, and an
+			// un-allocated widget reports 1x1. ApplyChildPageSizes ignores that and the first real
+			// allocation applies the true size to every child in the stack.
+			ApplyChildPageSizes();
 
 			pageRenderer.Container.ShowAll();
 
@@ -436,12 +496,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				var pageRenderer = Platform.GetRenderer(item.Page);
 				Widget.Add(pageRenderer.Container);
 
-				pageRenderer.Container.SetSizeRequest(
-					  Allocation.Width,
-					  Allocation.Height);
-
 				pageRenderer.Container.ShowAll();
 			}
+
+			ApplyChildPageSizes();
 		}
 
 		private async Task<bool> PopPageAsync(Page page, bool animated)

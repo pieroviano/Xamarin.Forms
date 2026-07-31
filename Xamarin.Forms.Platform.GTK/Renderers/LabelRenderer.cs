@@ -140,7 +140,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					FontAttributes = Element.FontAttributes,
 					FontFamily = Element.FontFamily,
 					FontSize = Element.FontSize,
-					Text = GLib.Markup.EscapeText(Element.UpdateFormsText(Element.Text ?? string.Empty, Element.TextTransform)) ?? string.Empty
+					// Do NOT escape here: SetTextFromSpan builds Pango markup and escapes the span
+					// text itself. Escaping twice renders "a &quot; b" instead of 'a " b'.
+					// Upstream fixed this once (#8473) and the TextTransform change (#3690) undid it.
+					Text = Element.UpdateFormsText(Element.Text ?? string.Empty, Element.TextTransform) ?? string.Empty
 				};
 
 				Control.SetTextFromSpan(span);

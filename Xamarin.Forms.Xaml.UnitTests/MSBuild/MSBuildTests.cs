@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
 using Mono.Cecil;
@@ -21,6 +22,17 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			"Xamarin.Forms.Core.dll",
 			"Xamarin.Forms.Xaml.dll",
 		};
+
+		// Directory holding .NETFramework\v4.7\, supplied by the
+		// Microsoft.NETFramework.ReferenceAssemblies.net47 package and handed to us through
+		// assembly metadata by the csproj. The legacy-format half of these tests targets
+		// .NET Framework v4.7, which has no targeting pack on Linux or macOS - without this
+		// every one of those builds fails with MSB3644.
+		static readonly string netFrameworkReferenceAssemblies =
+			typeof(MSBuildTests).Assembly
+				.GetCustomAttributes<AssemblyMetadataAttribute>()
+				.FirstOrDefault(a => a.Key == "NetFrameworkReferenceAssemblies")
+				?.Value;
 
 		class Xaml
 		{
@@ -159,8 +171,24 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				propertyGroup.Add(NewElement("OutputPath").WithValue("bin\\Debug"));
 				propertyGroup.Add(NewElement("TargetFrameworkVersion").WithValue("v4.7"));
 				propertyGroup.Add(NewElement("RootNamespace").WithValue("test"));
+
+				// Resolve mscorlib/System from the reference-assemblies NuGet package rather than
+				// from a machine-wide targeting pack, so this half of the matrix builds on Linux
+				// and macOS too. These three properties are exactly what the package's own
+				// .targets sets for a v4.7 project; we set them by hand because the generated
+				// project has no PackageReference machinery to import it. mscorlib is already in
+				// `references`, which is what NoStdLib requires.
+				if (!string.IsNullOrEmpty(netFrameworkReferenceAssemblies))
+				{
+					propertyGroup.Add(NewElement("TargetFrameworkRootPath").WithValue(netFrameworkReferenceAssemblies));
+					propertyGroup.Add(NewElement("EnableFrameworkPathOverride").WithValue("false"));
+					propertyGroup.Add(NewElement("NoStdLib").WithValue("true"));
+				}
 			}
-			propertyGroup.Add(NewElement("_XFBuildTasksLocation").WithValue($"{testDirectory}\\"));
+			// Trailing separator is required - the targets append the task assembly's file name
+			// straight onto it. Use the platform's, not a hard-coded backslash.
+			propertyGroup.Add(NewElement("_XFBuildTasksLocation").WithValue(
+				testDirectory.TrimEnd(IOPath.DirectorySeparatorChar, IOPath.AltDirectorySeparatorChar) + IOPath.DirectorySeparatorChar));
 
 
 			project.Add(propertyGroup);
@@ -624,6 +652,22 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertExists(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 
+		/// <summary>
+		/// XamlC must not run at all when the project contains no .xaml files.
+		///
+		/// This used to be asserted by scraping a /v:diagnostic log for
+		/// `Target "XamlC" skipped`. MSBuild 18.x (.NET 10 SDK) no longer logs a target that is
+		/// skipped because its Condition evaluated false - not at diagnostic verbosity and not
+		/// into a binlog either (verified against 18.6.11 with a two-target repro project), so
+		/// that string can never appear again and the assertion could only ever fail.
+		///
+		/// It is now asserted on the target's observable effect instead. XamlC's sole outputs
+		/// are the rewritten assembly and the XamlC.stamp it Touch-es, so an absent stamp after
+		/// a successful build means the target did not execute. The CssG output is checked in
+		/// the same breath as a positive control: it proves Xamarin.Forms.targets really was
+		/// imported and its targets really did run, so the missing stamp is XamlC being skipped
+		/// and not the whole targets file being absent.
+		/// </summary>
 		[Theory]
 		[InlineData(false)]
 		[InlineData(true)]
@@ -633,8 +677,13 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var projectFile = IOPath.Combine(tempDirectory, "test.csproj");
 			project.Save(projectFile);
 			RestoreIfNeeded(projectFile, sdkStyle);
-			var log = Build(projectFile, verbosity: "diagnostic");
-			Assert.True(log.Contains("Target \"XamlC\" skipped"), "XamlC should be skipped if there are no .xaml files.");
+			Build(projectFile);
+
+			AssertExists(IOPath.Combine(intermediateDirectory, "test.dll"), nonEmpty: true);
+			//positive control: the Xamarin.Forms targets ran
+			AssertExists(IOPath.Combine(intermediateDirectory, "Foo.css.g.cs"), nonEmpty: true);
+			//XamlC should be skipped if there are no .xaml files
+			AssertDoesNotExist(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 	}
 }

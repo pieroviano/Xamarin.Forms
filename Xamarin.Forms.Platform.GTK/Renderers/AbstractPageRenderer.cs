@@ -276,9 +276,38 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			SetElementSize(newSize);
 		}
 
+		bool _contentResizeQueued;
+
+		/// <summary>
+		/// Queues a resize of the page content - deferred to idle, never inline.
+		/// </summary>
+		/// <remarks>
+		/// This is called from <see cref="OnSizeAllocated"/>, i.e. from inside GTK's size-allocate
+		/// cycle, and GTK3 discards a resize queued from there. Worse than discarding it: the
+		/// content's parent keeps its resize-needed flag set for good, and
+		/// gtk_widget_queue_resize_internal bails out at the first ancestor that already has it -
+		/// so every later queue_resize raised from anywhere in that subtree is swallowed too.
+		///
+		/// Measured on the ControlGallery's FlyoutPage: with the request raised inline, a
+		/// QueueResize on the flyout wrapper, on Controls.FlyoutPage, or on the content container
+		/// changed nothing, and only a QueueResize on the *toplevel* re-allocated the subtree. That
+		/// is what stopped a Gtk.Revealer's animated width from ever reaching the widget's
+		/// allocation (preferred width climbed 56 -> 299 -> 300 while the allocation sat at 1px).
+		/// </remarks>
 		private void PageQueueResize()
 		{
-			Control?.Content?.QueueResize();
+			if (_contentResizeQueued)
+				return;
+
+			_contentResizeQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_contentResizeQueued = false;
+				Control?.Content?.QueueResize();
+
+				return false;
+			});
 		}
 
 		private bool HasAncestorNavigationPage(TPage page)

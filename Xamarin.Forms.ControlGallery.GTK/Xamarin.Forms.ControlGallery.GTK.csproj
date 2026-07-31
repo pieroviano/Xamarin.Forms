@@ -23,8 +23,10 @@
     <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
     <PackageId>Net4x.$(AssemblyName)</PackageId>
   </PropertyGroup>
-  <!-- HAVE_OPENTK dropped: the OpenGL gallery pages need OpenGLView, which is quarantined
-       behind EnableGtkOpenGL in Xamarin.Forms.Platform.GTK until M6. -->
+  <!-- HAVE_OPENTK stays off permanently. OpenGLView itself works (plan M6 §9.2: it runs on
+       Gtk.GLArea and is exercised by OpenGLViewCoreGalleryPage), but BasicOpenGLGallery and
+       AdvancedOpenGLGallery are written against OpenTK.Graphics.OpenGL, and dropping the OpenTK
+       dependency was the point of that port. -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>full</DebugType>
     <DefineConstants>DEBUG;TRACE;__GTK__</DefineConstants>
@@ -44,10 +46,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
-    <!-- Xamarin.Forms.Maps.GTK is still net47/GTK#2 and depends on the checked-in GTK2
-         GMap.NET binaries; it is out of scope until M6. Xamarin.Forms.Maps itself is
-         netstandard2.0 and stays, because Xamarin.Forms.Controls references it. -->
     <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" />
+    <!-- Back in as of M6 §9.3: Xamarin.Forms.Maps.GTK is netstandard2.0 / GtkSharp 3 and draws
+         its own Cairo slippy map, with no GMap.NET or GTK#2 left. -->
+    <ProjectReference Include="..\Xamarin.Forms.Maps.GTK\Xamarin.Forms.Maps.GTK.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
   </ItemGroup>
   <ItemGroup>

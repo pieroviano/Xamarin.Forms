@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Xamarin.Forms.Internals;
@@ -79,24 +79,28 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				if (Control == null)
 				{
+					Controls.WebView webView = null;
+
 					try
 					{
-						// On Linux and MacOS use C#/CLI bindings to WebKit/Gtk+: https://github.com/mono/webkit-sharp
-						// On Windows, use the WebBrowser class from System.Windows.Forms.
-						Control = new Controls.WebView();
+						// WebKit2GTK, bound by hand in Controls/WebKit2.cs. The control falls back to a
+						// placeholder label instead of throwing when libwebkit2gtk-4.1 is not installed,
+						// so a missing runtime dependency degrades rather than aborting the app.
+						webView = new Controls.WebView();
 					}
 					catch (Exception ex)
 					{
 						Log.Warning("WebView loading", $"WebView load failed: {ex}");
 					}
 
-					SetNativeControl(Control);
+					if (webView == null)
+						return;
 
-					if (Control != null)
-					{
-						Control.LoadStarted += OnLoadStarted;
-						Control.LoadFinished += OnLoadFinished;
-					}
+					SetNativeControl(webView);
+
+					Control.LoadStarted += OnLoadStarted;
+					Control.LoadFinished += OnLoadFinished;
+					Control.LoadFailed += OnLoadFailed;
 
 					WebViewController.EvalRequested += OnEvalRequested;
 					WebViewController.EvaluateJavaScriptRequested += OnEvaluateJavaScriptRequested;
@@ -129,12 +133,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				{
 					Control.LoadStarted -= OnLoadStarted;
 					Control.LoadFinished -= OnLoadFinished;
+					Control.LoadFailed -= OnLoadFailed;
 				}
 
-				WebViewController.EvalRequested -= OnEvalRequested;
-				WebViewController.EvaluateJavaScriptRequested -= OnEvaluateJavaScriptRequested;
-				WebViewController.GoBackRequested -= OnGoBackRequested;
-				WebViewController.GoForwardRequested -= OnGoForwardRequested;
+				if (WebViewController != null)
+				{
+					WebViewController.EvalRequested -= OnEvalRequested;
+					WebViewController.EvaluateJavaScriptRequested -= OnEvaluateJavaScriptRequested;
+					WebViewController.GoBackRequested -= OnGoBackRequested;
+					WebViewController.GoForwardRequested -= OnGoForwardRequested;
+					WebViewController.ReloadRequested -= OnReloadRequested;
+				}
 			}
 
 			base.Dispose(disposing);
@@ -173,7 +182,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				Element.SendNavigating(args);
 
 				if (args.Cancel)
+				{
+					// WebKit2 decides navigation policy through "decide-policy", which is not bound;
+					// stopping the load is the closest approximation available here.
+					Control.StopLoading();
 					_lastEvent = WebNavigationEvent.NewPage;
+				}
 			}
 		}
 
@@ -199,6 +213,22 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			UpdateCanGoBackForward();
 		}
 
+		private void OnLoadFailed(object sender, string failingUri)
+		{
+			if (Control == null)
+			{
+				return;
+			}
+
+			WebViewController?.SendNavigated(new WebNavigatedEventArgs(
+				_lastEvent,
+				Element?.Source,
+				failingUri,
+				WebNavigationResult.Failure));
+
+			UpdateCanGoBackForward();
+		}
+
 		private void OnEvalRequested(object sender, EvalRequested eventArg)
 		{
 			if (Control != null)
@@ -209,8 +239,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		Task<string> OnEvaluateJavaScriptRequested(string script)
 		{
-			Control?.ExecuteScript(script);
-			return null;
+			if (Control == null)
+			{
+				return Task.FromResult<string>(null);
+			}
+
+			return Control.EvaluateJavaScriptAsync(script);
 		}
 
 		private void OnGoBackRequested(object sender, EventArgs eventArgs)
@@ -247,7 +281,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		void OnReloadRequested(object sender, EventArgs eventArgs)
 		{
-			Control.Reload();
+			Control?.Reload();
 		}
 	}
 }

@@ -45,6 +45,11 @@ GTK 3 must be installed on the machine running the app — `libgtk-3-0` on Linux
 GtkSharp binds these libraries at runtime; a missing GTK3 shows up as a `DllNotFoundException`
 on the first widget touch.
 
+`WebView` additionally needs **WebKit2GTK 4.1** — `libwebkit2gtk-4.1-0` on Debian/Ubuntu,
+`webkit2gtk4.1` on Fedora. This one is optional: the backend loads it lazily and, when it is
+absent, a `WebView` renders a "WebView unavailable" placeholder instead of throwing, so the rest
+of the application is unaffected.
+
 ## Threading
 
 GTK is not thread-safe. Everything that touches a widget must run on the thread that called
@@ -53,14 +58,33 @@ anywhere else.
 
 ## Optional features
 
-Two areas are quarantined behind MSBuild switches and compiled out by default, because each
-needs native dependencies that are not part of a base GTK3 install. Set the property in the
-consuming project and rebuild this backend from source to enable them:
+**Nothing is behind an MSBuild switch any more.** Every renderer is always compiled in; the two
+that depend on something outside a base GTK3 install degrade at runtime instead of at build time,
+so there is no property to set and no need to rebuild this backend from source:
 
-| Property | Enables | Needs |
+| Renderer | Needs | Without it |
 | --- | --- | --- |
-| `EnableGtkWebView` | `WebView` via WebKit2GTK | `libwebkit2gtk-4.1` |
-| `EnableGtkOpenGL` | `OpenGLView` via `Gtk.GLArea` | An OpenGL-capable GTK build |
+| `OpenGLView` (`Gtk.GLArea`) | An OpenGL-capable GTK build — GTK 3.16+ plus a usable GL/EGL driver | GTK stores a `GError` on the area and paints its own GL error placeholder inside the view's bounds. Nothing throws, and the application stays up. |
+| `WebView` (WebKit2GTK) | `libwebkit2gtk-4.1.so.0` | The renderer shows a placeholder (see *Native prerequisites*). |
+
+The former `EnableGtkOpenGL` / `EnableGtkWebView` properties are gone, along with the OpenTK
+dependency `OpenGLView` used to carry: it now runs on `Gtk.GLArea`, which is part of GTK itself.
+
+## Maps
+
+`Xamarin.Forms.Maps` **is** supported on GTK, in a separate package:
+
+```
+dotnet add package Net4x.Xamarin.Forms.Maps.GTK
+```
+
+It draws its own Web-Mercator slippy map with Cairo over OpenStreetMap-compatible raster tiles, so
+it needs **no API key and no native dependency beyond GTK 3 itself**. `MapType`, `MoveToRegion`,
+`VisibleRegion`, pan/zoom, `Pins` and `MapElements` (`Polyline`/`Polygon`/`Circle`) are implemented,
+and `Geocoder` is backed by Nominatim. Call `Xamarin.Forms.Maps.GTK.FormsMaps.Init()` after
+`Forms.Init()`. See that package's README for its known limitations (notably `IsShowingUser`, which
+needs an application-supplied position provider because GTK has no location service) and for how to
+point it at your own tile server before shipping.
 
 ## Dependencies
 

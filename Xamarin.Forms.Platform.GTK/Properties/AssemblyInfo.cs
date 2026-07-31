@@ -21,6 +21,7 @@ using Xamarin.Forms.Platform.GTK.Renderers;
 [assembly: ExportRenderer(typeof(CarouselPage), typeof(CarouselPageRenderer))]
 [assembly: ExportRenderer(typeof(CarouselView), typeof(CarouselViewRenderer))]
 [assembly: ExportRenderer(typeof(CheckBox), typeof(CheckBoxRenderer))]
+[assembly: ExportRenderer(typeof(CollectionView), typeof(CollectionViewRenderer))]
 [assembly: ExportRenderer(typeof(DatePicker), typeof(DatePickerRenderer))]
 [assembly: ExportRenderer(typeof(Editor), typeof(EditorRenderer))]
 [assembly: ExportRenderer(typeof(Entry), typeof(EntryRenderer))]
@@ -36,9 +37,7 @@ using Xamarin.Forms.Platform.GTK.Renderers;
 #pragma warning restore CS0618 // Type or member is obsolete
 [assembly: ExportRenderer(typeof(FlyoutPage), typeof(FlyoutPageRenderer))]
 [assembly: ExportRenderer(typeof(NavigationPage), typeof(NavigationPageRenderer))]
-#if ENABLE_GTK_OPENGL
 [assembly: ExportRenderer(typeof(OpenGLView), typeof(OpenGLViewRenderer))]
-#endif
 [assembly: ExportRenderer(typeof(Page), typeof(PageRenderer))]
 [assembly: ExportRenderer(typeof(Picker), typeof(PickerRenderer))]
 [assembly: ExportRenderer(typeof(ProgressBar), typeof(ProgressBarRenderer))]
@@ -46,6 +45,7 @@ using Xamarin.Forms.Platform.GTK.Renderers;
 [assembly: ExportRenderer(typeof(RefreshView), typeof(RefreshViewRenderer))]
 [assembly: ExportRenderer(typeof(ScrollView), typeof(ScrollViewRenderer))]
 [assembly: ExportRenderer(typeof(SearchBar), typeof(SearchBarRenderer))]
+[assembly: ExportRenderer(typeof(Shell), typeof(ShellRenderer))]
 [assembly: ExportRenderer(typeof(Slider), typeof(SliderRenderer))]
 [assembly: ExportRenderer(typeof(Stepper), typeof(StepperRenderer))]
 [assembly: ExportRenderer(typeof(SwipeView), typeof(SwipeViewRenderer))]
@@ -53,9 +53,7 @@ using Xamarin.Forms.Platform.GTK.Renderers;
 [assembly: ExportRenderer(typeof(TabbedPage), typeof(TabbedPageRenderer))]
 [assembly: ExportRenderer(typeof(TableView), typeof(TableViewRenderer))]
 [assembly: ExportRenderer(typeof(TimePicker), typeof(TimePickerRenderer))]
-#if ENABLE_GTK_WEBVIEW
 [assembly: ExportRenderer(typeof(WebView), typeof(WebViewRenderer))]
-#endif
 
 [assembly: ExportCell(typeof(Cell), typeof(CellRenderer))]
 [assembly: ExportCell(typeof(Xamarin.Forms.EntryCell), typeof(EntryCellRenderer))]

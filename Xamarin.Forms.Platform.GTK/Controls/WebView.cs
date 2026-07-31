@@ -1,344 +1,457 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using System.Threading.Tasks;
 using Gtk;
-using Xamarin.Forms.Platform.GTK.Helpers;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
-	// WebView definition for all platforms (Linux, macOS and Windows).
 	public interface IWebView
 	{
 		string Uri { get; set; }
+		bool IsAvailable { get; }
 		void Navigate(string uri);
 		void LoadHTML(string html, string baseUrl);
 		bool CanGoBack();
 		void GoBack();
 		bool CanGoForward();
 		void GoForward();
+		void Reload();
 		void ExecuteScript(string script);
+		Task<string> EvaluateJavaScriptAsync(string script);
 		event EventHandler LoadStarted;
 		event EventHandler LoadFinished;
+		event EventHandler<string> LoadFailed;
 	}
 
+	/// <summary>
+	/// Hosts a native <c>WebKitWebView</c> (WebKit2GTK) inside a GTK 3 widget tree.
+	///
+	/// The WebKit widget is created and owned natively — see <see cref="WebKit2"/> — and parented
+	/// with <c>gtk_container_add</c> rather than through GtkSharp, because GtkSharp has no wrapper
+	/// for the <c>WebKitWebView</c> GType. An <see cref="EventBox"/> is used as the managed host so
+	/// the subtree owns its own GdkWindow.
+	///
+	/// When <c>libwebkit2gtk-4.1.so.0</c> cannot be loaded the widget degrades to a placeholder
+	/// label; it never throws out of the constructor, so a missing runtime dependency does not take
+	/// the application down.
+	/// </summary>
 	public class WebView : EventBox, IWebView
 	{
-		private GTKPlatform _platform;
-		private WebViewWindows _webViewWindows;
-		private WebViewLinux _webViewLinux;
+		IntPtr _webView;
+		Gtk.Label _placeholder;
+		bool _disposed;
+
+		// GObject stores only the unmanaged thunk for a connected signal, so the managed delegates
+		// must be rooted here for as long as the native widget lives.
+		WebKit2.LoadChangedHandler _loadChangedHandler;
+		WebKit2.LoadFailedHandler _loadFailedHandler;
 
 		public event EventHandler LoadStarted;
 		public event EventHandler LoadFinished;
-
-		public string Uri
-		{
-			get
-			{
-				if (_platform == GTKPlatform.Windows)
-				{
-					return _webViewWindows.WebBrowser.Url != null ? _webViewWindows.WebBrowser.Url.ToString() : string.Empty;
-				}
-				else
-				{
-					return _webViewLinux.WebView.Uri;
-				}
-			}
-			set
-			{
-				if (_platform == GTKPlatform.Windows)
-				{
-					_webViewWindows.WebBrowser.Url = new Uri(value);
-				}
-				else
-				{
-					_webViewLinux.WebView.LoadUri(value);
-				}
-			}
-		}
+		public event EventHandler<string> LoadFailed;
 
 		public WebView()
 		{
 			BuildWebView();
 		}
 
-		private void BuildWebView()
+		/// <summary>True when WebKit2GTK was found and the native view was created.</summary>
+		public bool IsAvailable => _webView != IntPtr.Zero;
+
+		/// <summary>Raw <c>WebKitWebView*</c>, or <see cref="IntPtr.Zero"/> when unavailable.</summary>
+		public IntPtr NativeWebView => _webView;
+
+		public string Uri
 		{
-			_platform = PlatformHelper.GetGTKPlatform();
-
-			if (_platform == GTKPlatform.Windows)
+			get
 			{
-				_webViewWindows = new WebViewWindows();
+				if (_webView == IntPtr.Zero)
+					return string.Empty;
 
-				_webViewWindows.WebBrowser.Navigating += (sender, args) =>
-				{
-					LoadStarted?.Invoke(this, args);
-				};
-
-				_webViewWindows.WebBrowser.Navigated += (sender, args) =>
-				{
-					LoadFinished?.Invoke(this, args);
-				};
-
-				Add(_webViewWindows);
+				return WebKit2.Utf8ToString(WebKit2.webkit_web_view_get_uri(_webView)) ?? string.Empty;
 			}
-			else
+			set { Navigate(value); }
+		}
+
+		public string Title
+		{
+			get
 			{
-				_webViewLinux = new WebViewLinux();
+				if (_webView == IntPtr.Zero)
+					return string.Empty;
 
-				_webViewLinux.WebView.LoadStarted += (sender, args) =>
-				{
-					LoadStarted?.Invoke(this, args);
-				};
-
-				_webViewLinux.WebView.LoadFinished += (sender, args) =>
-				{
-					LoadFinished?.Invoke(this, args);
-				};
-
-				Add(_webViewLinux);
+				return WebKit2.Utf8ToString(WebKit2.webkit_web_view_get_title(_webView)) ?? string.Empty;
 			}
 		}
 
 		public void Navigate(string uri)
 		{
-			if (_platform == GTKPlatform.Windows)
+			if (_webView == IntPtr.Zero || string.IsNullOrEmpty(uri))
+				return;
+
+			IntPtr native = WebKit2.StringToUtf8(ToAbsoluteUri(uri));
+
+			try
 			{
-				_webViewWindows.Navigate(uri);
+				WebKit2.webkit_web_view_load_uri(_webView, native);
 			}
-			else
+			finally
 			{
-				_webViewLinux.Navigate(uri);
+				WebKit2.FreeUtf8(native);
 			}
 		}
 
 		public void LoadHTML(string html, string baseUrl)
 		{
-			if (_platform == GTKPlatform.Windows)
+			if (_webView == IntPtr.Zero)
+				return;
+
+			IntPtr nativeHtml = WebKit2.StringToUtf8(html ?? string.Empty);
+			IntPtr nativeBase = string.IsNullOrEmpty(baseUrl) ? IntPtr.Zero : WebKit2.StringToUtf8(baseUrl);
+
+			try
 			{
-				_webViewWindows.LoadHTML(html, baseUrl);
+				WebKit2.webkit_web_view_load_html(_webView, nativeHtml, nativeBase);
 			}
-			else
+			finally
 			{
-				_webViewLinux.LoadHTML(html, baseUrl);
+				WebKit2.FreeUtf8(nativeHtml);
+				WebKit2.FreeUtf8(nativeBase);
 			}
 		}
 
 		public bool CanGoBack()
 		{
-			if (_platform == GTKPlatform.Windows)
-			{
-				return _webViewWindows.WebBrowser.CanGoBack;
-			}
-			else
-			{
-				return _webViewLinux.WebView.CanGoBack();
-			}
+			return _webView != IntPtr.Zero && WebKit2.webkit_web_view_can_go_back(_webView);
 		}
 
 		public void GoBack()
 		{
-			if (_platform == GTKPlatform.Windows)
-			{
-				_webViewWindows.WebBrowser.GoBack();
-			}
-			else
-			{
-				_webViewLinux.WebView.GoBack();
-			}
+			if (_webView != IntPtr.Zero)
+				WebKit2.webkit_web_view_go_back(_webView);
 		}
 
 		public bool CanGoForward()
 		{
-			if (_platform == GTKPlatform.Windows)
-			{
-				return _webViewWindows.WebBrowser.CanGoForward;
-			}
-			else
-			{
-				return _webViewLinux.WebView.CanGoForward();
-			}
+			return _webView != IntPtr.Zero && WebKit2.webkit_web_view_can_go_forward(_webView);
 		}
 
 		public void GoForward()
 		{
-			if (_platform == GTKPlatform.Windows)
-			{
-				_webViewWindows.WebBrowser.GoForward();
-			}
-			else
-			{
-				_webViewLinux.WebView.GoForward();
-			}
+			if (_webView != IntPtr.Zero)
+				WebKit2.webkit_web_view_go_forward(_webView);
 		}
 
 		public void Reload()
 		{
-			if (_platform == GTKPlatform.Windows)
-			{
-				_webViewWindows.WebBrowser.Refresh();
-			}
-			else
-			{
-				_webViewLinux.WebView.Reload();
-			}
+			if (_webView != IntPtr.Zero)
+				WebKit2.webkit_web_view_reload(_webView);
 		}
 
+		public void StopLoading()
+		{
+			if (_webView != IntPtr.Zero)
+				WebKit2.webkit_web_view_stop_loading(_webView);
+		}
+
+		/// <summary>Fire-and-forget script execution (the Forms <c>Eval</c> contract).</summary>
 		public void ExecuteScript(string script)
 		{
-			if (_platform == GTKPlatform.Windows)
+			if (_webView == IntPtr.Zero || string.IsNullOrEmpty(script))
+				return;
+
+			JavaScriptEvaluator.Evaluate(_webView, script, null);
+		}
+
+		/// <summary>Runs <paramref name="script"/> and completes with its result converted to a string.</summary>
+		public Task<string> EvaluateJavaScriptAsync(string script)
+		{
+			var tcs = new TaskCompletionSource<string>();
+
+			if (_webView == IntPtr.Zero)
 			{
-				_webViewWindows.WebBrowser.DocumentText = script;
-				_webViewWindows.WebBrowser.Document.InvokeScript(script);
+				tcs.SetResult(null);
+				return tcs.Task;
+			}
+
+			if (string.IsNullOrEmpty(script))
+			{
+				tcs.SetResult(null);
+				return tcs.Task;
+			}
+
+			JavaScriptEvaluator.Evaluate(_webView, script, tcs);
+
+			return tcs.Task;
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && !_disposed)
+			{
+				_disposed = true;
+				_webView = IntPtr.Zero;
+				_loadChangedHandler = null;
+				_loadFailedHandler = null;
+			}
+
+			base.Dispose(disposing);
+		}
+
+		void BuildWebView()
+		{
+			if (WebKit2.IsAvailable)
+			{
+				try
+				{
+					_webView = WebKit2.webkit_web_view_new();
+				}
+				catch (Exception ex)
+				{
+					Internals.Log.Warning("WebView", $"WebKit2GTK web view creation failed: {ex.Message}");
+					_webView = IntPtr.Zero;
+				}
+			}
+
+			if (_webView != IntPtr.Zero)
+			{
+				// gtk_container_add sinks the floating reference returned by webkit_web_view_new,
+				// so the container owns the widget from here on and we must not unref it.
+				WebKit2.gtk_container_add(Handle, _webView);
+				WebKit2.gtk_widget_show(_webView);
+
+				IntPtr settings = WebKit2.webkit_web_view_get_settings(_webView);
+
+				if (settings != IntPtr.Zero)
+					WebKit2.webkit_settings_set_enable_javascript(settings, true);
+
+				ConnectSignals();
+
+				// The native child is destroyed with the container; drop the pointer before
+				// anything can dereference it.
+				Destroyed += (sender, args) => _webView = IntPtr.Zero;
 			}
 			else
 			{
-				_webViewLinux.WebView.ExecuteScript(script);
+				_placeholder = new Gtk.Label("WebView unavailable — libwebkit2gtk-4.1.so.0 could not be loaded.")
+				{
+					Wrap = true,
+					Justify = Gtk.Justification.Center
+				};
+
+				Add(_placeholder);
+			}
+
+			ShowAll();
+		}
+
+		void ConnectSignals()
+		{
+			_loadChangedHandler = OnLoadChanged;
+			_loadFailedHandler = OnLoadFailed;
+
+			WebKit2.ConnectSignal(_webView, "load-changed", _loadChangedHandler);
+			WebKit2.ConnectSignal(_webView, "load-failed", _loadFailedHandler);
+		}
+
+		void OnLoadChanged(IntPtr webView, int loadEvent, IntPtr userData)
+		{
+			try
+			{
+				if (loadEvent == WebKit2.LoadStarted)
+					LoadStarted?.Invoke(this, EventArgs.Empty);
+				else if (loadEvent == WebKit2.LoadFinished)
+					LoadFinished?.Invoke(this, EventArgs.Empty);
+			}
+			catch (Exception ex)
+			{
+				// Never let a managed exception unwind into the GTK main loop.
+				Internals.Log.Warning("WebView", $"load-changed handler failed: {ex}");
 			}
 		}
-	}
 
-	public class WebViewWindows : EventBox
-	{
-		[DllImport("libgdk-win32-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr gdk_win32_drawable_get_handle(IntPtr d);
+		bool OnLoadFailed(IntPtr webView, int loadEvent, IntPtr failingUri, IntPtr error, IntPtr userData)
+		{
+			try
+			{
+				string uri = WebKit2.Utf8ToString(failingUri);
+				LoadFailed?.Invoke(this, uri);
+			}
+			catch (Exception ex)
+			{
+				Internals.Log.Warning("WebView", $"load-failed handler failed: {ex}");
+			}
 
-		private WebBrowser _browser = null;
+			// false: let WebKit show its own error page.
+			return false;
+		}
 
 		/// <summary>
-		/// Imported unmanaged function for setting the parent of a window.
-		/// it's used for setting the parent of a WebBrowser.
+		/// Turns a bare relative path into a <c>file:</c> URI rooted at the application directory,
+		/// mirroring what the other backends do for <c>UrlWebViewSource</c> values that are not
+		/// absolute URIs. Absolute URIs (http, https, file, data, about, …) pass through untouched.
 		/// </summary>
-		[DllImport("user32.dll", EntryPoint = "SetParent")]
-		private static extern IntPtr SetParent([In] IntPtr hWndChild, [In] IntPtr hWndNewParent);
-
-		public WebViewWindows()
+		static string ToAbsoluteUri(string uri)
 		{
-			BuildWebView();
-		}
+			if (System.Uri.IsWellFormedUriString(uri, UriKind.Absolute))
+				return uri;
 
-		public WebBrowser WebBrowser
-		{
-			get { return _browser; }
-		}
+			System.Uri parsed;
 
-		public void Navigate(string uri)
-		{
-			Uri uriResult;
-			bool result = Uri.TryCreate(uri, UriKind.Absolute, out uriResult)
-				&& (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+			if (System.Uri.TryCreate(uri, UriKind.Absolute, out parsed))
+				return uri;
 
-			if (result)
+			try
 			{
-				_browser.Navigate(new Uri(uri));
+				string location = typeof(WebView).GetTypeInfo().Assembly.Location;
+				string root = string.IsNullOrEmpty(location)
+					? System.IO.Directory.GetCurrentDirectory()
+					: System.IO.Path.GetDirectoryName(location);
+				string full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root ?? string.Empty, uri));
+
+				return new System.Uri(full).AbsoluteUri;
 			}
-			else
+			catch (Exception)
 			{
-				string appPath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase);
-				string filePath = System.IO.Path.Combine(appPath, uri);
-				_browser.Url = new Uri(filePath);
+				return uri;
 			}
 		}
 
-		public void LoadHTML(string html, string baseUrl)
+		/// <summary>
+		/// Marshalling for <c>webkit_web_view_evaluate_javascript</c>'s <c>GAsyncReadyCallback</c>.
+		///
+		/// The completion source is handed to native code as a <see cref="GCHandle"/> and the
+		/// callback delegate is rooted in a static field, because the call is asynchronous and
+		/// nothing on the managed side keeps either alive otherwise.
+		/// </summary>
+		static class JavaScriptEvaluator
 		{
-			_browser.DocumentText = html;
-			_browser.Update();
-		}
+			static readonly WebKit2.AsyncReadyHandler Callback = OnReady;
 
-		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
-		{
-			base.OnSizeAllocated(allocation);
+			// webkit_web_view_evaluate_javascript arrived in WebKitGTK 2.40; fall back to the older
+			// run_javascript on runtimes that predate it.
+			static bool _useLegacyApi;
 
-			if (IsRealized)
+			internal static void Evaluate(IntPtr webView, string script, TaskCompletionSource<string> tcs)
 			{
-				_browser.Bounds =
-					new System.Drawing.Rectangle(allocation.X, allocation.Y, allocation.Width, allocation.Height);
+				IntPtr nativeScript = WebKit2.StringToUtf8(script);
+				GCHandle handle = tcs != null ? GCHandle.Alloc(tcs) : default(GCHandle);
+				IntPtr userData = tcs != null ? GCHandle.ToIntPtr(handle) : IntPtr.Zero;
+
+				try
+				{
+					if (!_useLegacyApi)
+					{
+						try
+						{
+							WebKit2.webkit_web_view_evaluate_javascript(webView, nativeScript, new IntPtr(-1),
+								IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, tcs != null ? Callback : null, userData);
+
+							return;
+						}
+						catch (EntryPointNotFoundException)
+						{
+							_useLegacyApi = true;
+						}
+					}
+
+					WebKit2.webkit_web_view_run_javascript(webView, nativeScript, IntPtr.Zero,
+						tcs != null ? Callback : null, userData);
+				}
+				catch (Exception ex)
+				{
+					if (tcs != null)
+					{
+						handle.Free();
+						tcs.TrySetResult(null);
+					}
+
+					Internals.Log.Warning("WebView", $"JavaScript evaluation failed: {ex.Message}");
+				}
+				finally
+				{
+					WebKit2.FreeUtf8(nativeScript);
+				}
 			}
-		}
 
-		private void BuildWebView()
-		{
-			CreateWebView();
-
-			var browserHandle = _browser.Handle;
-
-			ScrolledWindow scroll = new ScrolledWindow
+			static void OnReady(IntPtr sourceObject, IntPtr result, IntPtr userData)
 			{
-				CanFocus = true,
-				ShadowType = ShadowType.None
-			};
+				TaskCompletionSource<string> tcs = null;
 
-			var drawingArea = new DrawingArea();
+				try
+				{
+					if (userData == IntPtr.Zero)
+						return;
 
-			IntPtr windowHandle;
+					GCHandle handle = GCHandle.FromIntPtr(userData);
+					tcs = handle.Target as TaskCompletionSource<string>;
+					handle.Free();
 
-			drawingArea.ExposeEvent += (s, a) =>
+					if (tcs == null)
+						return;
+
+					tcs.TrySetResult(ReadResult(sourceObject, result));
+				}
+				catch (Exception ex)
+				{
+					Internals.Log.Warning("WebView", $"JavaScript callback failed: {ex}");
+					tcs?.TrySetResult(null);
+				}
+			}
+
+			static string ReadResult(IntPtr webView, IntPtr asyncResult)
 			{
-				IntPtr test = drawingArea.Window.Handle;
-				windowHandle = gdk_win32_drawable_get_handle(test);
+				IntPtr error;
+				IntPtr value;
+				IntPtr jsResult = IntPtr.Zero;
 
-				// Embedding Windows Browser control into a gtk widget.
-				SetParent(browserHandle, windowHandle);
-			};
+				if (_useLegacyApi)
+				{
+					jsResult = WebKit2.webkit_web_view_run_javascript_finish(webView, asyncResult, out error);
+					value = jsResult == IntPtr.Zero
+						? IntPtr.Zero
+						: WebKit2.webkit_javascript_result_get_js_value(jsResult);
+				}
+				else
+				{
+					value = WebKit2.webkit_web_view_evaluate_javascript_finish(webView, asyncResult, out error);
+				}
 
-			scroll.Add(drawingArea);
+				if (value == IntPtr.Zero)
+				{
+					string message = WebKit2.TakeErrorMessage(error);
 
-			Add(scroll);
-			ShowAll();
-		}
+					if (!string.IsNullOrEmpty(message))
+						Internals.Log.Warning("WebView", $"JavaScript evaluation failed: {message}");
 
-		private void CreateWebView()
-		{
-			_browser = new WebBrowser();
-			_browser.ScriptErrorsSuppressed = true;
-			_browser.AllowWebBrowserDrop = false;
-		}
-	}
+					return null;
+				}
 
-	public class WebViewLinux : EventBox
-	{
-		private Box _vbox = null;
-		private WebKit.WebView _webview = null;
+				try
+				{
+					if (WebKit2.jsc_value_is_undefined(value) || WebKit2.jsc_value_is_null(value))
+						return null;
 
-		public WebViewLinux()
-		{
-			BuildWebView();
-		}
+					IntPtr text = WebKit2.jsc_value_to_string(value);
 
-		public WebKit.WebView WebView
-		{
-			get { return _webview; }
-		}
-
-		public void Navigate(string uri)
-		{
-			_webview.Open(uri);
-		}
-
-		public void LoadHTML(string html, string baseUrl)
-		{
-			_webview.LoadHtmlString(html, baseUrl);
-		}
-
-		private void BuildWebView()
-		{
-			CreateWebView();
-
-			ScrolledWindow scroll = new ScrolledWindow();
-			scroll.AddWithViewport(_webview);
-
-			_vbox = new Box(Gtk.Orientation.Vertical, 1);
-			_vbox.PackStart(scroll, true, true, 0);
-
-			Add(_vbox);
-			ShowAll();
-		}
-
-		private void CreateWebView()
-		{
-			_webview = new WebKit.WebView();
-			_webview.Editable = false;
+					try
+					{
+						return WebKit2.Utf8ToString(text);
+					}
+					finally
+					{
+						WebKit2.g_free(text);
+					}
+				}
+				finally
+				{
+					if (jsResult != IntPtr.Zero)
+						WebKit2.webkit_javascript_result_unref(jsResult);
+					else
+						WebKit2.g_object_unref(value);
+				}
+			}
 		}
 	}
 }

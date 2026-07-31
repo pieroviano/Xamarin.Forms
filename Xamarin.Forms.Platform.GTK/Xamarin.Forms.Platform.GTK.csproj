@@ -20,17 +20,17 @@
         <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" Condition="'$(OS)' == 'Windows_NT'" />
     </ItemGroup>
     <!--
-    Feature switches for the pieces quarantined during the GTK3 port (plan M6).
-    Flip to true (and install the matching native deps) to re-enable.
-      EnableGtkWebView  -> WebKit2GTK-backed WebView   (needs libwebkit2gtk-4.1)
-      EnableGtkOpenGL   -> OpenGLView via Gtk.GLArea
+    Nothing is quarantined any more (plan M6 is complete for the renderer surface):
+
+      WebView   - Controls/WebKit2.cs binds libwebkit2gtk-4.1.so.0 by hand (§9.1); every entry
+                  point is resolved lazily, so the renderer compiles and registers
+                  unconditionally and degrades to a placeholder when WebKitGTK is absent.
+      OpenGLView- Controls/OpenGLView.cs wraps Gtk.GLArea (§9.2), which is part of GTK 3.16+
+                  itself; the OpenTK 3 GLWidget and its per-platform GLX/WGL/AGL window-info
+                  initializers are deleted, so there is no OpenTK dependency and nothing to
+                  switch off. A machine with no usable GL driver gets GTK's own GL error
+                  placeholder, not a crash.
   -->
-    <PropertyGroup>
-        <EnableGtkWebView Condition="'$(EnableGtkWebView)' == ''">false</EnableGtkWebView>
-        <EnableGtkOpenGL Condition="'$(EnableGtkOpenGL)' == ''">false</EnableGtkOpenGL>
-        <DefineConstants Condition="'$(EnableGtkWebView)' == 'true'">$(DefineConstants);ENABLE_GTK_WEBVIEW</DefineConstants>
-        <DefineConstants Condition="'$(EnableGtkOpenGL)' == 'true'">$(DefineConstants);ENABLE_GTK_OPENGL</DefineConstants>
-    </PropertyGroup>
     <ItemGroup>
         <!--
           Pinned explicitly. The Net4x.NuGetUtility tooling rewrote this into
@@ -49,16 +49,6 @@
     <ItemGroup>
         <Compile Include="..\Xamarin.Forms.Core\Crc64.cs" Link="Crc64.cs" />
         <Compile Include="..\Xamarin.Forms.Core\StreamWrapper.cs" Link="StreamWrapper.cs" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(EnableGtkOpenGL)' != 'true'">
-        <Compile Remove="Controls\GLWidget\**\*.cs" />
-        <Compile Remove="Controls\OpenGLView.cs" />
-        <Compile Remove="Renderers\OpenGLViewRenderer.cs" />
-        <Compile Remove="GtkOpenGL.cs" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(EnableGtkWebView)' != 'true'">
-        <Compile Remove="Controls\WebView.cs" />
-        <Compile Remove="Renderers\WebViewRenderer.cs" />
     </ItemGroup>
     <!--
     Loaded at runtime by relative path

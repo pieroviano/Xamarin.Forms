@@ -17,12 +17,16 @@ namespace Xamarin.Forms.ControlGallery.GTK
 		{
 			ExceptionManager.UnhandledException += OnUnhandledException;
 
-			// GtkOpenGL.Init() and FormsMaps.Init() are gone for now: OpenGLView is
-			// quarantined behind EnableGtkOpenGL, and Xamarin.Forms.Maps.GTK is still
-			// GTK#2. Both come back in M6.
+			// GtkOpenGL.Init() is gone for good: it existed only to bootstrap OpenTK's
+			// Toolkit, and OpenGLView now runs on Gtk.GLArea, which needs no initialisation
+			// (plan M6 §9.2).
 			GtkThemes.Init();
 			Gtk.Application.Init();
-			Forms.Init();
+
+			// The Maps renderer lives in Xamarin.Forms.Maps.GTK, so that assembly has to be
+			// loaded before Registrar scans - naming a type in it is what forces the load.
+			Forms.Init(new[] { typeof(Xamarin.Forms.Maps.GTK.MapRenderer).Assembly });
+			Xamarin.Forms.Maps.GTK.FormsMaps.Init();
 			var app = new App();
 			var window = new FormsWindow();
 			window.LoadApplication(app);

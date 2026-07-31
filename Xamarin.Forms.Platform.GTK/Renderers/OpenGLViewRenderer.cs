@@ -1,12 +1,25 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 
 namespace Xamarin.Forms.Platform.GTK.Renderers
 {
+	/// <summary>
+	/// Maps <c>Xamarin.Forms.OpenGLView</c> onto <see cref="Controls.OpenGLView"/>, which wraps
+	/// <c>Gtk.GLArea</c> (plan M6 §9.2).
+	///
+	/// Two drawing modes, exactly as on the other backends:
+	/// <list type="bullet">
+	/// <item><c>HasRenderLoop == true</c>: the native view redraws off the widget's frame clock.</item>
+	/// <item><c>HasRenderLoop == false</c>: a frame is produced only when the element raises
+	/// <c>DisplayRequested</c> (i.e. the application calls <c>OpenGLView.Display()</c>).</item>
+	/// </list>
+	///
+	/// <c>OpenGLView.OnDisplay</c> is a plain CLR property that the application can replace at any
+	/// time, so it is read through a thunk on every frame rather than captured once.
+	/// </summary>
 	public class OpenGLViewRenderer : ViewRenderer<OpenGLView, Controls.OpenGLView>
 	{
-		private Controls.OpenGLView _openGlView;
-		private bool _disposed;
+		bool _disposed;
 
 		protected override void Dispose(bool disposing)
 		{
@@ -15,7 +28,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				_disposed = true;
 
 				if (Element != null)
-					((IOpenGlViewController)Element).DisplayRequested -= OnDisplay;
+					((IOpenGlViewController)Element).DisplayRequested -= OnDisplayRequested;
+
+				if (Control != null)
+				{
+					Control.HasRenderLoop = false;
+					Control.OnDisplay = null;
+				}
 			}
 
 			base.Dispose(disposing);
@@ -24,19 +43,22 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		protected override void OnElementChanged(ElementChangedEventArgs<OpenGLView> e)
 		{
 			if (e.OldElement != null)
-				((IOpenGlViewController)e.OldElement).DisplayRequested -= OnDisplay;
+				((IOpenGlViewController)e.OldElement).DisplayRequested -= OnDisplayRequested;
 
 			if (e.NewElement != null)
 			{
-				// The Open Toolkit library is a low-level C# binding for OpenGL, OpenGL ES and OpenAL. 
-				// Runs on Linux, MacOS and Windows with GTK# (and more platforms).
-				_openGlView = new Controls.OpenGLView();
-				SetNativeControl(_openGlView);
+				if (Control == null)
+				{
+					var openGlView = new Controls.OpenGLView();
+					// Read the Forms callback per frame: OnDisplay is not a BindableProperty, so
+					// there is no change notification to re-subscribe on when it is reassigned.
+					openGlView.OnDisplay = OnRenderFrame;
+					SetNativeControl(openGlView);
+				}
 
-				((IOpenGlViewController)e.NewElement).DisplayRequested += OnDisplay;
+				((IOpenGlViewController)e.NewElement).DisplayRequested += OnDisplayRequested;
 
-				SetRenderMode();
-				SetupRenderAction();
+				UpdateRenderLoop();
 			}
 
 			base.OnElementChanged(e);
@@ -47,37 +69,41 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			base.OnElementPropertyChanged(sender, e);
 
 			if (e.PropertyName == OpenGLView.HasRenderLoopProperty.PropertyName)
-			{
-				SetRenderMode();
-				SetupRenderAction();
-			}
+				UpdateRenderLoop();
 		}
 
-		public void OnDisplay(object sender, EventArgs eventArgs)
+		void OnRenderFrame(Rectangle rectangle)
 		{
-			if (Element.HasRenderLoop)
+			if (_disposed)
 				return;
 
-			SetupRenderAction();
+			Element?.OnDisplay?.Invoke(rectangle);
 		}
 
-		private void SetRenderMode()
+		void OnDisplayRequested(object sender, EventArgs eventArgs)
 		{
+			if (_disposed || Control == null)
+				return;
+
+			// With a render loop running the frame clock is already producing frames, so an explicit
+			// Display() has nothing to add.
+			if (Element != null && Element.HasRenderLoop)
+				return;
+
+			Control.RequestRender();
+		}
+
+		void UpdateRenderLoop()
+		{
+			if (Control == null || Element == null)
+				return;
+
 			Control.HasRenderLoop = Element.HasRenderLoop;
-		}
 
-		private void SetupRenderAction()
-		{
+			// Leaving (or never entering) the render loop still owes the caller one frame, otherwise
+			// an OpenGLView that only ever draws once would stay empty.
 			if (!Element.HasRenderLoop)
-				return;
-
-			var model = Element;
-			var onDisplay = model.OnDisplay;
-
-			if (_openGlView != null)
-			{
-				_openGlView.OnDisplay = onDisplay;
-			}
+				Control.RequestRender();
 		}
 	}
 }

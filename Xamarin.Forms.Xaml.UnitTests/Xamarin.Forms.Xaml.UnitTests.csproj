@@ -57,6 +57,27 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <!--
+      Not used by any code in this project. MSBuild/MSBuildTests.cs generates *legacy-format*
+      csproj files targeting .NET Framework v4.7 (that half of the [Theory] matrix is the only
+      coverage of the non-SDK project path through Xamarin.Forms.targets), and Linux and macOS
+      have no .NET Framework targeting pack, so those builds died with
+          error MSB3644: The reference assemblies for .NETFramework,Version=v4.7 were not found.
+      This package carries the v4.7 reference assemblies; the generated projects point
+      TargetFrameworkRootPath at it. GeneratePathProperty gives us $(Pkg...) below, and the
+      path is handed to the test code as assembly metadata - a restored package is the only
+      thing that can supply it, so a missing restore fails loudly instead of silently
+      falling back to whatever the machine happens to have installed.
+    -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net47" Version="1.0.3"
+                      PrivateAssets="all" GeneratePathProperty="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- build\ is the directory that contains .NETFramework\v4.7\, which is what
+         $(TargetFrameworkRootPath) expects. Trailing slash matters to MSBuild. -->
+    <AssemblyMetadata Include="NetFrameworkReferenceAssemblies"
+                      Condition="'$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)' != ''"
+                      Value="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)/build/" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Xamarin.Forms.Core.UnitTests\MockDispatcherProvider.cs">

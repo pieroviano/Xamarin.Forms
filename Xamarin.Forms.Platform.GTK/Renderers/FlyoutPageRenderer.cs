@@ -100,12 +100,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			base.OnSizeAllocated(allocation);
 
-			Control?.Content?.SetSize(allocation.Width, allocation.Height);
-
-			// ShouldShowSplitMode is a function of the allocation (and orientation), so resizing
-			// the window can flip it. Re-evaluate - but deferred: the setter runs
-			// RefreshFlyoutLayoutBehavior, and mutating geometry inside a size-allocate is
-			// exactly what GTK3 discards.
+			// Everything below mutates geometry, so all of it is deferred: a size request or a
+			// resize queued from inside size-allocate is discarded by GTK3, and it leaves the
+			// content container's parent permanently flagged resize-needed, which swallows every
+			// later queue_resize raised anywhere beneath it (see AbstractPageRenderer.PageQueueResize).
+			// SetSize inline here was one of the two sites wedging the flyout subtree.
 			if (_behaviorUpdateQueued)
 				return;
 
@@ -115,6 +114,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				_behaviorUpdateQueued = false;
 
+				Control?.Content?.SetSize(allocation.Width, allocation.Height);
+
+				// ShouldShowSplitMode is a function of the allocation (and orientation), so
+				// resizing the window can flip it. Re-evaluate here too.
 				if (Widget != null && Page?.Flyout != null && Page?.Detail != null)
 					UpdateFlyoutLayoutBehavior();
 

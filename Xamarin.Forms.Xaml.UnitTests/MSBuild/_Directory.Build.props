@@ -1,4 +1,19 @@
-﻿<Project>
+<Project>
+  <PropertyGroup>
+    <!--
+      The projects these tests generate live under the test assembly's own output directory
+      (bin\Debug\net10.0\temp\<test>\) and the tests assert on obj\Debug\... paths.
+
+      The repo-root Directory.Build.props - imported below - redirects intermediate and output
+      paths to obj-wsl\ / bin-wsl\ whenever the tree is built from Unix off a /mnt/ (drvfs)
+      mount, so a Windows and a WSL build of the same working tree do not share obj\. That is
+      right for the real projects and wrong for these throwaway ones: they are created fresh
+      per test run, are never built from both sides at once, and their output layout is part
+      of what the tests assert. Setting the switch here - before the import, so it wins - keeps
+      them on the conventional obj\ and bin\ on every OS.
+    -->
+    <UseOSSpecificOutputPaths>false</UseOSSpecificOutputPaths>
+  </PropertyGroup>
   <Import Project="..\..\..\..\..\..\.nuspec\Xamarin.Forms.props" />
   <Import Project="..\..\..\..\..\..\Directory.Build.props" />
-</Project> 
+</Project>

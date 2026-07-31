@@ -19,10 +19,13 @@
         other's obj\, and every build is a full rebuild.
 
     Redirecting the Unix side keeps both sets of artifacts intact. DefaultItemExcludes
-    then has to drop obj\ and bin\ by hand: the SDK only excludes the *current*
-    BaseIntermediateOutputPath/BaseOutputPath from the default globs, so the Windows-side
-    obj\<config>\<tfm>\*.AssemblyInfo.cs and ThisAssembly.GitInfo.g.cs would otherwise be
-    compiled alongside the obj-wsl\ copies (CS0579/CS0102 duplicate definitions).
+    then has to drop the *other* side's obj\ and bin\ by hand, in both directions: the SDK
+    only excludes the *current* BaseIntermediateOutputPath/BaseOutputPath from the default
+    globs, so obj\<config>\<tfm>\*.AssemblyInfo.cs and ThisAssembly.GitInfo.g.cs from one
+    side get compiled alongside the other side's copies (CS0579/CS0102 duplicate
+    definitions). This has to be DefaultItemExcludes, not <Compile Remove="obj-wsl\**" />:
+    Directory.Build.props is evaluated before Microsoft.NET.Sdk.DefaultItems.props creates
+    the globs, and a Remove only affects items that already exist, so it is a no-op here.
 
     Scoped to trees that are actually shared, i.e. mounted under /mnt (drvfs). A native
     Linux or macOS checkout has no Windows side to collide with and keeps the conventional
@@ -42,7 +45,10 @@
   <PropertyGroup Condition="'$(UseOSSpecificOutputPaths)' == 'true'">
     <BaseIntermediateOutputPath>obj-wsl/</BaseIntermediateOutputPath>
     <BaseOutputPath>bin-wsl/</BaseOutputPath>
-    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj-wsl/**;bin-wsl/**;obj/**;bin/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -142,6 +148,6 @@
   <Import Condition="'$(SampleProject)' != 'True'" Project="SourceLink.Build.props" />
   <!-- This target is replaced by GitInfo when restored. Allows Version.targets to rely on it before restore. -->
   <Target Name="GitVersion" />
-  
+
   <Import Condition="'$(EnvironmentBuildPropsImported)' != 'True'" Project="Environment.Build.props" />
 </Project>
