@@ -1,77 +1,73 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
-    <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
-    <IsPackable>true</IsPackable>
-
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
+    <PropertyGroup>
+        <PackageOutputPath>$(SolutionDir)Packages/</PackageOutputPath>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
+        <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
+        <IsPackable>true</IsPackable>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>Xamarin.Forms.Platform.GTK</AssemblyName>
+        <RootNamespace>Xamarin.Forms.Platform.GTK</RootNamespace>
+        <Description>GTK3 Backend for Xamarin.Forms</Description>
+        <LangVersion>latest</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" />
+    </ItemGroup>
     <!--
-      netstandard2.0, not net10.0: this is a LIBRARY, and GtkSharp 3.24 itself targets
-      netstandard2.0, as do Core/Platform/Xaml/Maps. Targeting netstandard2.0 keeps the GTK
-      backend consumable from any TFM >= ns2.0 rather than pinning consumers to .NET 10.
-      The ControlGallery.GTK app stays net10.0 - that is where the runtime is chosen.
-    -->
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Xamarin.Forms.Platform.GTK</AssemblyName>
-    <RootNamespace>Xamarin.Forms.Platform.GTK</RootNamespace>
-    <Description>GTK3 Backend for Xamarin.Forms</Description>
-    <!-- Overrides the repo-wide LangVersion 8.0 from Environment.Build.props -->
-    <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
-  </PropertyGroup>
-
-  <!--
     Feature switches for the pieces quarantined during the GTK3 port (plan M6).
     Flip to true (and install the matching native deps) to re-enable.
       EnableGtkWebView  -> WebKit2GTK-backed WebView   (needs libwebkit2gtk-4.1)
       EnableGtkOpenGL   -> OpenGLView via Gtk.GLArea
   -->
-  <PropertyGroup>
-    <EnableGtkWebView Condition="'$(EnableGtkWebView)' == ''">false</EnableGtkWebView>
-    <EnableGtkOpenGL Condition="'$(EnableGtkOpenGL)' == ''">false</EnableGtkOpenGL>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants Condition="'$(EnableGtkWebView)' == 'true'">$(DefineConstants);ENABLE_GTK_WEBVIEW</DefineConstants>
-    <DefineConstants Condition="'$(EnableGtkOpenGL)' == 'true'">$(DefineConstants);ENABLE_GTK_OPENGL</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="GtkSharp" Version="3.24.24.95" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
-  </ItemGroup>
-
-  <!-- Core internals compiled directly into the platform assembly, as before -->
-  <ItemGroup>
-    <Compile Include="..\Xamarin.Forms.Core\Crc64.cs" Link="Crc64.cs" />
-    <Compile Include="..\Xamarin.Forms.Core\StreamWrapper.cs" Link="StreamWrapper.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(EnableGtkOpenGL)' != 'true'">
-    <Compile Remove="Controls\GLWidget\**\*.cs" />
-    <Compile Remove="Controls\OpenGLView.cs" />
-    <Compile Remove="Renderers\OpenGLViewRenderer.cs" />
-    <Compile Remove="GtkOpenGL.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(EnableGtkWebView)' != 'true'">
-    <Compile Remove="Controls\WebView.cs" />
-    <Compile Remove="Renderers\WebViewRenderer.cs" />
-  </ItemGroup>
-
-  <!--
+    <PropertyGroup>
+        <EnableGtkWebView Condition="'$(EnableGtkWebView)' == ''">false</EnableGtkWebView>
+        <EnableGtkOpenGL Condition="'$(EnableGtkOpenGL)' == ''">false</EnableGtkOpenGL>
+        <DefineConstants Condition="'$(EnableGtkWebView)' == 'true'">$(DefineConstants);ENABLE_GTK_WEBVIEW</DefineConstants>
+        <DefineConstants Condition="'$(EnableGtkOpenGL)' == 'true'">$(DefineConstants);ENABLE_GTK_OPENGL</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="GtkSharp" Version="$(InputBoxLibraryVersion).$(VersionBuildSuffix)" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
+    </ItemGroup>
+    <!-- Core internals compiled directly into the platform assembly, as before -->
+    <ItemGroup>
+        <Compile Include="..\Xamarin.Forms.Core\Crc64.cs" Link="Crc64.cs" />
+        <Compile Include="..\Xamarin.Forms.Core\StreamWrapper.cs" Link="StreamWrapper.cs" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(EnableGtkOpenGL)' != 'true'">
+        <Compile Remove="Controls\GLWidget\**\*.cs" />
+        <Compile Remove="Controls\OpenGLView.cs" />
+        <Compile Remove="Renderers\OpenGLViewRenderer.cs" />
+        <Compile Remove="GtkOpenGL.cs" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(EnableGtkWebView)' != 'true'">
+        <Compile Remove="Controls\WebView.cs" />
+        <Compile Remove="Renderers\WebViewRenderer.cs" />
+    </ItemGroup>
+    <!--
     Loaded at runtime by relative path
     (Controls/FlyoutPage.cs: new Pixbuf("./Resources/hamburger.png")),
     so it must be copied next to the assembly - not embedded.
   -->
-  <ItemGroup>
-    <Content Include="Resources\hamburger.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
+    <ItemGroup>
+        <Content Include="Resources\hamburger.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    <PropertyGroup>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
+        <Content Include="$(SolutionDir)License.txt" Link="License.txt" Pack="true" PackagePath="\License.txt" Condition="Exists('$(SolutionDir)License.txt')" />
+    </ItemGroup>
+    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets" Condition="Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets')" />
 </Project>

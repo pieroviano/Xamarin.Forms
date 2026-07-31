@@ -12,7 +12,12 @@ namespace Xamarin.Forms.Platform.GTK
 {
 	internal class GtkPlatformServices : IPlatformServices
 	{
-		public bool IsInvokeRequired => Thread.CurrentThread.IsBackground;
+		// Was Thread.CurrentThread.IsBackground, which is simply the wrong question: a foreground
+		// worker thread reports false, so Forms skipped marshalling and touched GTK widgets off
+		// the main loop. Compare against the thread that ran Forms.Init instead. If Init has not
+		// run we cannot know, and claiming "no marshalling needed" is the dangerous answer.
+		public bool IsInvokeRequired =>
+			Forms.MainThread == null || Thread.CurrentThread != Forms.MainThread;
 
 		public string RuntimePlatform => Device.GTK;
 
@@ -65,20 +70,37 @@ namespace Xamarin.Forms.Platform.GTK
 
 		public Color GetNamedColor(string name)
 		{
-			// Not supported on this platform
+			// GTK themes expose named colours through the style context (@theme_fg_color and
+			// friends). Look the name up against the default screen's theme; unknown names fall
+			// back to Color.Default, which is what Forms expects for "this platform has no such
+			// colour". Callers may run before a screen exists, hence the null guard.
+			var screen = Gdk.Screen.Default;
+
+			if (screen == null || string.IsNullOrEmpty(name))
+				return Color.Default;
+
+			using (var styleContext = new Gtk.StyleContext())
+			using (var path = new Gtk.WidgetPath())
+			{
+				path.AppendType(Gtk.Window.GType);
+				styleContext.Path = path;
+				styleContext.Screen = screen;
+
+				if (styleContext.LookupColor(name, out var rgba))
+					return new Color(rgba.Red, rgba.Green, rgba.Blue, rgba.Alpha);
+			}
+
 			return Color.Default;
 		}
 
-		public async Task<Stream> GetStreamAsync(Uri uri, CancellationToken cancellationToken)
-		{
-			using (var client = new HttpClient())
-			{
-				// Do not remove this await otherwise the client will dispose before
-				// the stream even starts
-				var result = await StreamWrapper.GetStreamAsync(uri, cancellationToken, client).ConfigureAwait(false);
+		// One HttpClient for the process. The previous code newed one up per call inside a using,
+		// which is the classic socket-exhaustion pattern: disposed HttpClients leave their
+		// connections in TIME_WAIT, and a page pulling many remote images exhausts ephemeral ports.
+		static readonly HttpClient s_httpClient = new HttpClient();
 
-				return result;
-			}
+		public Task<Stream> GetStreamAsync(Uri uri, CancellationToken cancellationToken)
+		{
+			return StreamWrapper.GetStreamAsync(uri, cancellationToken, s_httpClient);
 		}
 
 		public IIsolatedStorageFile GetUserStoreForApplication()
@@ -88,7 +110,13 @@ namespace Xamarin.Forms.Platform.GTK
 
 		public void OpenUriAction(Uri uri)
 		{
-			System.Diagnostics.Process.Start(uri.AbsoluteUri);
+			// Process.Start(string) does NOT shell-execute on .NET (Core) the way it did on .NET
+			// Framework - it tries to exec the URI as a program and throws. UseShellExecute routes
+			// through xdg-open on Linux, which is what actually opens a browser.
+			System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.AbsoluteUri)
+			{
+				UseShellExecute = true
+			});
 		}
 
 		public void StartTimer(TimeSpan interval, Func<bool> callback)
@@ -117,6 +145,57 @@ namespace Xamarin.Forms.Platform.GTK
 			return Platform.GetNativeSize(view, widthConstraint, heightConstraint);
 		}
 
-		public OSAppTheme RequestedTheme => OSAppTheme.Unspecified;
+		public OSAppTheme RequestedTheme => GetRequestedTheme();
+
+		// GTK has no "OS theme" signal, but it does have two settings that together say whether
+		// the current theme is a dark one: the explicit gtk-application-prefer-dark-theme flag,
+		// and the theme name itself (the convention is a "-dark" suffix, e.g. Adwaita-dark).
+		static OSAppTheme GetRequestedTheme()
+		{
+			var settings = Gtk.Settings.Default;
+
+			if (settings == null)
+				return OSAppTheme.Unspecified;
+
+			if (settings.ApplicationPreferDarkTheme)
+				return OSAppTheme.Dark;
+
+			var themeName = settings.ThemeName;
+
+			if (!string.IsNullOrEmpty(themeName) &&
+				themeName.EndsWith("-dark", StringComparison.OrdinalIgnoreCase))
+				return OSAppTheme.Dark;
+
+			return OSAppTheme.Light;
+		}
+
+		/// <summary>
+		/// Subscribes to the GTK settings that back <see cref="RequestedTheme"/> so Forms is told
+		/// when the desktop theme changes. Called from <c>Forms.Init</c>, after GTK is up: the
+		/// settings object does not exist before <c>Gtk.Application.Init</c>.
+		/// </summary>
+		internal static void TrackThemeChanges()
+		{
+			var settings = Gtk.Settings.Default;
+
+			if (settings == null)
+				return;
+
+			var lastTheme = GetRequestedTheme();
+
+			void OnThemeSettingChanged(object o, GLib.NotifyArgs args)
+			{
+				var currentTheme = GetRequestedTheme();
+
+				if (currentTheme == lastTheme)
+					return;
+
+				lastTheme = currentTheme;
+				Application.Current?.TriggerThemeChanged(new AppThemeChangedEventArgs(currentTheme));
+			}
+
+			settings.AddNotification("gtk-theme-name", OnThemeSettingChanged);
+			settings.AddNotification("gtk-application-prefer-dark-theme", OnThemeSettingChanged);
+		}
 	}
 }

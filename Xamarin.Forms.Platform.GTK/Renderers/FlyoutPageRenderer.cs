@@ -101,7 +101,28 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			base.OnSizeAllocated(allocation);
 
 			Control?.Content?.SetSize(allocation.Width, allocation.Height);
+
+			// ShouldShowSplitMode is a function of the allocation (and orientation), so resizing
+			// the window can flip it. Re-evaluate - but deferred: the setter runs
+			// RefreshFlyoutLayoutBehavior, and mutating geometry inside a size-allocate is
+			// exactly what GTK3 discards.
+			if (_behaviorUpdateQueued)
+				return;
+
+			_behaviorUpdateQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_behaviorUpdateQueued = false;
+
+				if (Widget != null && Page?.Flyout != null && Page?.Detail != null)
+					UpdateFlyoutLayoutBehavior();
+
+				return false;
+			});
 		}
+
+		bool _behaviorUpdateQueued;
 
 		/// <summary>
 		/// Reports the flyout/detail geometry back to Forms.
@@ -199,7 +220,18 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void UpdateFlyoutLayoutBehavior()
 		{
-			if (Page.Detail is NavigationPage)
+			// ShouldShowSplitMode is Core's own answer to "is the flyout permanently on screen",
+			// and it accounts for idiom and orientation as well as FlyoutLayoutBehavior - which
+			// the raw FlyoutLayoutBehavior enum does not. UpdateFlyoutPageBounds already derives
+			// the Forms-side rectangles from it, so the native widget has to follow the same
+			// authority or the two halves disagree. They did: with a real screen size reported
+			// (M4's GtkDeviceInfo), a landscape desktop made Core lay the detail out at
+			// x=300 w=500 while the native side still overlaid it full-width at x=0.
+			if (Element is IFlyoutPageController controller && controller.ShouldShowSplitMode)
+			{
+				Widget.FlyoutLayoutBehaviorType = FlyoutLayoutBehaviorType.Split;
+			}
+			else if (Page.Detail is NavigationPage)
 			{
 				Widget.FlyoutLayoutBehaviorType = GetFlyoutLayoutBehavior(Page.FlyoutLayoutBehavior);
 			}

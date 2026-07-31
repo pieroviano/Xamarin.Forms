@@ -297,17 +297,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		static Pango.FontDescription CreateFontDescription(FontImageSource fontImageSource)
 		{
-			// Xamarin.Forms allows "path/to/file.ttf#Family Name"; Pango resolves by family
-			// name through fontconfig, so only the family part is meaningful here. A font
-			// shipped as a loose file must be visible to fontconfig (e.g. ~/.local/share/fonts).
-			var family = fontImageSource.FontFamily ?? string.Empty;
-			if (family.Contains("#"))
-			{
-				var fontPathAndFamily = family.Split('#');
-				family = fontPathAndFamily.Length > 1 && !string.IsNullOrWhiteSpace(fontPathAndFamily[1])
-					? fontPathAndFamily[1]
-					: IOPath.GetFileNameWithoutExtension(fontPathAndFamily[0]);
-			}
+			// Pango resolves by family name through fontconfig. ToPangoFamily handles the
+			// "path/to/file.ttf#Family Name" convention, and - for an icon font shipped with
+			// [assembly: ExportFont] - extracts it, registers it with fontconfig and returns the
+			// family name that is really inside the file.
+			var family = fontImageSource.FontFamily.ToPangoFamily();
 
 			var description = new Pango.FontDescription();
 

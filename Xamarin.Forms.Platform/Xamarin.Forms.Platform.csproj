@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Net4x.Xamarin.Forms.Platform</PackageId>
     <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>

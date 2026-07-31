@@ -21,10 +21,19 @@ namespace Xamarin.Forms
 		static IReadOnlyList<string> s_flags;
 		public static IReadOnlyList<string> Flags => s_flags ?? (s_flags = new List<string>().AsReadOnly());
 
+		/// <summary>
+		/// The thread that called <see cref="Init"/>, which is the thread running the GTK main
+		/// loop. GTK is not thread-safe, so every widget touch has to happen here; this is what
+		/// <c>IPlatformServices.IsInvokeRequired</c> compares against.
+		/// </summary>
+		internal static System.Threading.Thread MainThread { get; private set; }
+
 		public static void Init(IEnumerable<Assembly> rendererAssemblies = null)
 		{
 			if (IsInitialized)
 				return;
+
+			MainThread = System.Threading.Thread.CurrentThread;
 
 			Log.Listeners.Add(new DelegateLogListener((c, m) => Debug.WriteLine(LogFormat, c, m)));
 
@@ -37,11 +46,16 @@ namespace Xamarin.Forms
 			Color.SetAccent(Color.FromHex("#3498DB"));
 			ExpressionSearch.Default = new GtkExpressionSearch();
 
+			GtkPlatformServices.TrackThemeChanges();
+
 			Registrar.RegisterAll(new[]
 			{
 				typeof(ExportCellAttribute),
 				typeof(ExportImageSourceHandlerAttribute),
-				typeof(ExportRendererAttribute)
+				typeof(ExportRendererAttribute),
+				// Without this, Registrar never scans for [assembly: ExportFont(...)] and
+				// FontRegistrar stays empty - custom fonts fail silently.
+				typeof(ExportFontAttribute)
 			});
 
 			IsInitialized = true;
