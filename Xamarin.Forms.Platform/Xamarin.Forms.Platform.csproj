@@ -1,24 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <PackageId>Net4x.Xamarin.Forms.Platform</PackageId>
-    <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
-    <IsPackable>true</IsPackable>
-    <!--
-      Same expression as every other packable project here. Without it the SDK default
-      applies - $(VersionPrefix)-$(VersionSuffix), i.e. the prerelease 5.0.0-0 - and
-      Xamarin.Forms.Core, which packs as the stable 5.0.0.0, then carries a prerelease
-      dependency: NU5104, which TreatWarningsAsErrors turns into a build failure.
-    -->
-    <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
-  </ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-  </PropertyGroup>
+    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
+    <PropertyGroup>
+        <PackageOutputPath>$(SolutionDir)Packages/</PackageOutputPath>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackageId>Net4x.Xamarin.Forms.Platform.Base</PackageId>
+        <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
+        <IsPackable>true</IsPackable>
+        <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'"></PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'"></PropertyGroup>
+    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets" Condition="Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets')" />
 </Project>
