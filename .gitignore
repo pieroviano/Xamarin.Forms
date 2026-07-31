@@ -1,5 +1,7 @@
 bin
 obj
+obj-wsl
+bin-wsl
 classic_bin
 classic_obj
 *.dll
@@ -8,6 +10,7 @@ classic_obj
 *.log
 *.userprefs
 *.suo
+*.snupkg
 _docs.xml
 UpgradeLog*
 docs/*.xml

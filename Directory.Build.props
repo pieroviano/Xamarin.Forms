@@ -1,5 +1,50 @@
 <Project>
 
+  <!--
+    Windows and Unix builds of the same working tree need separate obj\ and bin\.
+
+    A tree on a Windows drive (D:\CommonLibrary\Xamarin.Forms, reached from WSL as
+    /mnt/d/CommonLibrary/Xamarin.Forms) can be built from both sides at once - Visual
+    Studio on Windows, `dotnet build` in WSL - and they cannot share intermediate output:
+
+      * project.assets.json records absolute package paths. A Windows restore writes
+        C:\Users\<user>\.nuget\packages plus the VS fallback folders; those do not exist
+        under WSL, so the next Linux build dies in ResolvePackageAssets with
+            NuGet.Packaging.Core.PackagingException: Unable to find fallback package
+            folder 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages'.
+        (and the reverse, with /home/<user>/.nuget/packages, breaks the Windows build).
+        Visual Studio's background restore rewrites obj\ on its own, so a `dotnet restore`
+        in WSL is undone within seconds while the solution is open.
+      * The two sides generally run different SDK versions, so each invalidates the
+        other's obj\, and every build is a full rebuild.
+
+    Redirecting the Unix side keeps both sets of artifacts intact. DefaultItemExcludes
+    then has to drop obj\ and bin\ by hand: the SDK only excludes the *current*
+    BaseIntermediateOutputPath/BaseOutputPath from the default globs, so the Windows-side
+    obj\<config>\<tfm>\*.AssemblyInfo.cs and ThisAssembly.GitInfo.g.cs would otherwise be
+    compiled alongside the obj-wsl\ copies (CS0579/CS0102 duplicate definitions).
+
+    Scoped to trees that are actually shared, i.e. mounted under /mnt (drvfs). A native
+    Linux or macOS checkout has no Windows side to collide with and keeps the conventional
+    obj\/bin\ - which build.cake depends on, e.g. IOS_TEST_LIBRARY's
+    ./Xamarin.Forms.Core.iOS.UITests/bin/<config>/. Force it either way with
+    -p:UseOSSpecificOutputPaths=true|false.
+
+    The XAML build tasks drop moves too, via _XFBuildTasksLocation below - otherwise the
+    Unix build cannot refresh artifacts\build-tasks\ (Visual Studio holds those DLLs open:
+    "Access to the path ... is denied") and silently compiles XAML with whatever Windows
+    left there.
+  -->
+  <PropertyGroup>
+    <UseOSSpecificOutputPaths Condition="'$(UseOSSpecificOutputPaths)' == '' AND '$(OS)' != 'Windows_NT' AND $(MSBuildThisFileDirectory.StartsWith('/mnt/'))">true</UseOSSpecificOutputPaths>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(UseOSSpecificOutputPaths)' == 'true'">
+    <BaseIntermediateOutputPath>obj-wsl/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin-wsl/</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!--
       Seven projects carry <Version>$(VersionPrefix).$(VersionSuffix)</Version>, injected by the
@@ -23,6 +68,16 @@
           NU1015: The following PackageReference item(s) do not have a version specified.
     -->
     <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)' == ''">1.0.13</NuGetUtilityVersion>
+
+    <!--
+      Net4x.NuGetUtility is Windows-only: its targets shell out to native-windows\NuGetUtility.exe.
+      Every project that uses it therefore guards all three touch points - the two
+      NuGet.Utility.props/.targets imports and the PackageReference - with
+      '$(OS)' == 'Windows_NT', so a Linux or macOS build neither restores nor runs it.
+      The version above is still defined unconditionally: it is what those (skipped) conditions
+      interpolate, and leaving it empty would reintroduce the NU1015 failure described above.
+    -->
+
   </PropertyGroup>
 
   <PropertyGroup>
@@ -45,6 +100,7 @@
       Configuration-independent on purpose: the path is fixed, so it does not matter that
       Directory.Build.props is evaluated before the SDK defaults $(Configuration).
     -->
+    <_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == '' AND '$(UseOSSpecificOutputPaths)' == 'true'">$(MSBuildThisFileDirectory)artifacts/build-tasks-unix/netstandard2.0/</_XFBuildTasksLocation>
     <_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)artifacts\build-tasks\netstandard2.0\</_XFBuildTasksLocation>
     <__XFBuildTasksLocation>$(_XFBuildTasksLocation)</__XFBuildTasksLocation>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
