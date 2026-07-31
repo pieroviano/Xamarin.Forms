@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,15 +17,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void TypeConvertersOnAttachedBP(bool useCompiledXaml)
 			{
 				var p = new Unreported002(useCompiledXaml);
-				Assert.AreEqual(new Rectangle(0.5, 0.5, 1, -1), AbsoluteLayout.GetLayoutBounds(p.label));
+				Assert.Equal(new Rectangle(0.5, 0.5, 1, -1), AbsoluteLayout.GetLayoutBounds(p.label));
 			}
 		}
 	}

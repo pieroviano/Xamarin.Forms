@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,24 +18,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Application.Current = null;
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void ControlTemplateAsImplicitAppLevelStyles(bool useCompiledXaml)
 			{
 				Application.Current = new Bz53381App();
@@ -44,8 +41,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var presenter = ((StackLayout)view.InternalChildren[0]).Children[1] as ContentPresenter;
 				Assume.That(presenter, Is.Not.Null);
 				var grid = presenter.Content as Grid;
-				Assert.That(grid, Is.Not.Null);
-				Assert.That(grid.BackgroundColor, Is.EqualTo(Color.Green));
+				Assert.NotNull(grid);
+				Assert.Equal(Color.Green, grid.BackgroundColor);
 			}
 		}
 	}

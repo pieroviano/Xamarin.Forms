@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,27 +18,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void MultipleTriggers(bool useCompiledXaml)
 			{
 				Issue2578 layout = null;
 				Assert.DoesNotThrow(() => layout = new Issue2578(useCompiledXaml));
 
-				Assert.AreEqual(null, layout.label.Text);
-				Assert.AreEqual(Color.Default, layout.label.BackgroundColor);
-				Assert.AreEqual(Color.Olive, layout.label.TextColor);
+				Assert.Equal(null, layout.label.Text);
+				Assert.Equal(Color.Default, layout.label.BackgroundColor);
+				Assert.Equal(Color.Olive, layout.label.TextColor);
 				layout.label.Text = "Foo";
-				Assert.AreEqual(Color.Red, layout.label.BackgroundColor);
+				Assert.Equal(Color.Red, layout.label.BackgroundColor);
 			}
 		}
 	}

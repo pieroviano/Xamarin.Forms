@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,29 +16,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void OnPlatformFontConversion(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new Bz55343(useCompiledXaml);
-				Assert.That(layout.label0.FontSize, Is.EqualTo(16d));
-				Assert.That(layout.label1.FontSize, Is.EqualTo(64d));
+				Assert.Equal(16d, layout.label0.FontSize);
+				Assert.Equal(64d, layout.label1.FontSize);
 			}
 		}
 	}

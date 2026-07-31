@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,30 +16,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void ParsingNestedMarkups(bool useCompiledXaml)
 			{
 				var layout = new Gh2171(useCompiledXaml);
 				var markup = layout.BindingContext as Gh2171Extension;
-				Assert.That(markup, Is.Not.Null);
-				Assert.That(markup.Foo, Is.EqualTo("foo"));
-				Assert.That(markup.Bar, Is.EqualTo("bar"));
-				Assert.That((markup.Binding as Binding).Path, Is.EqualTo("Text"));
+				Assert.NotNull(markup);
+				Assert.Equal("foo", markup.Foo);
+				Assert.Equal("bar", markup.Bar);
+				Assert.Equal("Text", (markup.Binding as Binding).Path);
 			}
 		}
 	}

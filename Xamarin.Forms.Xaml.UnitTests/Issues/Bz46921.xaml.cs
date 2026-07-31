@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,20 +17,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void MultipleWaysToCreateAThicknessResource(bool useCompiledXaml)
 			{
 				var page = new Bz46921(useCompiledXaml);
 				foreach (var resname in new string[] { "thickness0", "thickness1", "thickness2", "thickness3", })
 				{
 					var resource = page.Resources[resname];
-					Assert.That(resource, Is.TypeOf<Thickness>());
+					Assert.IsType<Thickness>(resource);
 					var thickness = (Thickness)resource;
-					Assert.AreEqual(new Thickness(4, 20, 4, 20), thickness);
+					Assert.Equal(new Thickness(4, 20, 4, 20), thickness);
 
 				}
 			}

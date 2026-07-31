@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Xaml.UnitTests;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	[TestFixture]
 	public class MethodDefinitionExtensionsTests
 	{
 		public class NonGenericClass
@@ -17,7 +16,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 		}
 
 		public class GenericClass<T, U, V>
-		{
+		: IDisposable{
 			public object NonGeneric() => default(object);
 			public T GenericT() => default(T);
 			public U GenericU() => default(U);
@@ -28,9 +27,8 @@ namespace Xamarin.Forms.XamlcUnitTests
 
 		ModuleDefinition module;
 
-		[SetUp]
-		public void SetUp()
-		{
+		public GenericClass()
+{
 			module = ModuleDefinition.CreateModule("foo", new ModuleParameters()
 			{
 				AssemblyResolver = new MockAssemblyResolver(),
@@ -38,32 +36,31 @@ namespace Xamarin.Forms.XamlcUnitTests
 			});
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			module?.Dispose();
 		}
 
-		[Test]
+		[Fact]
 		public void ResolveGenericReturnType()
 		{
 			var type = module.ImportReference(typeof(GenericClass<bool, string, int>));
 
 			var getter = type.GetMethods(md => md.Name == "NonGeneric", module).Single();
 			var returnType = getter.Item1.ResolveGenericReturnType(getter.Item2, module);
-			Assert.AreEqual("System.Object", returnType.FullName);
+			Assert.Equal("System.Object", returnType.FullName);
 
 			getter = type.GetMethods(md => md.Name == "GenericT", module).Single();
 			returnType = getter.Item1.ResolveGenericReturnType(getter.Item2, module);
-			Assert.AreEqual("System.Boolean", returnType.FullName);
+			Assert.Equal("System.Boolean", returnType.FullName);
 
 			getter = type.GetMethods(md => md.Name == "GenericU", module).Single();
 			returnType = getter.Item1.ResolveGenericReturnType(getter.Item2, module);
-			Assert.AreEqual("System.String", returnType.FullName);
+			Assert.Equal("System.String", returnType.FullName);
 
 			getter = type.GetMethods(md => md.Name == "GenericV", module).Single();
 			returnType = getter.Item1.ResolveGenericReturnType(getter.Item2, module);
-			Assert.AreEqual("System.Int32", returnType.FullName);
+			Assert.Equal("System.Int32", returnType.FullName);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -14,19 +14,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void RectBoundsDoesntThrow([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh11551(useCompiledXaml);
 				var bounds = AbsoluteLayout.GetLayoutBounds(layout.label);
-				Assert.That(bounds, Is.EqualTo(new Rect(1, .5, -1, 22)));
+				Assert.Equal(new Rect(1, .5, -1, 22), bounds);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -21,20 +21,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void FindMostDerivedABP([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh12025)));
 				var layout = new Gh12025(useCompiledXaml);
-				Assert.That(NavigationPage.GetIconColor(layout), Is.EqualTo(NavigationPage.IconColorProperty.DefaultValue));
-				Assert.That(Gh12025NavPage.GetIconColor(layout), Is.EqualTo(Color.HotPink));
+				Assert.Equal(NavigationPage.IconColorProperty.DefaultValue, NavigationPage.GetIconColor(layout));
+				Assert.Equal(Color.HotPink, Gh12025NavPage.GetIconColor(layout));
 			}
 		}
 	}

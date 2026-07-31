@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Core.UnitTests;
@@ -20,23 +20,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
+			[InlineData(true)]
 			public void ErrorOnUnknownXmlnsForDataType(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

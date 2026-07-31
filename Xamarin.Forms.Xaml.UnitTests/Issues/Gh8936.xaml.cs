@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -23,20 +23,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void IndexerBindingOnSubclasses([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh8936(useCompiledXaml) { BindingContext = new Gh8936VM() };
-				Assert.That(layout.entry0.Text, Is.EqualTo("Value"));
+				Assert.Equal("Value", layout.entry0.Text);
 				layout.entry0.Text = "Bar";
-				Assert.That(layout.entry0.Text, Is.EqualTo("Bar"));
-				Assert.That(((Gh8936VM)layout.BindingContext).Data["Key"], Is.EqualTo("Bar"));
+				Assert.Equal("Bar", layout.entry0.Text);
+				Assert.Equal("Bar", ((Gh8936VM)layout.BindingContext).Data["Key"]);
 			}
 		}
 	}

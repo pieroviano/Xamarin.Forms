@@ -16,7 +16,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 	public class FlyoutPage : Fixed
 	{
-		private const int DefaultFlyoutWidth = 300;
+		// internal so FlyoutPageRenderer can report matching bounds back to Forms.
+		internal const int DefaultFlyoutWidth = 300;
 		private const int IsPresentedAnimationMilliseconds = 300;
 
 		private Gdk.Rectangle _lastAllocation;
@@ -190,6 +191,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public event EventHandler IsPresentedChanged;
 
+		bool _sizeUpdateQueued;
+
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
@@ -199,9 +202,29 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				_lastAllocation = allocation;
 			}
 
-			_flyout.WidthRequest = DefaultFlyoutWidth;
-			_flyout.HeightRequest = _detail.HeightRequest = allocation.Height;
-			RefreshFlyoutLayoutBehavior(_flyoutBehaviorType);
+			// Deferred: WidthRequest/HeightRequest and RefreshFlyoutLayoutBehavior's MoveTo
+			// all queue a resize, which GTK3 discards when queued from inside size-allocate.
+			// Applied inline, the detail widget kept its natural size, and the detail page's
+			// own renderer then pushed that natural size back into Forms - overwriting the
+			// correct DetailBounds the FlyoutPageRenderer had just set.
+			if (_sizeUpdateQueued)
+				return;
+
+			_sizeUpdateQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_sizeUpdateQueued = false;
+
+				if (_flyout != null && _detail != null)
+				{
+					_flyout.WidthRequest = DefaultFlyoutWidth;
+					_flyout.HeightRequest = _detail.HeightRequest = _lastAllocation.Height;
+					RefreshFlyoutLayoutBehavior(_flyoutBehaviorType);
+				}
+
+				return false;
+			});
 		}
 
 		protected override void OnShown()

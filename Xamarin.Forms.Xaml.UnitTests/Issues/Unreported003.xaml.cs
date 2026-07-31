@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,10 +17,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void AllowCtorArgsForValueTypes(bool useCompiledXaml)
 			{
 				var page = new Unreported003(useCompiledXaml);

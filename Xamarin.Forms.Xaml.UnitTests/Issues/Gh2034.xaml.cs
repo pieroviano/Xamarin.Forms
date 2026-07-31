@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -18,10 +18,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
+			[InlineData(true)]
 			public void Compiles(bool useCompiledXaml)
 			{
 				if (!useCompiledXaml)

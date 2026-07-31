@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 using IOPath = System.IO.Path;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
-	public class CecilExtensionsTests : IAssemblyResolver
-	{
+	public class CecilExtensionsTests : IAssemblyResolver, IDisposable{
 		const string testNamespace = "Xamarin.Forms.Xaml.UnitTests";
 		AssemblyDefinition assembly;
 		readonly List<AssemblyDefinition> assemblies = new List<AssemblyDefinition>();
@@ -23,9 +21,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 		}
 
-		[SetUp]
-		public void SetUp()
-		{
+		public CecilExtensionsTests()
+{
 			assembly = AssemblyDefinition.ReadAssembly(GetType().Assembly.Location, readerParameters);
 			assemblies.Add(assembly);
 		}
@@ -46,9 +43,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			return assembly;
 		}
 
-		[TearDown]
 		public void Dispose()
-		{
+{
 			foreach (var assembly in assemblies)
 			{
 				assembly.Dispose();
@@ -78,8 +74,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public void IsXamlTrue(string name)
 		{
 			var resource = GetResource(name);
-			Assert.IsTrue(resource.IsXaml(assembly.MainModule, out string className), $"IsXaml should return true for '{name}'.");
-			Assert.AreEqual(className, $"{testNamespace}.{name}"); // Test cases x:Class matches the file name
+			Assert.True(resource.IsXaml(assembly.MainModule, out string className), $"IsXaml should return true for '{name}'.");
+			Assert.Equal(className, $"{testNamespace}.{name}"); // Test cases x:Class matches the file name
 		}
 
 		static string[] IsXamlFalseSource = new[]
@@ -92,7 +88,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public void IsXamlFalse(string name)
 		{
 			var resource = GetResource(name);
-			Assert.IsFalse(resource.IsXaml(assembly.MainModule, out _), $"IsXaml should return false for '{name}'.");
+			Assert.False(resource.IsXaml(assembly.MainModule, out _), $"IsXaml should return false for '{name}'.");
 		}
 	}
 }

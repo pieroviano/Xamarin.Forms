@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -21,23 +21,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void Test(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
@@ -71,47 +68,47 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				};
 
 				//testing paths
-				Assert.AreEqual("Text0", layout.label0.Text);
-				Assert.AreEqual("Text0", layout.label1.Text);
-				Assert.AreEqual("Text1", layout.label2.Text);
-				Assert.AreEqual("TextIndex", layout.label3.Text);
-				Assert.AreEqual("Text0", layout.label8.Text);
+				Assert.Equal("Text0", layout.label0.Text);
+				Assert.Equal("Text0", layout.label1.Text);
+				Assert.Equal("Text1", layout.label2.Text);
+				Assert.Equal("TextIndex", layout.label3.Text);
+				Assert.Equal("Text0", layout.label8.Text);
 
 				//value types
-				Assert.That(layout.label5.Text, Is.EqualTo("42"));
-				Assert.That(layout.label6.Text, Is.EqualTo("text6"));
-				Assert.AreEqual("Text9", layout.label9.Text);
-				Assert.AreEqual("Text9", layout.label10.Text);
+				Assert.Equal("42", layout.label5.Text);
+				Assert.Equal("text6", layout.label6.Text);
+				Assert.Equal("Text9", layout.label9.Text);
+				Assert.Equal("Text9", layout.label10.Text);
 				layout.label9.Text = "Text from label9";
-				Assert.AreEqual("Text from label9", vm.StructModel.Text);
+				Assert.Equal("Text from label9", vm.StructModel.Text);
 				layout.label10.Text = "Text from label10";
-				Assert.AreEqual("Text from label10", vm.StructModel.Model.Text);
+				Assert.Equal("Text from label10", vm.StructModel.Model.Text);
 
 				//testing selfPath
 				layout.label4.BindingContext = "Self";
-				Assert.AreEqual("Self", layout.label4.Text);
+				Assert.Equal("Self", layout.label4.Text);
 				layout.label7.BindingContext = 42;
-				Assert.That(layout.label7.Text, Is.EqualTo("42"));
+				Assert.Equal("42", layout.label7.Text);
 
 				//testing INPC
 				GC.Collect();
 				vm.Text = "Text2";
-				Assert.AreEqual("Text2", layout.label0.Text);
+				Assert.Equal("Text2", layout.label0.Text);
 
 				//testing 2way
-				Assert.AreEqual("Text2", layout.entry0.Text);
+				Assert.Equal("Text2", layout.entry0.Text);
 				((IElementController)layout.entry0).SetValueFromRenderer(Entry.TextProperty, "Text3");
-				Assert.AreEqual("Text3", layout.entry0.Text);
-				Assert.AreEqual("Text3", vm.Text);
+				Assert.Equal("Text3", layout.entry0.Text);
+				Assert.Equal("Text3", vm.Text);
 				((IElementController)layout.entry1).SetValueFromRenderer(Entry.TextProperty, "Text4");
-				Assert.AreEqual("Text4", layout.entry1.Text);
-				Assert.AreEqual("Text4", vm.Model.Text);
+				Assert.Equal("Text4", layout.entry1.Text);
+				Assert.Equal("Text4", vm.Model.Text);
 				vm.Model = null;
 				layout.entry1.BindingContext = null;
 
 				//testing invalid bindingcontext type
 				layout.BindingContext = new object();
-				Assert.AreEqual(null, layout.label0.Text);
+				Assert.Equal(null, layout.label0.Text);
 			}
 		}
 	}

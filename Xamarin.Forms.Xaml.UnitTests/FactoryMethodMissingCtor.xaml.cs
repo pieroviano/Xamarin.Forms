@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -13,13 +13,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void Throw([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

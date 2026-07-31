@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,27 +18,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices { RuntimePlatform = Device.iOS };
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void RecyclingStrategyIsHandled(bool useCompiledXaml)
 			{
 				var p = new Pr3384(useCompiledXaml);
-				Assert.AreEqual(ListViewCachingStrategy.RecycleElement, p.listView.CachingStrategy);
+				Assert.Equal(ListViewCachingStrategy.RecycleElement, p.listView.CachingStrategy);
 			}
 		}
 	}

@@ -1,27 +1,23 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class OnAppThemeTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
-		{
-			base.Setup();
+		public OnAppThemeTests()
+{
 			Application.Current = new MockApplication();
 		}
 
-		[TearDown]
-		public override void TearDown()
-		{
+		public override void Dispose()
+{
 			Application.Current = null;
-			base.TearDown();
+			base.Dispose();
 		}
 
-		[Test]
+		[Fact]
 		public void OnAppThemeExtensionLightDarkColor()
 		{
 			var xaml = @"
@@ -32,14 +28,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Light;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Dark;
 			label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void OnAppThemeLightDarkColor()
 		{
 			var xaml = @"
@@ -54,14 +50,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Light;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Dark;
 			label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void OnAppThemeUnspecifiedThemeDefaultsToLightColor()
 		{
 			var xaml = @"
@@ -76,10 +72,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Unspecified;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void OnAppThemeUnspecifiedLightColorDefaultsToDefault()
 		{
 			var xaml = @"
@@ -94,10 +90,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Light;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void AppThemeColorLightDark()
 		{
 			var xaml = @"
@@ -112,14 +108,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Light;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Dark;
 			label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void AppThemeColorUnspecifiedThemeDefaultsToLightColor()
 		{
 			var xaml = @"
@@ -134,10 +130,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Unspecified;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void AppThemeColorUnspecifiedLightColorDefaultsToDefault()
 		{
 			var xaml = @"
@@ -152,7 +148,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RequestedTheme = OSAppTheme.Unspecified;
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 		}
 	}
 }

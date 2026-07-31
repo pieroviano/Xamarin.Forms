@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -53,24 +53,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class Issue1549
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public Issue1549()
+{
 			SeverityColorConverter.count = 0;
 			InvertBoolenConverter.count = 0;
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void ConverterIsInvoked()
 		{
 			var xaml = @"
@@ -95,11 +92,11 @@ xmlns=""http://xamarin.com/schemas/2014/forms""
 			var layout = new ContentPage().LoadFromXaml(xaml);
 			layout.BindingContext = new { Value = "Foo", Severity = "Bar" };
 			var label = layout.FindByName<Label>("label");
-			Assert.AreEqual(Color.Blue, label.BackgroundColor);
-			Assert.AreEqual(1, SeverityColorConverter.count);
+			Assert.Equal(Color.Blue, label.BackgroundColor);
+			Assert.Equal(1, SeverityColorConverter.count);
 		}
 
-		[Test]
+		[Fact]
 		public void ConverterIsInvoked_Escaped()
 		{
 			var xaml = @"
@@ -124,11 +121,11 @@ xmlns=""http://xamarin.com/schemas/2014/forms""
 			var layout = new ContentPage().LoadFromXaml(xaml);
 			layout.BindingContext = new { Value = "Foo", Severity = "Bar" };
 			var label = layout.FindByName<Label>("label");
-			Assert.AreEqual(Color.Blue, label.BackgroundColor);
-			Assert.AreEqual(1, SeverityColorConverter.count);
+			Assert.Equal(Color.Blue, label.BackgroundColor);
+			Assert.Equal(1, SeverityColorConverter.count);
 		}
 
-		[Test]
+		[Fact]
 		public void ResourcesInNonXFBaseClassesAreFound()
 		{
 			var xaml = @"<local:BaseView 
@@ -184,13 +181,13 @@ xmlns=""http://xamarin.com/schemas/2014/forms""
 			var label00 = (cell0.View as Grid).Children[0] as Label;
 			var label01 = (cell0.View as Grid).Children[1] as Label;
 
-			Assert.AreEqual("Show Is Locked", label00.Text);
-			Assert.AreEqual("Show Is Not locked", label01.Text);
+			Assert.Equal("Show Is Locked", label00.Text);
+			Assert.Equal("Show Is Not locked", label01.Text);
 
-			Assert.AreEqual(true, label00.IsVisible);
-			Assert.AreEqual(false, label01.IsVisible);
+			Assert.Equal(true, label00.IsVisible);
+			Assert.Equal(false, label01.IsVisible);
 
-			Assert.AreEqual(4, InvertBoolenConverter.count);
+			Assert.Equal(4, InvertBoolenConverter.count);
 
 		}
 	}

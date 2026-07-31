@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,34 +18,32 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Application.Current = new MockApplication();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void LoadTypeFromXmlns(bool useCompiledXaml)
 			{
 				TypeLoader layout = null;
 				Assert.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
 				Assert.NotNull(layout.customview0);
-				Assert.That(layout.customview0, Is.TypeOf<CustomView>());
+				Assert.IsType<CustomView>(layout.customview0);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void LoadTypeFromXmlnsWithoutAssembly(bool useCompiledXaml)
 			{
 				TypeLoader layout = null;
 				Assert.DoesNotThrow(() => layout = new TypeLoader(useCompiledXaml));
 				Assert.NotNull(layout.customview1);
-				Assert.That(layout.customview1, Is.TypeOf<CustomView>());
+				Assert.IsType<CustomView>(layout.customview1);
 			}
 		}
 	}

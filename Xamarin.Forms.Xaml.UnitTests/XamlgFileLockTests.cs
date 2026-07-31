@@ -2,14 +2,13 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Core.UnitTests;
 using IOPath = System.IO.Path;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class XamlgFileLockTests : BaseTestFixture
 	{
 		string CreateXamlInputFile()
@@ -25,7 +24,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			return fileName;
 		}
 
-		[Test]
+		[Fact]
 		public void XamlFileShouldNotBeLockedAfterFileIsGenerated()
 		{
 			string xamlInputFile = CreateXamlInputFile();

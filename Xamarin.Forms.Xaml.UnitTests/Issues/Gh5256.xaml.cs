@@ -1,5 +1,5 @@
 ﻿using System.Windows.Input;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -29,13 +29,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void EventOverriding([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh5256(useCompiledXaml) { BindingContext = new { CompletedCommand = new Command(() => Assert.Pass()) } };

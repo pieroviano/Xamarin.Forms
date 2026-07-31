@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -15,12 +16,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Application.Current = new MockApplication
 				{
@@ -33,35 +32,34 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				};
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void MergedResourcesAreFound(bool useCompiledXaml)
 			{
 				var layout = new TestSharedResourceDictionary(useCompiledXaml);
-				Assert.AreEqual(Color.Pink, layout.label.TextColor);
+				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void NoConflictsBetweenSharedRDs(bool useCompiledXaml)
 			{
 				var layout = new TestSharedResourceDictionary(useCompiledXaml);
-				Assert.AreEqual(Color.Pink, layout.label.TextColor);
-				Assert.AreEqual(Color.Purple, layout.label2.TextColor);
+				Assert.Equal(Color.Pink, layout.label.TextColor);
+				Assert.Equal(Color.Purple, layout.label2.TextColor);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ImplicitStyleCanBeSharedFromSharedRD(bool useCompiledXaml)
 			{
 				var layout = new TestSharedResourceDictionary(useCompiledXaml);
-				Assert.AreEqual(Color.Red, layout.implicitLabel.TextColor);
+				Assert.Equal(Color.Red, layout.implicitLabel.TextColor);
 			}
 
 			class MyRD : ResourceDictionary
@@ -73,12 +71,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				}
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void MergedRDAtAppLevel(bool useCompiledXaml)
 			{
 				var layout = new TestSharedResourceDictionary(useCompiledXaml);
-				Assert.AreEqual("Foo", layout.label3.Text);
+				Assert.Equal("Foo", layout.label3.Text);
 			}
 
 		}

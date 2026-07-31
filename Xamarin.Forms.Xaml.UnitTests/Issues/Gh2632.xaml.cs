@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -33,23 +33,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void BindingDoesNotThrowOnRedefinedProperty(bool useCompiledXaml)
 			{
 				var layout = new Gh2632(useCompiledXaml);

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -34,29 +34,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void FindMemberOnInterfaces(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4227)));
 				var layout = new Gh4227(useCompiledXaml) { BindingContext = new Gh4227VM() };
-				Assert.That(layout.label0.Text, Is.EqualTo("level0"));
-				Assert.That(layout.label1.Text, Is.EqualTo("level1"));
+				Assert.Equal("level0", layout.label0.Text);
+				Assert.Equal("level1", layout.label1.Text);
 			}
 		}
 	}

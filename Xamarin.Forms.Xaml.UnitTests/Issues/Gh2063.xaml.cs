@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 using Xamarin.Forms.Build.Tasks;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,10 +16,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void DetailedErrorMessageOnMissingXmlnsDeclaration(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

@@ -153,7 +153,12 @@ namespace Xamarin.Forms.Platform.GTK
 		{
 			base.OnSizeAllocated(allocation);
 
-			UpdateElementLayout();
+			// Deferred, never inline: SetSizeRequest/Fixed.Move both queue a resize, and
+			// queueing a resize from inside size-allocate is invalid in GTK3. Doing it
+			// inline did not merely get dropped - it left the subtree's resize machinery
+			// wedged, so widgets appended later (e.g. ListView rows added by the idle
+			// loader) were never allocated at all.
+			QueueLayoutUpdate();
 		}
 
 		/// <summary>

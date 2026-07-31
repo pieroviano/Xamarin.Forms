@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -17,23 +18,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void DoesNotAllowGridRowDefinition(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

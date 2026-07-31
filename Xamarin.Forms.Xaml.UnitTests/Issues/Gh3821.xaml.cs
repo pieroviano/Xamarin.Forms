@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -30,28 +30,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			}
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void NoConflictsInNamescopes(bool useCompiledXaml)
 			{
 				var layout = new Gh3821(useCompiledXaml) { Text = "root" };
 				var view = ((Gh3821View)((StackLayout)layout.Content).Children[0]);
 				var label0 = ((Label)((Gh3821View)((StackLayout)layout.Content).Children[0]).Content);
-				Assert.That(label0.Text, Is.EqualTo("root"));
+				Assert.Equal("root", label0.Text);
 			}
 		}
 	}

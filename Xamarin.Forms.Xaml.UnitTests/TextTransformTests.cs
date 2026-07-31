@@ -1,15 +1,14 @@
-using NUnit.Framework;
+﻿using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Internals;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class TextTransformTests : BaseTestFixture
 	{
-		[TestCase(TextTransform.None)]
-		[TestCase(TextTransform.Lowercase)]
-		[TestCase(TextTransform.Uppercase)]
+		[InlineData(TextTransform.None)]
+		[InlineData(TextTransform.Lowercase)]
+		[InlineData(TextTransform.Uppercase)]
 		public void LabelTextTransform(TextTransform result)
 		{
 			var xaml = @"
@@ -20,7 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Device.PlatformServices = new MockPlatformServices();
 			var label = new Label().LoadFromXaml(xaml);
 
-			Assert.AreEqual(result, label.TextTransform);
+			Assert.Equal(result, label.TextTransform);
 		}
 	}
 }

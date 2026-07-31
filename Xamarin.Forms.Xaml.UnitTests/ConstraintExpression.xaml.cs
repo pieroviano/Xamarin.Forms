@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,28 +18,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ConstantConstraint(bool useCompiledXaml)
 			{
 				var layout = new ConstraintExpression(useCompiledXaml);
 				var label = layout.constantConstraint;
 				var constraint = RelativeLayout.GetWidthConstraint(label);
 				Assert.NotNull(constraint);
-				Assert.AreEqual(42, constraint.Compute(null));
+				Assert.Equal(42, constraint.Compute(null));
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ConstraintRelativeToParent(bool useCompiledXaml)
 			{
 				var layout = new ConstraintExpression(useCompiledXaml);
@@ -47,11 +45,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var label = layout.constraintRelativeToParent;
 				var constraint = RelativeLayout.GetWidthConstraint(label);
 				Assert.NotNull(constraint);
-				Assert.AreEqual(102, constraint.Compute(layout.relativeLayout));
+				Assert.Equal(102, constraint.Compute(layout.relativeLayout));
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ContraintRelativeToView(bool useCompiledXaml)
 			{
 				var layout = new ConstraintExpression(useCompiledXaml)
@@ -64,7 +62,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var label = layout.constraintRelativeToView;
 				var constraint = RelativeLayout.GetWidthConstraint(label);
 				Assert.NotNull(constraint);
-				Assert.AreEqual(97, constraint.Compute(layout.relativeLayout));
+				Assert.Equal(97, constraint.Compute(layout.relativeLayout));
 			}
 		}
 	}

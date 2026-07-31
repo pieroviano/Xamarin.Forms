@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,18 +17,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void NestedMarkupExtension(bool useCompiledXaml)
 			{
 				var page = new Issue1415(useCompiledXaml);
 				var label = page.FindByName<Label>("label");
 				Assert.NotNull(label);
 				label.BindingContext = "foo";
-				Assert.AreEqual("oof", label.Text);
+				Assert.Equal("oof", label.Text);
 			}
 		}
 	}

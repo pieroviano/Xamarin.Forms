@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 using Xamarin.Forms;
 
 namespace Foo.Xamarin.Bar
@@ -15,12 +15,11 @@ namespace Foo.Xamarin.Bar
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
-			//No need for any actual [Test]. If this compiles, the bug is fixed.
+			[InlineData(true)]
+			[InlineData(false)]
+			//No need for any actual [Fact]. If this compiles, the bug is fixed.
 			public void DoesCompile(bool useCompiledXaml)
 			{
 				var layout = new Bz43301(useCompiledXaml);

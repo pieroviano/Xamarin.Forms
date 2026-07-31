@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -46,29 +47,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void BindProperties(bool useCompiledXaml)
 			{
 				var page = new BindablePropertiesAccessModifiers(useCompiledXaml);
 				page.BindingContext = new Data();
-				Assert.AreEqual("Bar", page.AMC.GetValue(AccessModifiersControl.InternalBarProperty));
-				Assert.AreEqual("Foo", page.AMC.GetValue(AccessModifiersControl.PublicFooProperty));
+				Assert.Equal("Bar", page.AMC.GetValue(AccessModifiersControl.InternalBarProperty));
+				Assert.Equal("Foo", page.AMC.GetValue(AccessModifiersControl.PublicFooProperty));
 			}
 		}
 	}

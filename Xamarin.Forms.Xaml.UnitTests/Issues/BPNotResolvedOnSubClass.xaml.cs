@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -26,23 +26,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void CorrectlyResolveBPOnSubClasses(bool useCompiledXaml)
 			{
 				var layout = new BPNotResolvedOnSubClass(useCompiledXaml);
@@ -52,7 +49,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var button = new Button();
 				button.Style = style;
 
-				Assert.AreEqual(Color.FromHex("#dddddd"), button.GetValue(ShadowColorProperty));
+				Assert.Equal(Color.FromHex("#dddddd"), button.GetValue(ShadowColorProperty));
 			}
 		}
 	}

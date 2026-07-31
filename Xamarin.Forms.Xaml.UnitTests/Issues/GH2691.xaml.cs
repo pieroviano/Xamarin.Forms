@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Build.Utilities;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Controls;
@@ -24,7 +24,6 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
 			const string c_xaml = @"
@@ -54,42 +53,41 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</ContentPage.Content>
 				</ContentPage>";
 
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				GH2691.Init();  // only to make sure compiler pulls in Controls assembly
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void TestXamlParserAndGenerator(bool useCompiledXaml)
 			{
 				Gh2691 issue2691 = new Gh2691(useCompiledXaml);
 
 				// http://xamarin.com/schemas/2014/forms/customurl1 -> Xamarin.Forms.Controls.CustomNamespace1
 				var button = issue2691.FindByName("_testButton1") as Controls.CustomNamespace1.CustomButton;
-				Assert.IsNotNull(button);
+				Assert.NotNull(button);
 
 				// http://xamarin.com/schemas/2014/forms/customurl1 -> Xamarin.Forms.Controls.CustomNamespace2
 				var label1 = issue2691.FindByName("_testLabel1") as Controls.CustomNamespace2.CustomLabel;
-				Assert.IsNotNull(label1);
+				Assert.NotNull(label1);
 
 				// http://xamarin.com/schemas/2014/forms/customurl2 -> Xamarin.Forms.Controls.CustomNamespace3
 				var label2 = issue2691.FindByName("_testLabel2") as Controls.CustomNamespace3.CustomLabel;
-				Assert.IsNotNull(label2);
+				Assert.NotNull(label2);
 
 				// http://xamarin.com/schemas/2014/forms/customurl2 -> Xamarin.Forms.Controls.CustomNamespace3
 				var stack = issue2691.FindByName("_testStackLayout") as Controls.CustomNamespace3.CustomStackLayout;
-				Assert.IsNotNull(stack);
+				Assert.NotNull(stack);
 
 				// clr-namespace:Xamarin.Forms.Controls.CustomNamespace1;assembly=Xamarin.Forms.Controls
 				var button2 = issue2691.FindByName("_testButton2") as Controls.CustomNamespace1.CustomButton;
-				Assert.IsNotNull(button2);
+				Assert.NotNull(button2);
 
 				// using:Xamarin.Forms.Xaml.UnitTests
 				var label3 = issue2691.FindByName("_testLabel3") as Gh2691TestUsingSyntaxLabel;
-				Assert.IsNotNull(label3);
+				Assert.NotNull(label3);
 			}
 
 			[TestCase]
@@ -132,9 +130,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				};
 
 				var generator = new XamlGenerator(item, xamlg.Language, xamlg.AssemblyName, xamlOutputFile, xamlg.References, null);
-				Assert.IsTrue(generator.Execute());
+				Assert.True(generator.Execute());
 
-				Assert.IsTrue(xamlg.Execute());
+				Assert.True(xamlg.Execute());
 			}
 
 			string CreateXamlInputFile()

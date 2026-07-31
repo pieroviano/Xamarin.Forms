@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -61,35 +61,33 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				action((Button)view);
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
 			void AssertStyleApplied(Button button)
 			{
-				Assert.AreEqual(LayoutOptions.Center, button.HorizontalOptions);
-				Assert.AreEqual(LayoutOptions.CenterAndExpand, button.VerticalOptions);
-				Assert.AreEqual(16, button.FontSize);
-				Assert.AreEqual(Color.Blue, button.TextColor);
-				Assert.AreEqual(FontAttributes.Italic, button.FontAttributes);
+				Assert.Equal(LayoutOptions.Center, button.HorizontalOptions);
+				Assert.Equal(LayoutOptions.CenterAndExpand, button.VerticalOptions);
+				Assert.Equal(16, button.FontSize);
+				Assert.Equal(Color.Blue, button.TextColor);
+				Assert.Equal(FontAttributes.Italic, button.FontAttributes);
 			}
 
 			void AssertStyleUnApplied(Button button)
 			{
-				Assert.AreEqual(View.HorizontalOptionsProperty.DefaultValue, button.HorizontalOptions);
-				Assert.AreEqual(View.VerticalOptionsProperty.DefaultValue, button.VerticalOptions);
-				Assert.AreEqual(10, button.FontSize);
-				Assert.AreEqual(Button.TextColorProperty.DefaultValue, button.TextColor);
-				Assert.AreEqual(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
+				Assert.Equal(View.HorizontalOptionsProperty.DefaultValue, button.HorizontalOptions);
+				Assert.Equal(View.VerticalOptionsProperty.DefaultValue, button.VerticalOptions);
+				Assert.Equal(10, button.FontSize);
+				Assert.Equal(Button.TextColorProperty.DefaultValue, button.TextColor);
+				Assert.Equal(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void SetUnsetStyleFromResource(bool useCompiledXaml)
 			{
 				var layout = new Issue2659(useCompiledXaml);
@@ -104,18 +102,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			void AssertPropertiesApplied(Button button)
 			{
-				Assert.AreEqual(Color.Red, button.TextColor);
-				Assert.AreEqual(FontAttributes.Bold, button.FontAttributes);
+				Assert.Equal(Color.Red, button.TextColor);
+				Assert.Equal(FontAttributes.Bold, button.FontAttributes);
 			}
 
 			void AssertPropertiesUnApplied(Button button)
 			{
-				Assert.AreEqual(Button.TextColorProperty.DefaultValue, button.TextColor);
-				Assert.AreEqual(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
+				Assert.Equal(Button.TextColorProperty.DefaultValue, button.TextColor);
+				Assert.Equal(Button.FontAttributesProperty.DefaultValue, button.FontAttributes);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void SetUnsetLocalProperties(bool useCompiledXaml)
 			{
 				var layout = new Issue2659(useCompiledXaml);

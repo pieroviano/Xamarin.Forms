@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -12,19 +12,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void SetStyleId(bool useCompiledXaml)
 			{
 				var layout = new SetStyleIdFromXName(useCompiledXaml);
-				Assert.That(layout.label0.StyleId, Is.EqualTo("label0"));
-				Assert.That(layout.label1.StyleId, Is.EqualTo("foo"));
-				Assert.That(layout.label2.StyleId, Is.EqualTo("bar"));
+				Assert.Equal("label0", layout.label0.StyleId);
+				Assert.Equal("foo", layout.label1.StyleId);
+				Assert.Equal("bar", layout.label2.StyleId);
 			}
 		}
 	}

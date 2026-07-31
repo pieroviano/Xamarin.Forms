@@ -1,12 +1,11 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1564
 	{
-		[Test]
+		[Fact]
 		public void ViewCellAsXamlRoot()
 		{
 			var xaml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -22,7 +21,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ViewCell>";
 			var cell = new ViewCell().LoadFromXaml(xaml);
 			Assert.NotNull(cell);
-			Assert.AreEqual("This is my label", ((cell.View as StackLayout).Children[0] as Label).Text);
+			Assert.Equal("This is my label", ((cell.View as StackLayout).Children[0] as Label).Text);
 		}
 	}
 }

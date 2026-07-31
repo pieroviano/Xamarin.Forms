@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -20,20 +20,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void CompiledBindingsTargetNullValue(bool useCompiledXaml)
 			{
 				var layout = new Gh4103(useCompiledXaml) { BindingContext = new Gh4103VM() };
-				Assert.That(layout.label.Text, Is.EqualTo("initial"));
+				Assert.Equal("initial", layout.label.Text);
 
 				layout.BindingContext = new Gh4103VM { SomeNullableValue = null };
-				Assert.That(layout.label.Text, Is.EqualTo("target null"));
+				Assert.Equal("target null", layout.label.Text);
 			}
 		}
 	}

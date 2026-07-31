@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Xaml.Diagnostics;
@@ -15,31 +15,28 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 			bool debuggerinitialstate;
 			int failures = 0;
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				VisualDiagnostics.VisualTreeChanged += VTChanged;
 				debuggerinitialstate = Xamarin.Forms.Xaml.Diagnostics.DebuggerHelper._mockDebuggerIsAttached;
 				DebuggerHelper._mockDebuggerIsAttached = true;
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				DebuggerHelper._mockDebuggerIsAttached = debuggerinitialstate;
 				Device.PlatformServices = null;
 				VisualDiagnostics.VisualTreeChanged -= VTChanged;
 				failures = 0;
 			}
 
-			[Test]
+			[Fact]
 			public void SourceInfoForElementsInDT([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh10803(useCompiledXaml);

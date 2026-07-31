@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -18,31 +18,28 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 			IReadOnlyList<string> _flags;
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				_flags = Device.Flags;
 				if (Device.Flags == null)
 					Device.SetFlags(new List<string>().AsReadOnly());
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 				Device.SetFlags(_flags);
 			}
 
-			[TestCase(true, "xamlDoubleImplicitOpHack")]
-			[TestCase(false, "xamlDoubleImplicitOpHack")]
-			[TestCase(true, null)]
-			[TestCase(false, null)]
+			[InlineData(true, "xamlDoubleImplicitOpHack")]
+			[InlineData(false, "xamlDoubleImplicitOpHack")]
+			[InlineData(true, null)]
+			[InlineData(false, null)]
 			public void Bz59818(bool useCompiledXaml, string flag)
 			{
 				Device.SetFlags(new List<string>(Device.Flags) {
@@ -60,7 +57,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					return;
 				}
 				var layout = new Bz59818(useCompiledXaml);
-				Assert.That(layout.grid.ColumnDefinitions[0].Width, Is.EqualTo(new GridLength(100)));
+				Assert.Equal(new GridLength(100), layout.grid.ColumnDefinitions[0].Width);
 			}
 		}
 	}

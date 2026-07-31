@@ -1,9 +1,7 @@
-using System;
+﻿using System;
 using System.IO;
 
-#if !NETSTANDARD1_0
 using System.Net.Http;
-#endif
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,7 +90,6 @@ namespace Xamarin.Forms
 			base.Dispose(disposing);
 		}
 
-#if !NETSTANDARD1_0
 
 		public static async Task<Stream> GetStreamAsync(Uri uri, CancellationToken cancellationToken, HttpClient client)
 		{
@@ -107,7 +104,6 @@ namespace Xamarin.Forms
 			// otherwise the stream may get disposed before the caller can use it
 			return new StreamWrapper(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), response);
 		}
-#endif
 
 	}
 }

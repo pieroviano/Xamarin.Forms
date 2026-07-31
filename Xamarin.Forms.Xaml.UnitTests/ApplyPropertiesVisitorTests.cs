@@ -1,10 +1,9 @@
-using System.Collections;
-using NUnit.Framework;
+﻿using System.Collections;
+using Xunit;
 using Xamarin.Forms.Xaml;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public static class ApplyPropertiesVisitorTests
 	{
 		public class MarkupExtension : IMarkupExtension
@@ -20,7 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			public ArrayList ArrayList { get; } = new ArrayList();
 		}
 
-		[Test]
+		[Fact]
 		public static void ProvideValueForCollectionItem()
 		{
 			const string NAMESPACE = "clr-namespace:Xamarin.Forms.Xaml.UnitTests;assembly=Xamarin.Forms.Xaml.UnitTests";
@@ -41,7 +40,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			rootNode.Accept(new CreateValuesVisitor(context), null);
 			rootNode.Accept(new ApplyPropertiesVisitor(context), null);
 
-			CollectionAssert.AreEqual(new[] { "provided value", "provided value" }, rootElement.ArrayList);
+			Assert.Equal(new[] { "provided value", "provided value" }, rootElement.ArrayList);
 		}
 	}
 }

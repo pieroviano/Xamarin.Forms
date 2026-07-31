@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,38 +16,35 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void SetUp()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void InlineCSSParsed(bool useCompiledXaml)
 			{
 				var layout = new InlineCSS(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.Pink));
+				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void InitialValue(bool useCompiledXaml)
 			{
 				var layout = new InlineCSS(useCompiledXaml);
-				Assert.That(layout.BackgroundColor, Is.EqualTo(Color.Green));
-				Assert.That(layout.stack.BackgroundColor, Is.EqualTo(Color.Green));
-				Assert.That(layout.button.BackgroundColor, Is.EqualTo(Color.Green));
-				Assert.That(layout.label.BackgroundColor, Is.EqualTo(VisualElement.BackgroundColorProperty.DefaultValue));
-				Assert.That(layout.label.TextTransform, Is.EqualTo(TextTransform.Uppercase));
+				Assert.Equal(Color.Green, layout.BackgroundColor);
+				Assert.Equal(Color.Green, layout.stack.BackgroundColor);
+				Assert.Equal(Color.Green, layout.button.BackgroundColor);
+				Assert.Equal(VisualElement.BackgroundColorProperty.DefaultValue, layout.label.BackgroundColor);
+				Assert.Equal(TextTransform.Uppercase, layout.label.TextTransform);
 			}
 		}
 	}

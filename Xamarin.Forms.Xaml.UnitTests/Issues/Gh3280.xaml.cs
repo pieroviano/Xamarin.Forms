@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -21,27 +21,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void SizeHasConverter(bool useCompiledXaml)
 			{
 				Gh3280 layout = null;
 				Assert.DoesNotThrow(() => layout = new Gh3280(useCompiledXaml));
-				Assert.That(layout.Foo, Is.EqualTo(new Size(15, 25)));
+				Assert.Equal(new Size(15, 25), layout.Foo);
 			}
 		}
 	}

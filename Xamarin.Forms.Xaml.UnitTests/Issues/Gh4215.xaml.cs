@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -26,27 +26,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void AvoidAmbiguousMatch(bool useCompiledXaml)
 			{
 				var layout = new Gh4215(useCompiledXaml);
 				Assert.DoesNotThrow(() => layout.BindingContext = new Gh4215VM());
-				Assert.That(layout.l0.Text, Is.EqualTo("foo"));
+				Assert.Equal("foo", layout.l0.Text);
 			}
 		}
 	}

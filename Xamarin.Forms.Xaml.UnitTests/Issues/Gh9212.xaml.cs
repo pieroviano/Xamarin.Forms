@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -23,17 +23,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void SingleQuoteAndTrailingSpaceInMarkupValue([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh9212(useCompiledXaml);
-				Assert.That(layout.label.Text, Is.EqualTo("Foo, Bar"));
+				Assert.Equal("Foo, Bar", layout.label.Text);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -28,29 +28,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public string ANonBindableProperty { get; set; }
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void TargetPropertyIsSetOnMarkups(bool useCompiledXaml)
 			{
 				var page = new Bz53275(useCompiledXaml);
-				Assert.AreEqual("ANonBindableProperty", page.ANonBindableProperty);
+				Assert.Equal("ANonBindableProperty", page.ANonBindableProperty);
 				var l0 = page.label;
-				Assert.AreEqual("Text", l0.Text);
+				Assert.Equal("Text", l0.Text);
 			}
 		}
 	}

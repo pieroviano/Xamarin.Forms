@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Input;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -15,26 +15,23 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 			IReadOnlyList<string> _flags;
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				_flags = Device.Flags;
 				Device.SetFlags(new List<string>(Device.Flags ?? new List<string>()) { "CollectionView_Experimental" }.AsReadOnly());
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 				Device.SetFlags(_flags);
 			}
 
-			[Test]
+			[Fact]
 			public void CanXReferenceRoot([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh7097(useCompiledXaml)
@@ -48,17 +45,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var cv = layout.Content as CollectionView;
 				var content = cv.ItemTemplate.CreateContent() as StackLayout;
 				var btn1 = content.Children[0] as Button;
-				Assert.That(btn1.Command, Is.TypeOf<MockCommand>());
+				Assert.IsType<MockCommand>(btn1.Command);
 			}
 
-			[Test]
+			[Fact]
 			//this was later reported as https://github.com/xamarin/Xamarin.Forms/issues/7286
 			public void RegisteringXNameOnSubPages([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh7097(useCompiledXaml);
 				var s = layout.FindByName("self");
-				Assert.That(layout.self, Is.Not.Null);
-				Assert.That(layout.collectionview, Is.Not.Null);
+				Assert.NotNull(layout.self);
+				Assert.NotNull(layout.collectionview);
 			}
 
 			class MockCommand : ICommand

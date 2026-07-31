@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,26 +17,23 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void NestedRDAreOnlyProcessedOnce(bool useCompiledXaml)
 			{
 				var layout = new Gh1554(useCompiledXaml);
-				Assert.That(layout.Resources.MergedDictionaries.First().First().Key, Is.EqualTo("label0"));
+				Assert.Equal("label0", layout.Resources.MergedDictionaries.First().First().Key);
 			}
 		}
 	}

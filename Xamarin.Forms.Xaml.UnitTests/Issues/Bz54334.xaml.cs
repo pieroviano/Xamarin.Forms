@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -55,24 +55,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Application.Current = null;
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void Foo(bool useCompiledXaml)
 			{
 				var app = Application.Current = new Bz54334App(useCompiledXaml);
@@ -80,16 +77,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var l0 = page.label;
 				var l1 = page.themedLabel;
 
-				Assert.That(l0.TextColor, Is.EqualTo(Color.Black));
-				Assert.That(l1.TextColor, Is.EqualTo(Color.Blue));
+				Assert.Equal(Color.Black, l0.TextColor);
+				Assert.Equal(Color.Blue, l1.TextColor);
 
 				MessagingCenter.Send<ContentPage>(page, "ChangeTheme");
-				Assert.That(l0.TextColor, Is.EqualTo(Color.Black));
-				Assert.That(l1.TextColor, Is.EqualTo(Color.Red));
+				Assert.Equal(Color.Black, l0.TextColor);
+				Assert.Equal(Color.Red, l1.TextColor);
 
 				MessagingCenter.Send<ContentPage>(page, "ChangeTheme");
-				Assert.That(l0.TextColor, Is.EqualTo(Color.Black));
-				Assert.That(l1.TextColor, Is.EqualTo(Color.Blue));
+				Assert.Equal(Color.Black, l0.TextColor);
+				Assert.Equal(Color.Blue, l1.TextColor);
 
 			}
 		}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -313,14 +313,10 @@ namespace Xamarin.Forms.Xaml
 		static BindableProperty GetBindableProperty(Type elementType, string localName, IXmlLineInfo lineInfo,
 			bool throwOnError = false)
 		{
-#if NETSTANDARD1_0
-			var bindableFieldInfo = elementType.GetFields().FirstOrDefault(fi => fi.Name == localName + "Property");
-#else
 			// F# does not support public fields, so allow internal (Assembly) as well as public
 			const BindingFlags supportedFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 			var bindableFieldInfo = elementType.GetFields(supportedFlags)
 												.FirstOrDefault(fi => (fi.IsAssembly || fi.IsPublic) && fi.Name == localName + "Property");
-#endif
 			Exception exception = null;
 			if (exception == null && bindableFieldInfo == null)
 			{
@@ -669,17 +665,6 @@ namespace Xamarin.Forms.Xaml
 			value = null;
 			var elementType = element.GetType();
 			PropertyInfo propertyInfo = null;
-#if NETSTANDARD1_0
-			try {
-				propertyInfo = elementType.GetRuntimeProperty(localName);
-			} catch (AmbiguousMatchException) {
-				// Get most derived instance of property
-				foreach (var property in elementType.GetRuntimeProperties().Where(prop => prop.Name == localName)) {
-					if (propertyInfo == null || propertyInfo.DeclaringType.IsAssignableFrom(property.DeclaringType))
-						propertyInfo = property;
-				}
-			}
-#else
 			while (elementType != null && propertyInfo == null)
 			{
 				try
@@ -692,7 +677,6 @@ namespace Xamarin.Forms.Xaml
 				}
 				elementType = elementType.BaseType;
 			}
-#endif
 			MethodInfo getter;
 			targetProperty = propertyInfo;
 			if (propertyInfo == null || !propertyInfo.CanRead || (getter = propertyInfo.GetMethod) == null)

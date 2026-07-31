@@ -1,14 +1,13 @@
-using NUnit.Framework;
+﻿using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class FontConverterTests : BaseTestFixture
 	{
-		[TestCase("Bold", Forms.FontAttributes.Bold)]
-		[TestCase("Italic", Forms.FontAttributes.Italic)]
-		[TestCase("Bold, Italic", Forms.FontAttributes.Bold | Forms.FontAttributes.Italic)]
+		[InlineData("Bold", Forms.FontAttributes.Bold)]
+		[InlineData("Italic", Forms.FontAttributes.Italic)]
+		[InlineData("Bold, Italic", Forms.FontAttributes.Bold | Forms.FontAttributes.Italic)]
 		public void FontAttributes(string attributeString, FontAttributes result)
 		{
 			var xaml = @"
@@ -20,9 +19,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var label = new Label().LoadFromXaml(xaml);
 
-			Assert.AreEqual(result, label.FontAttributes);
+			Assert.Equal(result, label.FontAttributes);
 #pragma warning disable 618
-			Assert.AreEqual(result, label.Font.FontAttributes);
+			Assert.Equal(result, label.Font.FontAttributes);
 #pragma warning restore 618
 		}
 	}

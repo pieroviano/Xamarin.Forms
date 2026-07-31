@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Xml;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -83,15 +83,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class MarkupExtensionTests : BaseTestFixture
 	{
 		IXamlTypeResolver typeResolver;
 
-		[SetUp]
-		public override void Setup()
-		{
-			base.Setup();
+		public MarkupExtensionTests()
+{
 			var nsManager = new XmlNamespaceManager(new NameTable());
 			nsManager.AddNamespace("local", "clr-namespace:Xamarin.Forms.Xaml.UnitTests;assembly=Xamarin.Forms.Xaml.UnitTests");
 			nsManager.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml");
@@ -99,7 +96,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			typeResolver = new Internals.XamlTypeResolver(nsManager, XamlParser.GetElementType, Assembly.GetCallingAssembly());
 		}
 
-		[Test]
+		[Fact]
 		public void TestSimpleExtension()
 		{
 			var markupString = "{local:FooMarkupExtension}";
@@ -109,11 +106,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 			var result = (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider);
 
-			Assert.That(result, Is.InstanceOf<string>());
-			Assert.AreEqual("Foo", result);
+			Assert.IsAssignableFrom<string>(result);
+			Assert.Equal("Foo", result);
 		}
 
-		[Test]
+		[Fact]
 		public void TestExtensionWithParameters()
 		{
 			var markupString = "{local:AppendMarkupExtension Value0=Foo, Value1=Bar}";
@@ -123,11 +120,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 			var result = (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider);
 
-			Assert.That(result, Is.InstanceOf<string>());
-			Assert.AreEqual("FooBar", result);
+			Assert.IsAssignableFrom<string>(result);
+			Assert.Equal("FooBar", result);
 		}
 
-		[Test]
+		[Fact]
 		public void TestServiceProvider()
 		{
 			var markupString = "{local:AccessServiceProviderExtension}";
@@ -140,11 +137,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var result = (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider);
 
-			Assert.That(result, Is.InstanceOf<string>());
-			Assert.AreEqual("TrueTrueTrue", result);
+			Assert.IsAssignableFrom<string>(result);
+			Assert.Equal("TrueTrueTrue", result);
 		}
 
-		[Test]
+		[Fact]
 		public void TestInXaml()
 		{
 			var xaml = @"
@@ -157,10 +154,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var label = new Label();
 			label.LoadFromXaml(xaml);
-			Assert.AreEqual("FooBar", label.Text.ToString());
+			Assert.Equal("FooBar", label.Text.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarkupExtensionInDefaultNamespace()
 		{
 			var xaml = @"
@@ -173,10 +170,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var label = new Label();
 			label.LoadFromXaml(xaml);
-			Assert.AreEqual("FooBar", label.Text.ToString());
+			Assert.Equal("FooBar", label.Text.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public void TestDocumentationCode()
 		{
 			var xaml = @"
@@ -187,10 +184,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				TextColor=""{local:ColorMarkup R=100, G=80, B=60}""/>";
 
 			var label = new Label().LoadFromXaml(xaml);
-			Assert.AreEqual(Color.FromRgb(100, 80, 60), label.TextColor);
+			Assert.Equal(Color.FromRgb(100, 80, 60), label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLookupWithSuffix()
 		{
 			var markupString = "{local:Baa}";
@@ -200,11 +197,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 			var result = (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider);
 
-			Assert.That(result, Is.InstanceOf<string>());
-			Assert.AreEqual("BaaExtension", result);
+			Assert.IsAssignableFrom<string>(result);
+			Assert.Equal("BaaExtension", result);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLookupOrder()
 		{
 			//The order of lookup is to look for the Extension-suffixed class name first and then look for the class name without the Extension suffix.
@@ -215,11 +212,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 			var result = (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider);
 
-			Assert.That(result, Is.InstanceOf<string>());
-			Assert.AreEqual("FuuExtension", result);
+			Assert.IsAssignableFrom<string>(result);
+			Assert.Equal("FuuExtension", result);
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowOnMarkupExtensionNotFound()
 		{
 			var markupString = "{local:Missing}";

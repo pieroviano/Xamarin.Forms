@@ -1,5 +1,4 @@
 ﻿using System;
-using NUnit.Framework.Constraints;
 using Xamarin.Forms.Build.Tasks;
 
 namespace Xamarin.Forms.Xaml.UnitTests

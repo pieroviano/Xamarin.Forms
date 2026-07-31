@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -29,17 +29,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void FallbcakToDefaultValueCreator(bool useCompiledXaml)
 			{
 				var layout = new Gh2752(useCompiledXaml) { BindingContext = null };
-				Assert.That(layout.My, Is.EqualTo("default created value"));
+				Assert.Equal("default created value", layout.My);
 			}
 		}
 	}

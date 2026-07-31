@@ -1,16 +1,15 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class DesignPropertiesTests
 	{
 		[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 		[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-		[Test]
+		[Fact]
 		public void DesignProperties()
 		{
 			var xaml = @"
@@ -28,7 +27,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var label = ((Forms.Internals.INameScope)view).FindByName("label") as Label;
 
-			Assert.That(label.Text, Is.EqualTo("Bar"));
+			Assert.Equal("Bar", label.Text);
 		}
 	}
 }

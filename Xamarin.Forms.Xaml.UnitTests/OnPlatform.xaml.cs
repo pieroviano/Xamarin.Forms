@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,116 +18,113 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void BoolToVisibility(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(true, layout.label0.IsVisible);
+				Assert.Equal(true, layout.label0.IsVisible);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(false, layout.label0.IsVisible);
+				Assert.Equal(false, layout.label0.IsVisible);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void DoubleToWidth(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(20, layout.label0.WidthRequest);
+				Assert.Equal(20, layout.label0.WidthRequest);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(30, layout.label0.WidthRequest);
+				Assert.Equal(30, layout.label0.WidthRequest);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void StringToText(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual("Foo", layout.label0.Text);
+				Assert.Equal("Foo", layout.label0.Text);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual("Bar", layout.label0.Text);
+				Assert.Equal("Bar", layout.label0.Text);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void OnPlatformAsResource(bool useCompiledXaml)
 			{
 				var layout = new OnPlatform(useCompiledXaml);
 				var onplat = layout.Resources["fontAttributes"] as OnPlatform<FontAttributes>;
 				Assert.NotNull(onplat);
 #pragma warning disable 612
-				Assert.AreEqual(FontAttributes.Bold, onplat.iOS);
-				Assert.AreEqual(FontAttributes.Italic, onplat.Android);
+				Assert.Equal(FontAttributes.Bold, onplat.iOS);
+				Assert.Equal(FontAttributes.Italic, onplat.Android);
 #pragma warning restore 612
 
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void OnPlatformAsResourceAreApplied(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var layout = new OnPlatform(useCompiledXaml);
 				var onidiom = layout.Resources["fontSize"] as OnIdiom<double>;
 				Assert.NotNull(onidiom);
-				Assert.That(onidiom.Phone, Is.TypeOf<double>());
-				Assert.AreEqual(20, onidiom.Phone);
-				Assert.AreEqual(FontAttributes.Bold, layout.label0.FontAttributes);
+				Assert.IsType<double>(onidiom.Phone);
+				Assert.Equal(20, onidiom.Phone);
+				Assert.Equal(FontAttributes.Bold, layout.label0.FontAttributes);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(FontAttributes.Italic, layout.label0.FontAttributes);
+				Assert.Equal(FontAttributes.Italic, layout.label0.FontAttributes);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void OnPlatform2Syntax(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(42, layout.label0.HeightRequest);
+				Assert.Equal(42, layout.label0.HeightRequest);
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(21, layout.label0.HeightRequest);
+				Assert.Equal(21, layout.label0.HeightRequest);
 
 
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = "FooBar";
 				layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(42, layout.label0.HeightRequest);
+				Assert.Equal(42, layout.label0.HeightRequest);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void OnPlatformDefault(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = "\ud83d\ude80";
 				var layout = new OnPlatform(useCompiledXaml);
-				Assert.AreEqual(63, layout.label0.HeightRequest);
+				Assert.Equal(63, layout.label0.HeightRequest);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,21 +17,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void AssignBindingMarkupToBindingBase(bool useCompiledXaml)
 			{
 				var listView = new Issue1306(useCompiledXaml);
 
 				Assert.NotNull(listView.GroupDisplayBinding);
 				Assert.NotNull(listView.GroupShortNameBinding);
-				Assert.That(listView.GroupDisplayBinding, Is.TypeOf<Binding>());
-				Assert.That(listView.GroupShortNameBinding, Is.TypeOf<Binding>());
-				Assert.AreEqual("Key", (listView.GroupDisplayBinding as Binding).Path);
-				Assert.AreEqual("Key", (listView.GroupShortNameBinding as Binding).Path);
+				Assert.IsType<Binding>(listView.GroupDisplayBinding);
+				Assert.IsType<Binding>(listView.GroupShortNameBinding);
+				Assert.Equal("Key", (listView.GroupDisplayBinding as Binding).Path);
+				Assert.Equal("Key", (listView.GroupShortNameBinding as Binding).Path);
 			}
 		}
 	}

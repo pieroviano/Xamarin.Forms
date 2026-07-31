@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,17 +17,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void AllowCreationOfTypesFromString(bool useCompiledXaml)
 			{
 				var layout = new Issue1199(useCompiledXaml);
 				var res = (Color)layout.Resources["AlmostSilver"];
 
-				Assert.AreEqual(Color.FromHex("#FFCCCCCC"), res);
+				Assert.Equal(Color.FromHex("#FFCCCCCC"), res);
 			}
 		}
 	}

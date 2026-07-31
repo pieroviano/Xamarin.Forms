@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,29 +16,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void KeyedRDWithImplicitStyles(bool useCompiledXaml)
 			{
 				var layout = new Bz60788(useCompiledXaml);
-				Assert.That(layout.Resources.Count, Is.EqualTo(2));
-				Assert.That(((ResourceDictionary)layout.Resources["RedTextBlueBackground"]).Count, Is.EqualTo(3));
-				Assert.That(((ResourceDictionary)layout.Resources["BlueTextRedBackground"]).Count, Is.EqualTo(3));
+				Assert.Equal(2, layout.Resources.Count);
+				Assert.Equal(3, ((ResourceDictionary)layout.Resources["RedTextBlueBackground"]).Count);
+				Assert.Equal(3, ((ResourceDictionary)layout.Resources["BlueTextRedBackground"]).Count);
 			}
 		}
 	}

@@ -1,13 +1,12 @@
 ﻿using System;
 
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1794
 	{
-		[Test]
+		[Fact]
 		public void FindNameInDT()
 		{
 			var xaml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>

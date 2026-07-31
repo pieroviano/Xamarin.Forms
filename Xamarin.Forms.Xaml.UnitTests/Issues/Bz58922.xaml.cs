@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -15,33 +15,30 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 			TargetIdiom defaultIdiom;
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				defaultIdiom = Device.Idiom;
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.Idiom = defaultIdiom;
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void OnIdiomXDouble(bool useCompiledXaml)
 			{
 				Device.Idiom = TargetIdiom.Phone;
 				var layout = new Bz58922(useCompiledXaml);
-				Assert.That(layout.grid.HeightRequest, Is.EqualTo(320));
+				Assert.Equal(320, layout.grid.HeightRequest);
 				Device.Idiom = TargetIdiom.Tablet;
 				layout = new Bz58922(useCompiledXaml);
-				Assert.That(layout.grid.HeightRequest, Is.EqualTo(480));
+				Assert.Equal(480, layout.grid.HeightRequest);
 			}
 		}
 	}

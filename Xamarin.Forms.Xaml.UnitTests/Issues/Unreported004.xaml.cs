@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -37,15 +37,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void MultipleGetMethodsAllowed(bool useCompiledXaml)
 			{
 				var page = new Unreported004(useCompiledXaml);
 				Assert.NotNull(page.label);
-				Assert.AreEqual("foo", GetSomeProperty(page.label));
+				Assert.Equal("foo", GetSomeProperty(page.label));
 			}
 		}
 	}

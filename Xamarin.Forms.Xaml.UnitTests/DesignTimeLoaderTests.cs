@@ -1,24 +1,21 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class DesignTimeLoaderTests
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public DesignTimeLoaderTests()
+{
 			Device.PlatformServices = new MockPlatformServices();
 			Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 			XamlLoader.FallbackTypeResolver = null;
 			XamlLoader.ValueCreatedCallback = null;
@@ -29,7 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 #pragma warning restore 0618
 		}
 
-		[Test]
+		[Fact]
 		public void ContentPageWithMissingClass()
 		{
 			var xaml = @"
@@ -38,10 +35,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					x:Class=""Xamarin.Forms.Xaml.UnitTests.CustomView""
 				/>";
 
-			Assert.That(XamlLoader.Create(xaml, true), Is.TypeOf<ContentPage>());
+			Assert.IsType<ContentPage>(XamlLoader.Create(xaml, true));
 		}
 
-		[Test]
+		[Fact]
 		public void ViewWithMissingClass()
 		{
 			var xaml = @"
@@ -50,10 +47,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					x:Class=""Xamarin.Forms.Xaml.UnitTests.CustomView""
 				/>";
 
-			Assert.That(XamlLoader.Create(xaml, true), Is.TypeOf<ContentView>());
+			Assert.IsType<ContentView>(XamlLoader.Create(xaml, true));
 		}
 
-		[Test]
+		[Fact]
 		public void ContentPageWithMissingTypeMockviewReplacement()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(MockView);
@@ -68,10 +65,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<MockView>());
+			Assert.IsType<MockView>(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void ContentPageWithMissingTypeNoReplacement()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type;
@@ -90,10 +87,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.Null);
+			Assert.Null(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void MissingTypeWithKnownProperty()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -115,11 +112,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
-			Assert.That(page.Content.BackgroundColor, Is.EqualTo(new Color(1, 0, 0)));
+			Assert.IsType<Button>(page.Content);
+			Assert.Equal(new Color(1, 0, 0), page.Content.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void MissingTypeWithUnknownProperty()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -141,10 +138,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
+			Assert.IsType<Button>(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void ExplicitStyleAppliedToMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -169,11 +166,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
-			Assert.That(page.Content.BackgroundColor, Is.EqualTo(Color.Red));
+			Assert.IsType<Button>(page.Content);
+			Assert.Equal(Color.Red, page.Content.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		[Ignore(nameof(ImplicitStyleAppliedToMissingType))]
 		public void ImplicitStyleAppliedToMissingType()
 		{
@@ -201,10 +198,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var myButton = (Button)page.Content;
 
-			Assert.That(myButton.BackgroundColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StyleTargetingRealTypeNotAppliedToMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -232,10 +229,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var myButton = (Button)page.Content;
 
 			//Button Style shouldn't apply to MyCustomButton
-			Assert.That(myButton.BackgroundColor, Is.Not.EqualTo(Color.Red));
+			Assert.NotEqual(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		[Ignore(nameof(StyleTargetingMissingTypeNotAppliedToFallbackType))]
 		public void StyleTargetingMissingTypeNotAppliedToFallbackType()
 		{
@@ -264,10 +261,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var myButton = (Button)page.Content;
 
 			//MyCustomButton Style should not be applied
-			Assert.That(myButton.BackgroundColor, Is.Not.EqualTo(Color.Red));
+			Assert.NotEqual(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StyleAppliedToDerivedTypesAppliesToDerivedMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -295,10 +292,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var myButton = (Button)page.Content;
 
 			//Button Style should apply to MyCustomButton
-			Assert.That(myButton.BackgroundColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void UnknownGenericType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ??
@@ -312,10 +309,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				 </ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<ProxyGenericButton<MockView>>());
+			Assert.IsType<ProxyGenericButton<MockView>>(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void InvalidGenericType()
 		{
 			int exceptionCount = 0;
@@ -332,11 +329,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				 </ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.Null);
-			Assert.That(exceptionCount, Is.EqualTo(1));
+			Assert.Null(page.Content);
+			Assert.Equal(1, exceptionCount);
 		}
 
-		[Test]
+		[Fact]
 		public void UnknownMarkupExtensionOnMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(MockView);
@@ -348,10 +345,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<MockView>());
+			Assert.IsType<MockView>(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void UnknownMarkupExtensionKnownType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(MockView);
@@ -364,10 +361,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
+			Assert.IsType<Button>(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void StaticResourceKeyInApp()
 		{
 			var app = @"
@@ -390,11 +387,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentPage>";
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
-			Assert.That(page.Content.BackgroundColor, Is.EqualTo(Color.HotPink));
+			Assert.IsType<Button>(page.Content);
+			Assert.Equal(Color.HotPink, page.Content.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StaticResourceKeyNotFound()
 		{
 			var xaml = @"
@@ -408,11 +405,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 #pragma warning restore CS0618 // Type or member is obsolete
 
 			var page = (ContentPage)XamlLoader.Create(xaml, true);
-			Assert.That(page.Content, Is.TypeOf<Button>());
-			Assert.That(exceptions.Count, Is.EqualTo(2));
+			Assert.IsType<Button>(page.Content);
+			Assert.Equal(2, exceptions.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void CssStyleAppliedToMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -447,10 +444,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var myButton = (Button)page.Content;
 
-			Assert.That(myButton.BackgroundColor, Is.EqualTo(Color.Blue));
+			Assert.Equal(Color.Blue, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void CssStyleTargetingRealTypeNotAppliedToMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -489,11 +486,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var button = ((StackLayout)page.Content).Children[0];
 			var myButton = ((StackLayout)page.Content).Children[1];
 
-			Assert.That(button.BackgroundColor, Is.EqualTo(Color.Red));
-			Assert.That(myButton.BackgroundColor, Is.Not.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, button.BackgroundColor);
+			Assert.NotEqual(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void CssStyleTargetingMissingTypeNotAppliedToFallbackType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -522,10 +519,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var myButton = (Button)page.Content;
 
-			Assert.That(myButton.BackgroundColor, Is.Not.EqualTo(Color.Blue));
+			Assert.NotEqual(Color.Blue, myButton.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void CanProvideInstanceWhenInstantiationThrows()
 		{
 			var xaml = @"
@@ -554,7 +551,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.DoesNotThrow(() => XamlLoader.Create(xaml, true));
 		}
 
-		[Test]
+		[Fact]
 		public void CanProvideInstanceWhenReplacedTypeConstructorInvalid()
 		{
 			var xaml = @"
@@ -570,7 +567,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.DoesNotThrow(() => XamlLoader.Create(xaml, true));
 		}
 
-		[Test]
+		[Fact]
 		public void CanIgnoreSettingPropertyThatThrows()
 		{
 			var xaml = @"
@@ -585,10 +582,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Xamarin.Forms.Internals.ResourceLoader.ExceptionHandler = exceptions.Add;
 #pragma warning restore CS0618 // Type or member is obsolete
 			Assert.DoesNotThrow(() => XamlLoader.Create(xaml, true));
-			Assert.That(exceptions.Count, Is.EqualTo(2));
+			Assert.Equal(2, exceptions.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void IgnoreConverterException()
 		{
 			var xaml = @"
@@ -603,10 +600,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Xamarin.Forms.Internals.ResourceLoader.ExceptionHandler = exceptions.Add;
 #pragma warning restore CS0618 // Type or member is obsolete
 			Assert.DoesNotThrow(() => XamlLoader.Create(xaml, true));
-			Assert.That(exceptions.Count, Is.EqualTo(1));
+			Assert.Equal(1, exceptions.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void IgnoreMarkupExtensionException()
 		{
 			var xaml = @"
@@ -627,7 +624,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.That(exceptions.Count, Is.GreaterThan(1));
 		}
 
-		[Test]
+		[Fact]
 		public void CanResolveRootNode()
 		{
 			string assemblyName = null;
@@ -649,12 +646,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 						</local:MissingType>";
 
 			XamlLoader.Create(xaml, true);
-			Assert.That(assemblyName, Is.EqualTo("my.assembly"));
-			Assert.That(clrNamespace, Is.EqualTo("my.namespace"));
-			Assert.That(typeName, Is.EqualTo("MissingType"));
+			Assert.Equal("my.assembly", assemblyName);
+			Assert.Equal("my.namespace", clrNamespace);
+			Assert.Equal("MissingType", typeName);
 		}
 
-		[Test]
+		[Fact]
 		public void CanResolveRootNodeWithoutAssembly()
 		{
 			string assemblyName = null;
@@ -676,12 +673,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 						</local:MissingType>";
 
 			XamlLoader.Create(xaml, true);
-			Assert.That(assemblyName, Is.EqualTo(null));
-			Assert.That(clrNamespace, Is.EqualTo("my.namespace"));
-			Assert.That(typeName, Is.EqualTo("MissingType"));
+			Assert.Equal(null, assemblyName);
+			Assert.Equal("my.namespace", clrNamespace);
+			Assert.Equal("MissingType", typeName);
 		}
 
-		[Test]
+		[Fact]
 		public void IgnoreNamedMissingTypeException()
 		{
 			var xaml = @"
@@ -702,7 +699,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.That(exceptions.Count, Is.GreaterThan(1));
 		}
 
-		[Test]
+		[Fact]
 		public void IgnoreFindByNameInvalidCastException()
 		{
 			var xaml = @"
@@ -720,7 +717,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.That(exceptions.Count, Is.GreaterThanOrEqualTo(1));
 		}
 
-		[Test]
+		[Fact]
 		public void TextAsRandomContent()
 		{
 			var xaml = @"
@@ -742,7 +739,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.That(exceptions.Count, Is.GreaterThanOrEqualTo(1));
 		}
 
-		[Test]
+		[Fact]
 		public void MissingGenericRootTypeProvidesCorrectTypeName()
 		{
 			var xaml = @"

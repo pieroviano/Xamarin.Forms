@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
@@ -16,23 +17,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void DataTriggerInTemplates(bool useCompiledXaml)
 			{
 				var layout = new Bz28719(useCompiledXaml);
@@ -44,10 +42,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(image0);
 
 				cell0.BindingContext = new { IsSelected = true };
-				Assert.AreEqual("Remove.png", (image0.Source as FileImageSource)?.File);
+				Assert.Equal("Remove.png", (image0.Source as FileImageSource)?.File);
 
 				cell0.BindingContext = new { IsSelected = false };
-				Assert.AreEqual("Add.png", (image0.Source as FileImageSource)?.File);
+				Assert.Equal("Add.png", (image0.Source as FileImageSource)?.File);
 
 				var cell1 = template.CreateContent() as ViewCell;
 				Assert.NotNull(cell1);
@@ -55,10 +53,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(image1);
 
 				cell1.BindingContext = new { IsSelected = true };
-				Assert.AreEqual("Remove.png", (image1.Source as FileImageSource)?.File);
+				Assert.Equal("Remove.png", (image1.Source as FileImageSource)?.File);
 
 				cell1.BindingContext = new { IsSelected = false };
-				Assert.AreEqual("Add.png", (image1.Source as FileImageSource)?.File);
+				Assert.Equal("Add.png", (image1.Source as FileImageSource)?.File);
 			}
 		}
 	}

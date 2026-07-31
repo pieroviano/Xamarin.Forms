@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -19,10 +19,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[Test]
+			[Fact]
 			public void NoGenericsOnXaml2006()
 			{
 				var xaml = @"
@@ -39,35 +38,35 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Throws(new XamlParseExceptionConstraint(8, 9), () => new ContentPage().LoadFromXaml(xaml));
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void GenericSupportOnXaml2009(bool useCompiledXaml)
 			{
 				var layout = new GenericsTests(useCompiledXaml);
 				Assert.True(layout.Resources.ContainsKey("genericButtonList"));
 				var list = layout.Resources["genericButtonList"];
-				Assert.That(list, Is.TypeOf<List<Button>>());
-				Assert.AreEqual(2, ((List<Button>)list).Count);
+				Assert.IsType<List<Button>>(list);
+				Assert.Equal(2, ((List<Button>)list).Count);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void FindGenericByName(bool useCompiledXaml)
 			{
 				var layout = new GenericsTests(useCompiledXaml);
 				var list = layout.FindByName<List<Button>>("myList");
-				Assert.That(list, Is.Not.Null);
-				Assert.That(list, Is.TypeOf<List<Button>>());
+				Assert.NotNull(list);
+				Assert.IsType<List<Button>>(list);
 
 				var nestedGenericList = layout.TestListMember;
-				Assert.That(nestedGenericList, Is.Not.Null);
+				Assert.NotNull(nestedGenericList);
 				Assert.That(nestedGenericList, Is.TypeOf<List<KeyValuePair<string, string>>>());
 
-				Assert.That(nestedGenericList.Count, Is.EqualTo(1));
+				Assert.Equal(1, nestedGenericList.Count);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void TestGenericParsing(bool useCompiledXaml)
 			{
 				var layout = new GenericsTests(useCompiledXaml);
@@ -76,7 +75,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				var list = layout.Resources["list"];
 				Assert.NotNull(list);
-				Assert.That(list, Is.TypeOf<List<String>>());
+				Assert.IsType<List<String>>(list);
 
 				var dict = layout.Resources["dict"];
 				Assert.NotNull(dict);
@@ -87,14 +86,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.That(queue, Is.TypeOf<List<KeyValuePair<string, string>>>());
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void TestXamlPrimitives(bool useCompiledXaml)
 			{
 				var layout = new GenericsTests(useCompiledXaml);
 				var list = layout.Resources["stringList"];
 				Assert.NotNull(list);
-				Assert.That(list, Is.TypeOf<List<String>>());
+				Assert.IsType<List<String>>(list);
 			}
 		}
 	}

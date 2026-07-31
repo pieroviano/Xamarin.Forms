@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -13,10 +13,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class Issue1501
 	{
-		[Test]
+		[Fact]
 		public void ConnectEventsInGestureRecognizers()
 		{
 			var xaml = @"

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -20,13 +20,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void BindToIntIndexer([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh5254(useCompiledXaml)
@@ -39,7 +38,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 						}
 					}
 				};
-				Assert.That(layout.label.Text, Is.EqualTo("Foo"));
+				Assert.Equal("Foo", layout.label.Text);
 			}
 		}
 	}

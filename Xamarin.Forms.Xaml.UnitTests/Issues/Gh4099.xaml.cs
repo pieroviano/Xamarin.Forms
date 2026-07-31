@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using NUnit.Framework;
+using Xunit;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Build.Tasks;
@@ -22,22 +22,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
+			[InlineData(true)]
 			public void BetterExceptionReport(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
@@ -48,7 +45,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					}
 					catch (BuildException xpe)
 					{
-						Assert.That(xpe.XmlInfo.LineNumber, Is.EqualTo(5));
+						Assert.Equal(5, xpe.XmlInfo.LineNumber);
 						Assert.Pass();
 					}
 					Assert.Fail();

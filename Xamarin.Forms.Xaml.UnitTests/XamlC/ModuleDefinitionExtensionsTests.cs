@@ -1,15 +1,14 @@
-using System;
+﻿using System;
 using Mono.Cecil;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 
 namespace Xamarin.Forms.XamlcUnitTests
 {
-	[TestFixture]
 	public class ModuleDefinitionExtensionsTests
 	{
 		class WithGenericInstanceCtorParameter
-		{
+		: IDisposable{
 			public WithGenericInstanceCtorParameter(Tuple<byte> argument)
 			{
 			}
@@ -22,12 +21,11 @@ namespace Xamarin.Forms.XamlcUnitTests
 		ModuleDefinition module;
 		XamlCAssemblyResolver resolver;
 
-		[SetUp]
-		public void SetUp()
-		{
+		public WithGenericInstanceCtorParameter()
+{
 			resolver = new XamlCAssemblyResolver();
-			resolver.AddAssembly(Uri.UnescapeDataString((new UriBuilder(typeof(ModuleDefinitionExtensionsTests).Assembly.CodeBase)).Path));
-			resolver.AddAssembly(Uri.UnescapeDataString((new UriBuilder(typeof(byte).Assembly.CodeBase)).Path));
+			resolver.AddAssembly(typeof(ModuleDefinitionExtensionsTests).Assembly.Location);
+			resolver.AddAssembly(typeof(byte).Assembly.Location);
 
 			module = ModuleDefinition.CreateModule("foo", new ModuleParameters
 			{
@@ -36,14 +34,13 @@ namespace Xamarin.Forms.XamlcUnitTests
 			});
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			resolver?.Dispose();
 			module?.Dispose();
 		}
 
-		[Test]
+		[Fact]
 		public void TestImportCtorReferenceWithGenericInstanceCtorParameter()
 		{
 			var type = module.ImportReference(typeof(WithGenericInstanceCtorParameter));
@@ -52,11 +49,11 @@ namespace Xamarin.Forms.XamlcUnitTests
 			var int16Tuple = module.ImportReference(typeof(Tuple<short>));
 			var int16TupleCtor = module.ImportCtorReference(type, new[] { int16Tuple });
 
-			Assert.AreEqual("System.Tuple`1<System.Byte>", byteTupleCtor.Parameters[0].ParameterType.FullName);
-			Assert.AreEqual("System.Tuple`1<System.Int16>", int16TupleCtor.Parameters[0].ParameterType.FullName);
+			Assert.Equal("System.Tuple`1<System.Byte>", byteTupleCtor.Parameters[0].ParameterType.FullName);
+			Assert.Equal("System.Tuple`1<System.Int16>", int16TupleCtor.Parameters[0].ParameterType.FullName);
 		}
 
-		[Test]
+		[Fact]
 		public void TestImportCtorReferenceWithGenericInstanceTypeParameter()
 		{
 			var byteTuple = module.ImportReference(typeof(Tuple<byte>));
@@ -64,8 +61,8 @@ namespace Xamarin.Forms.XamlcUnitTests
 			var in16Tuple = module.ImportReference(typeof(Tuple<short>));
 			var int16TupleCtor = module.ImportCtorReference(("mscorlib", "System", "Tuple`1"), 1, new[] { in16Tuple });
 
-			Assert.AreEqual("System.Tuple`1<System.Byte>", ((GenericInstanceType)byteTupleCtor.DeclaringType).GenericArguments[0].FullName);
-			Assert.AreEqual("System.Tuple`1<System.Int16>", ((GenericInstanceType)int16TupleCtor.DeclaringType).GenericArguments[0].FullName);
+			Assert.Equal("System.Tuple`1<System.Byte>", ((GenericInstanceType)byteTupleCtor.DeclaringType).GenericArguments[0].FullName);
+			Assert.Equal("System.Tuple`1<System.Int16>", ((GenericInstanceType)int16TupleCtor.DeclaringType).GenericArguments[0].FullName);
 		}
 	}
 }

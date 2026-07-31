@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Xaml.Diagnostics;
@@ -27,22 +27,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			stack.Children.Insert(index + 1, newLabel);
 		}
 
-		[TestFixture]
 		class Tests
-		{
+		: IDisposable{
 			bool _debuggerinitialstate;
 
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				_debuggerinitialstate = Xamarin.Forms.Xaml.Diagnostics.DebuggerHelper._mockDebuggerIsAttached;
 				DebuggerHelper._mockDebuggerIsAttached = true;
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				DebuggerHelper._mockDebuggerIsAttached = _debuggerinitialstate;
 				Device.PlatformServices = null;
 				VisualDiagnostics.VisualTreeChanged -= OnVTChanged;
@@ -50,12 +47,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			void OnVTChanged(object sender, VisualTreeChangeEventArgs e)
 			{
-				Assert.That(e.ChangeType, Is.EqualTo(VisualTreeChangeType.Remove));
-				Assert.That(e.ChildIndex, Is.EqualTo(0));
+				Assert.Equal(VisualTreeChangeType.Remove, e.ChangeType);
+				Assert.Equal(0, e.ChildIndex);
 				Assert.Pass();
 			}
 
-			[Test]
+			[Fact]
 			public void ChildIndexOnRemove([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh11334(useCompiledXaml);

@@ -1,27 +1,23 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class OnPlatformTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
-		{
-			base.Setup();
+		public OnPlatformTests()
+{
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
-		{
+		public override void Dispose()
+{
 			Device.PlatformServices = null;
-			base.TearDown();
+			base.Dispose();
 		}
 
-		[Test]
+		[Fact]
 		public void ApplyToProperty()
 		{
 			var xaml = @"
@@ -39,7 +35,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.NotNull(layout.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void UseTypeConverters()
 		{
 			var xaml = @"
@@ -65,18 +61,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 			layout = new ContentPage().LoadFromXaml(xaml);
-			Assert.AreEqual(new Thickness(0, 20, 0, 0), layout.Padding);
+			Assert.Equal(new Thickness(0, 20, 0, 0), layout.Padding);
 
 			((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 			layout = new ContentPage().LoadFromXaml(xaml);
-			Assert.AreEqual(new Thickness(0, 0, 10, 0), layout.Padding);
+			Assert.Equal(new Thickness(0, 0, 10, 0), layout.Padding);
 
 			((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.UWP;
 			layout = new ContentPage().LoadFromXaml(xaml);
-			Assert.AreEqual(new Thickness(0, 20, 0, 20), layout.Padding);
+			Assert.Equal(new Thickness(0, 20, 0, 20), layout.Padding);
 		}
 
-		[Test]
+		[Fact]
 		//Issue 1480
 		public void TypeConverterAndDerivedTypes()
 		{
@@ -96,14 +92,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 			image = new Image().LoadFromXaml(xaml);
-			Assert.AreEqual("icon_twitter.png", (image.Source as FileImageSource).File);
+			Assert.Equal("icon_twitter.png", (image.Source as FileImageSource).File);
 		}
 	}
 
-	[TestFixture]
 	public class OnIdiomTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void StackLayoutOrientation()
 		{
 			var xaml = @"
@@ -121,11 +116,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			</StackLayout>";
 			Device.Idiom = TargetIdiom.Phone;
 			var layout = new StackLayout().LoadFromXaml(xaml);
-			Assert.AreEqual(StackOrientation.Vertical, layout.Orientation);
+			Assert.Equal(StackOrientation.Vertical, layout.Orientation);
 
 			Device.Idiom = TargetIdiom.Tablet;
 			layout = new StackLayout().LoadFromXaml(xaml);
-			Assert.AreEqual(StackOrientation.Horizontal, layout.Orientation);
+			Assert.Equal(StackOrientation.Horizontal, layout.Orientation);
 		}
 	}
 }

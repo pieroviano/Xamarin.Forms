@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -34,27 +34,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public IServiceProvider ServiceProvider { get; set; }
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void ServiceProviderIsNullOnAttributedExtensions(bool useCompiledXaml)
 			{
 				var p = new AcceptEmptyServiceProvider(useCompiledXaml);
-				Assert.IsNull(p.ServiceProvider);
+				Assert.Null(p.ServiceProvider);
 			}
 		}
 	}

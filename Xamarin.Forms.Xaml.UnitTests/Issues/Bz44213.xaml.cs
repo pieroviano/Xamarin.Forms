@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -15,33 +16,30 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void BindingInOnPlatform(bool useCompiledXaml)
 			{
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.iOS;
 				var p = new Bz44213(useCompiledXaml);
 				p.BindingContext = new { Foo = "Foo", Bar = "Bar" };
-				Assert.AreEqual("Foo", p.label.Text);
+				Assert.Equal("Foo", p.label.Text);
 				((MockPlatformServices)Device.PlatformServices).RuntimePlatform = Device.Android;
 				p = new Bz44213(useCompiledXaml);
 				p.BindingContext = new { Foo = "Foo", Bar = "Bar" };
-				Assert.AreEqual("Bar", p.label.Text);
+				Assert.Equal("Bar", p.label.Text);
 			}
 		}
 	}

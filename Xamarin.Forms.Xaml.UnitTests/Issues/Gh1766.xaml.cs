@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,28 +18,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void CSSPropertiesNotInerited(bool useCompiledXaml)
 			{
 				var layout = new Gh1766(useCompiledXaml);
-				Assert.That(layout.stack.BackgroundColor, Is.EqualTo(Color.Pink));
-				Assert.That(layout.entry.BackgroundColor, Is.EqualTo(VisualElement.BackgroundColorProperty.DefaultValue));
+				Assert.Equal(Color.Pink, layout.stack.BackgroundColor);
+				Assert.Equal(VisualElement.BackgroundColorProperty.DefaultValue, layout.entry.BackgroundColor);
 			}
 		}
 	}

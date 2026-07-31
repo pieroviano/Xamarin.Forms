@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,23 +18,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ValueIsConverted(bool useCompiledXaml)
 			{
 				var layout = new TriggerTests(useCompiledXaml);
@@ -42,14 +39,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(entry);
 
 				var triggers = entry.Triggers;
-				Assert.IsNotEmpty(triggers);
+				Assert.NotEmpty(triggers);
 				var pwTrigger = triggers[0] as Trigger;
-				Assert.AreEqual(Entry.IsPasswordProperty, pwTrigger.Property);
-				Assert.AreEqual(true, pwTrigger.Value);
+				Assert.Equal(Entry.IsPasswordProperty, pwTrigger.Property);
+				Assert.Equal(true, pwTrigger.Value);
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ValueIsConvertedWithPropertyCondition(bool useCompiledXaml)
 			{
 				var layout = new TriggerTests(useCompiledXaml);
@@ -57,11 +54,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.NotNull(entry);
 
 				var triggers = entry.Triggers;
-				Assert.IsNotEmpty(triggers);
+				Assert.NotEmpty(triggers);
 				var pwTrigger = triggers[0] as MultiTrigger;
 				var pwCondition = pwTrigger.Conditions[0] as PropertyCondition;
-				Assert.AreEqual(Entry.IsPasswordProperty, pwCondition.Property);
-				Assert.AreEqual(true, pwCondition.Value);
+				Assert.Equal(Entry.IsPasswordProperty, pwCondition.Property);
+				Assert.Equal(true, pwCondition.Value);
 			}
 		}
 	}

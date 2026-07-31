@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -35,27 +35,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void AssignContentWithNoContentAttributeDoesNotThrow(bool useCompiledXaml)
 			{
 				var layout = new Gh3260(useCompiledXaml);
-				Assert.That(layout.mylayout.Children.Count, Is.EqualTo(1));
-				Assert.That(layout.mylayout.Children[0], Is.EqualTo(layout.label));
+				Assert.Equal(1, layout.mylayout.Children.Count);
+				Assert.Equal(layout.label, layout.mylayout.Children[0]);
 			}
 		}
 	}

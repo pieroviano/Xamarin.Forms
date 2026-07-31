@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 using Xamarin.Forms;
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -21,11 +21,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class SetterOnNonBPTests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ShouldThrow(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using NUnit.Framework;
+using Xunit;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
@@ -28,22 +28,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void BindingThrowsOnWrongConverterParameter(bool useCompiledXaml)
 			{
 				Assert.DoesNotThrow(() => new Gh4446(useCompiledXaml) { BindingContext = new Gh4446Item { Text = null } });

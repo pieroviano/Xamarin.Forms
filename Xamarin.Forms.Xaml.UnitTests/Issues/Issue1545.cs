@@ -1,24 +1,22 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1545
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public Issue1545()
+{
 			Device.PlatformServices = new MockPlatformServices { RuntimePlatform = Device.iOS };
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void BindingCanNotBeReused()
 		{
 			string xaml = @"<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
@@ -41,13 +39,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			ListView lv = page.FindByName<ListView>("List");
 
 			TextCell cell = (TextCell)lv.TemplatedItems.GetOrCreateContent(0, items[0]);
-			Assert.That(cell.Text, Is.EqualTo("Fu"));
+			Assert.Equal("Fu", cell.Text);
 
 			cell = (TextCell)lv.TemplatedItems.GetOrCreateContent(1, items[1]);
-			Assert.That(cell.Text, Is.EqualTo("Bar"));
+			Assert.Equal("Bar", cell.Text);
 		}
 
-		[Test]
+		[Fact]
 		public void ElementsCanNotBeReused()
 		{
 			string xaml = @"<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
@@ -82,18 +80,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			ViewCell cell0 = (ViewCell)lv.TemplatedItems.GetOrCreateContent(0, items[0]);
 
 
-			Assert.That(((Label)((StackLayout)cell0.View).Children[0]).Text, Is.EqualTo("Fu"));
+			Assert.Equal("Fu", ((Label)((StackLayout)cell0.View).Children[0]).Text);
 
 			ViewCell cell1 = (ViewCell)lv.TemplatedItems.GetOrCreateContent(1, items[1]);
-			Assert.That(((Label)((StackLayout)cell1.View).Children[0]).Text, Is.EqualTo("Bar"));
+			Assert.Equal("Bar", ((Label)((StackLayout)cell1.View).Children[0]).Text);
 
-			Assert.AreNotSame(cell0, cell1);
-			Assert.AreNotSame(cell0.View, cell1.View);
-			Assert.AreNotSame(((StackLayout)cell0.View).Children[0], ((StackLayout)cell1.View).Children[0]);
-			Assert.AreEqual(Color.FromHex("ff00aa"), ((StackLayout)cell1.View).Children[0].BackgroundColor);
+			Assert.NotSame(cell0, cell1);
+			Assert.NotSame(cell0.View, cell1.View);
+			Assert.NotSame(((StackLayout)cell0.View).Children[0], ((StackLayout)cell1.View).Children[0]);
+			Assert.Equal(Color.FromHex("ff00aa"), ((StackLayout)cell1.View).Children[0].BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void ElementsFromCollectionsAreNotReused()
 		{
 			var xaml = @"<ListView 
@@ -122,13 +120,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var cell0 = (ViewCellWithCollection)listview.TemplatedItems.GetOrCreateContent(0, items[0]);
 			var cell1 = (ViewCellWithCollection)listview.TemplatedItems.GetOrCreateContent(1, items[1]);
 
-			Assert.AreNotSame(cell0, cell1);
-			Assert.AreNotSame(cell0.Children, cell1.Children);
-			Assert.AreNotSame(cell0.Children[0], cell1.Children[0]);
+			Assert.NotSame(cell0, cell1);
+			Assert.NotSame(cell0.Children, cell1.Children);
+			Assert.NotSame(cell0.Children[0], cell1.Children[0]);
 
 		}
 
-		[Test]
+		[Fact]
 		public void ResourcesDeclaredInDataTemplatesAreNotShared()
 		{
 			var xaml = @"<ListView 
@@ -158,17 +156,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			listview.LoadFromXaml(xaml);
 			var cell0 = (ViewCell)listview.TemplatedItems.GetOrCreateContent(0, items[0]);
 			var cell1 = (ViewCell)listview.TemplatedItems.GetOrCreateContent(1, items[1]);
-			Assert.AreNotSame(cell0, cell1);
+			Assert.NotSame(cell0, cell1);
 
 			var label0 = (Label)cell0.View;
 			var label1 = (Label)cell1.View;
-			Assert.AreNotSame(label0, label1);
-			Assert.AreEqual("Foo", label0.Text);
-			Assert.AreEqual("Bar", label1.Text);
+			Assert.NotSame(label0, label1);
+			Assert.Equal("Foo", label0.Text);
+			Assert.Equal("Bar", label1.Text);
 
 			var res0 = label0.Resources;
 			var res1 = label1.Resources;
-			Assert.AreNotSame(res0, res1);
+			Assert.NotSame(res0, res1);
 
 			var obj0 = res0["object"];
 			var obj1 = res1["object"];
@@ -176,7 +174,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.NotNull(obj0);
 			Assert.NotNull(obj1);
 
-			Assert.AreNotSame(obj0, obj1);
+			Assert.NotSame(obj0, obj1);
 		}
 	}
 

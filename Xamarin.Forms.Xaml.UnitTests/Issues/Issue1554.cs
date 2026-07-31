@@ -1,25 +1,22 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1554
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public Issue1554()
+{
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void CollectionItemsInDataTemplate()
 		{
 			var xaml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -57,10 +54,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				cell1 = (ViewCell)listview.TemplatedItems.GetOrCreateContent(1, items[1]);
 			});
 
-			Assert.AreNotSame(cell0, cell1);
-			Assert.AreNotSame(cell0.View, cell1.View);
-			Assert.AreNotSame(((StackLayout)cell0.View).Children[0], ((StackLayout)cell1.View).Children[0]);
-			Assert.AreNotSame(((StackLayout)cell0.View).Children[1], ((StackLayout)cell1.View).Children[1]);
+			Assert.NotSame(cell0, cell1);
+			Assert.NotSame(cell0.View, cell1.View);
+			Assert.NotSame(((StackLayout)cell0.View).Children[0], ((StackLayout)cell1.View).Children[0]);
+			Assert.NotSame(((StackLayout)cell0.View).Children[1], ((StackLayout)cell1.View).Children[1]);
 
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
@@ -19,30 +19,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void RelativeSourceSelfBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);
 				var label = view.FindByName<Label>("SelfBindingLabel");
-				Assert.AreEqual(label.Text, label.StyleId);
+				Assert.Equal(label.Text, label.StyleId);
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void RelativeSourceAncestorLevelBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);
@@ -53,19 +50,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var level3Label = view.FindByName<Label>("AncestorLevel3Label");
 				var ancestorBindingContextLabel = view.FindByName<Label>("AncestorBindingContextLabel");
 
-				Assert.AreEqual(level1Label.Text, stack1.StyleId);
-				Assert.AreEqual(level2Label.Text, stack0.StyleId);
-				Assert.AreEqual(ancestorBindingContextLabel.Text, "Foo");
-				Assert.IsNull(level3Label.Text);
+				Assert.Equal(level1Label.Text, stack1.StyleId);
+				Assert.Equal(level2Label.Text, stack0.StyleId);
+				Assert.Equal(ancestorBindingContextLabel.Text, "Foo");
+				Assert.Null(level3Label.Text);
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void RelativeSourceTemplatedParentBinding(bool useCompiledXaml)
 			{
 				var view = new Gh3847(useCompiledXaml);
 				var cv = view.FindByName<ContentView>("contentView");
 				var label = cv.Children[0] as Label;
-				Assert.AreEqual(label.Text, cv.StyleId);
+				Assert.Equal(label.Text, cv.StyleId);
 			}
 		}
 	}

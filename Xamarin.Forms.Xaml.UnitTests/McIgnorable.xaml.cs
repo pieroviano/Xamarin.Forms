@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -15,11 +15,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void DoesNotThrow(bool useCompiledXaml)
 			{
 				var layout = new McIgnorable(useCompiledXaml);

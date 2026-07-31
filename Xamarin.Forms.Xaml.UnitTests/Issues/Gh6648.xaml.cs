@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -14,25 +14,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void DoesntFailOnNullDataType([Values(true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh6648)));
 			}
 
-			[Test]
+			[Fact]
 			public void BindingsOnxNullDataTypeWorks([Values(true, false)] bool useCompiledXaml)
 			{
 				var layout = new Gh6648(useCompiledXaml);
 				layout.stack.BindingContext = new { foo = "Foo" };
-				Assert.That(layout.label.Text, Is.EqualTo("Foo"));
+				Assert.Equal("Foo", layout.label.Text);
 			}
 		}
 	}

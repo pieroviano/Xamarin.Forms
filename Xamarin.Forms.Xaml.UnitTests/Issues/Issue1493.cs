@@ -1,30 +1,27 @@
 ﻿using System;
 using System.Globalization;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1493
-	{
+	: IDisposable{
 		CultureInfo _defaultCulture;
-		[SetUp]
-		public virtual void Setup()
-		{
+		public Issue1493()
+{
 			_defaultCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
 
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public virtual void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 			System.Threading.Thread.CurrentThread.CurrentCulture = _defaultCulture;
 		}
 
-		[TestCase("en-US"), TestCase("tr-TR"), TestCase("fr-FR")]
+		[InlineData("en-US"), TestCase("tr-TR"), TestCase("fr-FR")]
 		//mostly happens in european cultures
 		public void CultureInvariantNumberParsing(string culture)
 		{

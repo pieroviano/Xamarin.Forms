@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -13,18 +14,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			InitializeComponent();
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 #pragma warning disable 0618
 				Internals.XamlLoader.XamlFileProvider = null;
@@ -32,14 +30,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			}
 
-			[Test]
+			[Fact]
 			public void ShouldBeCompiled()
 			{
 				var p = new DefaultCtorRouting2();
 				Assert.True(p.IsCompiled);
 			}
 
-			[Test]
+			[Fact]
 			public void ShouldntBeCompiled()
 			{
 #pragma warning disable 0618

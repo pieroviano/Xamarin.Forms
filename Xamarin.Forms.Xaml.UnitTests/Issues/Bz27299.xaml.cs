@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -38,30 +38,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void SetUp()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Bz27299ViewModelLocator.Count = 0;
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void ViewModelLocatorOnlyCalledOnce(bool useCompiledXaml)
 			{
-				Assert.AreEqual(0, Bz27299ViewModelLocator.Count);
+				Assert.Equal(0, Bz27299ViewModelLocator.Count);
 				var layout = new Bz27299(useCompiledXaml);
-				Assert.AreEqual(1, Bz27299ViewModelLocator.Count);
-				Assert.AreEqual("Foo", layout.label.Text);
+				Assert.Equal(1, Bz27299ViewModelLocator.Count);
+				Assert.Equal("Foo", layout.label.Text);
 			}
 		}
 	}

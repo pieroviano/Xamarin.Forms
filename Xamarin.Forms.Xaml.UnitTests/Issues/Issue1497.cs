@@ -1,25 +1,22 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1497
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public Issue1497()
+{
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void BPCollectionsWithSingleElement()
 		{
 			var xaml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
@@ -32,7 +29,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					    </Grid>";
 
 			var grid = new Grid().LoadFromXaml(xaml);
-			Assert.AreEqual(1, grid.ColumnDefinitions.Count);
+			Assert.Equal(1, grid.ColumnDefinitions.Count);
 			Assert.True(grid.ColumnDefinitions[0].Width.IsStar);
 		}
 	}

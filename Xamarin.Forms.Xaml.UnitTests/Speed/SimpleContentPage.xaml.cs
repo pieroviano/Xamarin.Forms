@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -35,16 +35,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[Test]
+			[Fact]
 			[Ignore(nameof(XamlCIs20TimesFasterThanXaml))]
 			public void XamlCIs20TimesFasterThanXaml()
 			{
@@ -64,7 +62,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				Assert.Less(swXamlC.ElapsedMilliseconds * 20, swXaml.ElapsedMilliseconds);
 			}
 
-			[Test]
+			[Fact]
 			[Ignore(nameof(XamlCIsNotMuchSlowerThanCode))]
 			public void XamlCIsNotMuchSlowerThanCode()
 			{

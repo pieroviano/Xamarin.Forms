@@ -1,22 +1,19 @@
-using System;
+﻿using System;
 using System.Reflection;
 using System.Xml;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
 
-	[TestFixture]
 	public class TypeExtensionTests : BaseTestFixture
 	{
 		IXamlTypeResolver typeResolver;
 		Internals.XamlServiceProvider serviceProvider;
 
-		[SetUp]
-		public override void Setup()
-		{
-			base.Setup();
+		public TypeExtensionTests()
+{
 			var nsManager = new XmlNamespaceManager(new NameTable());
 			nsManager.AddNamespace("", "http://xamarin.com/schemas/2014/forms");
 			nsManager.AddNamespace("local", "clr-namespace:Xamarin.Forms.Xaml.UnitTests;assembly=Xamarin.Forms.Xaml.UnitTests");
@@ -31,25 +28,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 		}
 
-		[Test]
+		[Fact]
 		public void TestxType()
 		{
 			var markupString = @"{x:Type sys:String}";
-			Assert.AreEqual(typeof(string), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
+			Assert.Equal(typeof(string), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
 		}
 
-		[Test]
+		[Fact]
 		public void TestWithoutPrefix()
 		{
 			var markupString = @"{x:Type Grid}";
-			Assert.AreEqual(typeof(Grid), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
+			Assert.Equal(typeof(Grid), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
 		}
 
-		[Test]
+		[Fact]
 		public void TestWithExplicitTypeName()
 		{
 			var markupString = @"{x:Type TypeName=sys:String}";
-			Assert.AreEqual(typeof(string), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
+			Assert.Equal(typeof(string), (new MarkupExtensionParser()).ParseExpression(ref markupString, serviceProvider));
 		}
 	}
 }

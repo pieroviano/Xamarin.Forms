@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -58,13 +58,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void CompileBindingWithIndexer([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
@@ -72,9 +71,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 				var vm = new Gh5510VM();
 				var layout = new Gh5510(useCompiledXaml) { BindingContext = vm };
-				Assert.That(layout.entry.TextColor, Is.EqualTo(Color.Red));
+				Assert.Equal(Color.Red, layout.entry.TextColor);
 				vm.ClearErrorForPerson();
-				Assert.That(layout.entry.TextColor, Is.EqualTo(Color.Black));
+				Assert.Equal(Color.Black, layout.entry.TextColor);
 			}
 		}
 	}

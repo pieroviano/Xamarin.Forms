@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -16,20 +16,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void GenericBPCompiles([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					MockCompiler.Compile(typeof(Gh7559));
 				var layout = new Gh7559(useCompiledXaml);
 				var value = Gh7559Generic<Gh7559Enum>.GetIcon(layout);
-				Assert.That(value, Is.EqualTo(Gh7559Enum.LetterA));
+				Assert.Equal(Gh7559Enum.LetterA, value);
 			}
 		}
 	}

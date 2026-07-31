@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -17,27 +17,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices { RuntimePlatform = Device.iOS };
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void ConstraintsAreEvaluatedWithOnPlatform(bool useCompiledXaml)
 			{
 				var page = new Unreported007(useCompiledXaml);
-				Assert.That(RelativeLayout.GetXConstraint(page.label), Is.TypeOf<Constraint>());
-				Assert.AreEqual(3, RelativeLayout.GetXConstraint(page.label).Compute(null));
+				Assert.IsType<Constraint>(RelativeLayout.GetXConstraint(page.label));
+				Assert.Equal(3, RelativeLayout.GetXConstraint(page.label).Compute(null));
 			}
 		}
 	}

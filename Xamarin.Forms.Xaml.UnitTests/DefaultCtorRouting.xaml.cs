@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Build.Tasks;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Xaml;
@@ -20,22 +20,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			InitializeComponent();
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[Test]
+			[Fact]
 			public void ShouldntBeCompiled()
 			{
 				var p = new DefaultCtorRouting();

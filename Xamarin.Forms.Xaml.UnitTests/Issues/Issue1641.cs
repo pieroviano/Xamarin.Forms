@@ -1,12 +1,11 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class Issue1641
 	{
-		[Test]
+		[Fact]
 		public void StaticResourceInTableView()
 		{
 			var xaml = @"
@@ -29,8 +28,8 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</ContentPage>";
 			var page = new ContentPage().LoadFromXaml(xaml);
 			var table = page.Content as TableView;
-			Assert.AreEqual("Hello there!", page.Resources["caption"] as string);
-			Assert.AreEqual("Hello there!", (table.Root[0][0] as TextCell).Text);
+			Assert.Equal("Hello there!", page.Resources["caption"] as string);
+			Assert.Equal("Hello there!", (table.Root[0][0] as TextCell).Text);
 
 		}
 	}

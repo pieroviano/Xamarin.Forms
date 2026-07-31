@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -21,20 +21,19 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void BindingWithMultipleIndexers([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					MockCompiler.Compile(typeof(Gh8221));
 				var layout = new Gh8221(useCompiledXaml) { BindingContext = new Gh8221VM() };
-				Assert.That(layout.entryone.Text, Is.EqualTo("One"));
-				Assert.That(layout.entrytwo.Text, Is.EqualTo("Two"));
+				Assert.Equal("One", layout.entryone.Text);
+				Assert.Equal("Two", layout.entrytwo.Text);
 			}
 		}
 	}

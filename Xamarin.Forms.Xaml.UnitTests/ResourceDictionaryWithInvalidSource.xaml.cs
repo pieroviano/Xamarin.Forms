@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -18,20 +18,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		[TestFixtureAttribute]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void InvalidSourceThrows(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

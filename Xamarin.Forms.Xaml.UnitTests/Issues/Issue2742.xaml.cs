@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -23,21 +23,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		}
 
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void ToolBarItemsOnContentPageInheritors(bool useCompiledXaml)
 			{
 				var layout = new Issue2742(useCompiledXaml);
-				Assert.That(layout.Content, Is.TypeOf<Label>());
-				Assert.AreEqual("test", ((Label)layout.Content).Text);
+				Assert.IsType<Label>(layout.Content);
+				Assert.Equal("test", ((Label)layout.Content).Text);
 
 				Assert.NotNull(layout.ToolbarItems);
-				Assert.AreEqual(2, layout.ToolbarItems.Count);
+				Assert.Equal(2, layout.ToolbarItems.Count);
 #pragma warning disable 618
-				Assert.AreEqual("One", layout.ToolbarItems[0].Name);
+				Assert.Equal("One", layout.ToolbarItems[0].Name);
 #pragma warning restore 618
 			}
 		}

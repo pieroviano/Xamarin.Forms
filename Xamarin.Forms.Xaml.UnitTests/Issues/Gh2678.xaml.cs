@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -16,26 +16,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			}
 
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void StyleClassCanBeChanged([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh2678(useCompiledXaml);
 				var label = layout.label0;
-				Assert.That(label.BackgroundColor, Is.EqualTo(Color.Red));
+				Assert.Equal(Color.Red, label.BackgroundColor);
 				label.StyleClass = new List<string> { "two" };
-				Assert.That(label.BackgroundColor, Is.EqualTo(Color.Green));
+				Assert.Equal(Color.Green, label.BackgroundColor);
 			}
 		}
 	}

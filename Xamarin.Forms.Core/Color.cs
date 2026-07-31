@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -464,7 +464,6 @@ namespace Xamarin.Forms
 			return FromHsva(h / 360d, s / 100d, v / 100d, 1d);
 		}
 
-#if !NETSTANDARD1_0
 		public static implicit operator System.Drawing.Color(Color color)
 		{
 			if (color.IsDefault)
@@ -478,7 +477,6 @@ namespace Xamarin.Forms
 				return Color.Default;
 			return FromRgba(color.R, color.G, color.B, color.A);
 		}
-#endif
 		#region Color Definitions
 
 		// matches colors in WPF's System.Windows.Media.Colors

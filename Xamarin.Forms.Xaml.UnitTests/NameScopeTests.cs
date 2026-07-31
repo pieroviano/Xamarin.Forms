@@ -1,14 +1,13 @@
-using NUnit.Framework;
+﻿using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
 
-	[TestFixture]
 	public class NameScopeTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TopLevelObjectsHaveANameScope()
 		{
 			var xaml = @"
@@ -18,11 +17,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var view = new CustomView().LoadFromXaml(xaml);
 
-			Assert.IsNotNull(Forms.Internals.NameScope.GetNameScope(view));
-			Assert.That(Forms.Internals.NameScope.GetNameScope(view), Is.TypeOf<Forms.Internals.NameScope>());
+			Assert.NotNull(Forms.Internals.NameScope.GetNameScope(view));
+			Assert.IsType<Forms.Internals.NameScope>(Forms.Internals.NameScope.GetNameScope(view));
 		}
 
-		[Test]
+		[Fact]
 		public void NameScopeAreSharedWithChildren()
 		{
 			var xaml = @"
@@ -35,17 +34,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var layout = new StackLayout().LoadFromXaml(xaml);
 
-			Assert.IsNotNull(Forms.Internals.NameScope.GetNameScope(layout));
-			Assert.That(Forms.Internals.NameScope.GetNameScope(layout), Is.TypeOf<Forms.Internals.NameScope>());
+			Assert.NotNull(Forms.Internals.NameScope.GetNameScope(layout));
+			Assert.IsType<Forms.Internals.NameScope>(Forms.Internals.NameScope.GetNameScope(layout));
 
 			foreach (var child in layout.Children)
 			{
-				Assert.IsNull(Forms.Internals.NameScope.GetNameScope(child));
-				Assert.AreSame(Forms.Internals.NameScope.GetNameScope(layout), child.GetNameScope());
+				Assert.Null(Forms.Internals.NameScope.GetNameScope(child));
+				Assert.Same(Forms.Internals.NameScope.GetNameScope(layout), child.GetNameScope());
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void DataTemplateChildrenDoesNotParticipateToParentNameScope()
 		{
 			var xaml = @"
@@ -63,11 +62,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			var listview = new ListView();
 			listview.LoadFromXaml(xaml);
 
-			Assert.AreSame(listview, ((Forms.Internals.INameScope)listview).FindByName("listview"));
-			Assert.IsNull(((Forms.Internals.INameScope)listview).FindByName("textcell"));
+			Assert.Same(listview, ((Forms.Internals.INameScope)listview).FindByName("listview"));
+			Assert.Null(((Forms.Internals.INameScope)listview).FindByName("textcell"));
 		}
 
-		[Test]
+		[Fact]
 		public void ElementsCreatedFromDataTemplateHaveTheirOwnNameScope()
 		{
 			var xaml = @"
@@ -84,26 +83,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			var listview = new ListView();
 			listview.LoadFromXaml(xaml);
-			Assert.IsNotNull(Forms.Internals.NameScope.GetNameScope(listview));
-			Assert.That(Forms.Internals.NameScope.GetNameScope(listview), Is.TypeOf<Forms.Internals.NameScope>());
+			Assert.NotNull(Forms.Internals.NameScope.GetNameScope(listview));
+			Assert.IsType<Forms.Internals.NameScope>(Forms.Internals.NameScope.GetNameScope(listview));
 
 			var cell0 = listview.ItemTemplate.CreateContent() as Element;
 			var cell1 = listview.ItemTemplate.CreateContent() as Element;
 
-			Assert.IsNotNull(Forms.Internals.NameScope.GetNameScope(cell0));
-			Assert.That(Forms.Internals.NameScope.GetNameScope(cell0), Is.TypeOf<Forms.Internals.NameScope>());
-			Assert.IsNotNull(Forms.Internals.NameScope.GetNameScope(cell1));
-			Assert.That(Forms.Internals.NameScope.GetNameScope(cell1), Is.TypeOf<Forms.Internals.NameScope>());
+			Assert.NotNull(Forms.Internals.NameScope.GetNameScope(cell0));
+			Assert.IsType<Forms.Internals.NameScope>(Forms.Internals.NameScope.GetNameScope(cell0));
+			Assert.NotNull(Forms.Internals.NameScope.GetNameScope(cell1));
+			Assert.IsType<Forms.Internals.NameScope>(Forms.Internals.NameScope.GetNameScope(cell1));
 
-			Assert.AreNotSame(Forms.Internals.NameScope.GetNameScope(listview), Forms.Internals.NameScope.GetNameScope(cell0));
-			Assert.AreNotSame(Forms.Internals.NameScope.GetNameScope(listview), Forms.Internals.NameScope.GetNameScope(cell1));
-			Assert.AreNotSame(Forms.Internals.NameScope.GetNameScope(cell0), Forms.Internals.NameScope.GetNameScope(cell1));
+			Assert.NotSame(Forms.Internals.NameScope.GetNameScope(listview), Forms.Internals.NameScope.GetNameScope(cell0));
+			Assert.NotSame(Forms.Internals.NameScope.GetNameScope(listview), Forms.Internals.NameScope.GetNameScope(cell1));
+			Assert.NotSame(Forms.Internals.NameScope.GetNameScope(cell0), Forms.Internals.NameScope.GetNameScope(cell1));
 
-			Assert.IsNull(((Forms.Internals.INameScope)listview).FindByName("textcell"));
+			Assert.Null(((Forms.Internals.INameScope)listview).FindByName("textcell"));
 			Assert.NotNull(((Forms.Internals.INameScope)cell0).FindByName("textcell"));
 			Assert.NotNull(((Forms.Internals.INameScope)cell1).FindByName("textcell"));
 
-			Assert.AreNotSame(((Forms.Internals.INameScope)cell0).FindByName("textcell"), ((Forms.Internals.INameScope)cell1).FindByName("textcell"));
+			Assert.NotSame(((Forms.Internals.INameScope)cell0).FindByName("textcell"), ((Forms.Internals.INameScope)cell1).FindByName("textcell"));
 
 		}
 	}

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -28,27 +28,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			set { SetValue(ListProperty, value); }
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void LookForInheritanceOnOpImplicit(bool useCompiledXaml)
 			{
 				var p = new Bz45891(useCompiledXaml);
-				Assert.AreEqual("Foo", p.List.First());
+				Assert.Equal("Foo", p.List.First());
 			}
 		}
 	}

@@ -94,9 +94,50 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
+			// Must happen before base, which triggers the Forms layout pass:
+			// FlyoutPage.LayoutChildren lays Flyout/Detail out from these two rectangles.
+			UpdateFlyoutPageBounds(allocation);
+
 			base.OnSizeAllocated(allocation);
 
 			Control?.Content?.SetSize(allocation.Width, allocation.Height);
+		}
+
+		/// <summary>
+		/// Reports the flyout/detail geometry back to Forms.
+		/// </summary>
+		/// <remarks>
+		/// <see cref="FlyoutPage.LayoutChildren"/> lays its two children out from
+		/// <c>IFlyoutPageController.FlyoutBounds</c>/<c>DetailBounds</c>, which the platform
+		/// owns - the Android and iOS renderers both set them. The GTK renderer never did,
+		/// so Detail kept whatever size it happened to be measured at (194x200 for the
+		/// ControlGallery) regardless of the window size, and its content painted over the
+		/// rest of the page.
+		///
+		/// The rectangles deliberately mirror what Controls.FlyoutPage does to the native
+		/// widgets in RefreshFlyoutLayoutBehavior, so the Forms-side and GTK-side geometry
+		/// agree instead of fighting.
+		/// </remarks>
+		void UpdateFlyoutPageBounds(Gdk.Rectangle allocation)
+		{
+			if (!(Element is IFlyoutPageController controller))
+				return;
+
+			// Both setters throw until Flyout and Detail are assigned.
+			if (Page?.Flyout == null || Page?.Detail == null)
+				return;
+
+			double width = allocation.Width;
+			double height = allocation.Height;
+			double flyoutWidth = Controls.FlyoutPage.DefaultFlyoutWidth;
+
+			controller.FlyoutBounds = new Rectangle(0, 0, flyoutWidth, height);
+
+			// Split keeps the flyout permanently on screen, so the detail is inset by it;
+			// Popover/Default overlay the flyout, so the detail spans the full width.
+			controller.DetailBounds = controller.ShouldShowSplitMode
+				? new Rectangle(flyoutWidth, 0, Math.Max(0, width - flyoutWidth), height)
+				: new Rectangle(0, 0, width, height);
 		}
 
 		protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)

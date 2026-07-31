@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,30 +18,28 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void TestSwitches(bool useCompiledXaml)
 			{
 				var page = new Issue2016(useCompiledXaml);
-				Assert.AreEqual(false, page.a0.IsToggled);
-				Assert.AreEqual(false, page.b0.IsToggled);
-				Assert.AreEqual(false, page.s0.IsToggled);
-				Assert.AreEqual(false, page.t0.IsToggled);
+				Assert.Equal(false, page.a0.IsToggled);
+				Assert.Equal(false, page.b0.IsToggled);
+				Assert.Equal(false, page.s0.IsToggled);
+				Assert.Equal(false, page.t0.IsToggled);
 
 				page.a0.IsToggled = true;
 				page.b0.IsToggled = true;
 
-				Assert.AreEqual(true, page.s0.IsToggled);
-				Assert.AreEqual(true, page.t0.IsToggled);
+				Assert.Equal(true, page.s0.IsToggled);
+				Assert.Equal(true, page.t0.IsToggled);
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Internals;
@@ -235,18 +235,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void SetUp()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
@@ -265,9 +262,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				}
 			}
 
-			[TestCase(false, Device.iOS)]
-			[TestCase(false, Device.Android)]
-			//[TestCase(true)]
+			[InlineData(false, Device.iOS)]
+			[InlineData(false, Device.Android)]
+			//[InlineData(true)]
 			public void NativeInContentView(bool useCompiledXaml, string platform)
 			{
 				SetUpPlatform(platform);
@@ -282,22 +279,22 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				MockNativeView nativeView = null;
 				if (platform == Device.iOS)
 				{
-					Assert.That(view.Content, Is.TypeOf<MockUIViewWrapper>());
-					Assert.That(((MockUIViewWrapper)view.Content).NativeView, Is.TypeOf<MockUIView>());
+					Assert.IsType<MockUIViewWrapper>(view.Content);
+					Assert.IsType<MockUIView>(((MockUIViewWrapper)view.Content).NativeView);
 					nativeView = ((MockUIViewWrapper)view.Content).NativeView;
 				}
 				else if (platform == Device.Android)
 				{
-					Assert.That(view.Content, Is.TypeOf<MockAndroidViewWrapper>());
-					Assert.That(((MockAndroidViewWrapper)view.Content).NativeView, Is.TypeOf<MockAndroidView>());
+					Assert.IsType<MockAndroidViewWrapper>(view.Content);
+					Assert.IsType<MockAndroidView>(((MockAndroidViewWrapper)view.Content).NativeView);
 					nativeView = ((MockAndroidViewWrapper)view.Content).NativeView;
 				}
 
-				Assert.AreEqual("foo", nativeView.Foo);
-				Assert.AreEqual(42, nativeView.Bar);
-				Assert.AreEqual("Bound Value", nativeView.Baz);
-				Assert.AreEqual(LayoutOptions.End, view.Content.GetValue(View.HorizontalOptionsProperty));
-				Assert.AreEqual(LayoutOptions.EndAndExpand, view.Content.GetValue(View.VerticalOptionsProperty));
+				Assert.Equal("foo", nativeView.Foo);
+				Assert.Equal(42, nativeView.Bar);
+				Assert.Equal("Bound Value", nativeView.Baz);
+				Assert.Equal(LayoutOptions.End, view.Content.GetValue(View.HorizontalOptionsProperty));
+				Assert.Equal(LayoutOptions.EndAndExpand, view.Content.GetValue(View.VerticalOptionsProperty));
 			}
 		}
 	}

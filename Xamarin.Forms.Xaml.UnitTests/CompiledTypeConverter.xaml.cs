@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -30,23 +30,22 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void CompiledTypeConverterAreInvoked(bool useCompiledXaml)
 			{
 				var p = new CompiledTypeConverter(useCompiledXaml);
-				Assert.AreEqual(new Rectangle(0, 1, 2, 4), p.RectangleP);
-				Assert.AreEqual(new Rectangle(4, 8, 16, 32), p.RectangleBP);
-				Assert.AreEqual(Color.Pink, p.BackgroundColor);
-				Assert.AreEqual(LayoutOptions.EndAndExpand, p.label.GetValue(View.HorizontalOptionsProperty));
+				Assert.Equal(new Rectangle(0, 1, 2, 4), p.RectangleP);
+				Assert.Equal(new Rectangle(4, 8, 16, 32), p.RectangleBP);
+				Assert.Equal(Color.Pink, p.BackgroundColor);
+				Assert.Equal(LayoutOptions.EndAndExpand, p.label.GetValue(View.HorizontalOptionsProperty));
 				var xConstraint = RelativeLayout.GetXConstraint(p.label);
-				Assert.AreEqual(2, xConstraint.Compute(null));
-				Assert.AreEqual(new Thickness(2, 3), p.label.Margin);
-				Assert.AreEqual(2, p.List.Count);
-				Assert.AreEqual("Bar", p.List[1]);
+				Assert.Equal(2, xConstraint.Compute(null));
+				Assert.Equal(new Thickness(2, 3), p.label.Margin);
+				Assert.Equal(2, p.List.Count);
+				Assert.Equal("Bar", p.List[1]);
 			}
 		}
 	}

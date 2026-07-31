@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -19,25 +19,23 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void Setup()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void XNameForwardDeclaration(bool useCompiledXaml)
 			{
 				var page = new Issue1438(useCompiledXaml);
 
 				var slider = page.FindByName<Slider>("slider");
 				var label = page.FindByName<Label>("label");
-				Assert.AreSame(slider, label.BindingContext);
-				Assert.That(slider.Parent, Is.TypeOf<StackLayout>());
+				Assert.Same(slider, label.BindingContext);
+				Assert.IsType<StackLayout>(slider.Parent);
 			}
 		}
 	}

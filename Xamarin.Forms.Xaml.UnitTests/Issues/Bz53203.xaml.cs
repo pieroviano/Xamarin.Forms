@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -39,35 +39,32 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
+			[InlineData(true)]
 			public void MarkupOnAttachedBPDoesNotThrowAtCompileTime(bool useCompiledXaml)
 			{
 				MockCompiler.Compile(typeof(Bz53203));
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void MarkupOnAttachedBP(bool useCompiledXaml)
 			{
 				var page = new Bz53203(useCompiledXaml);
 				var label = page.label0;
-				Assert.That(Grid.GetRow(label), Is.EqualTo(42));
-				Assert.That(GetParameter(label), Is.EqualTo(Bz53203Values.Better));
+				Assert.Equal(42, Grid.GetRow(label));
+				Assert.Equal(Bz53203Values.Better, GetParameter(label));
 			}
 
 		}

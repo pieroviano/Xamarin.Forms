@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;netstandard1.0</TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
 	</PropertyGroup>
@@ -9,17 +9,11 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Xamarin.Forms.Platform\Xamarin.Forms.Platform.csproj" />
 	</ItemGroup>
-	<ItemGroup>
-		<Compile Remove="Internals\Legacy\**" />
-		<EmbeddedResource Remove="Internals\Legacy\**" />
-		<None Remove="Internals\Legacy\**" />
-	</ItemGroup>
-	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.0' ">
-		<Compile Include="Internals\Legacy\**" />
-		<PackageReference Include="System.ComponentModel" Version="4.3.0" />
-		<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
-		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
-	</ItemGroup>	
+	<!--
+		netstandard1.0 support removed: Internals\Legacy\** (FileAccess/FileMode/FileShare
+		shims) existed only for that leg, as did the System.ComponentModel /
+		System.Dynamic.Runtime / System.ValueTuple 4.x package references.
+	-->
 	<ItemGroup>
 	  <Folder Include="Xaml\Diagnostics\" />
 	</ItemGroup>

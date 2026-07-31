@@ -1,5 +1,4 @@
-﻿#if !NETSTANDARD1_0
-
+﻿
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -221,4 +220,3 @@ namespace Xamarin.Forms.Internals
 
 	}
 }
-#endif

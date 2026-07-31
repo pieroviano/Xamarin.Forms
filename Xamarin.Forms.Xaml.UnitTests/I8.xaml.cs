@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -35,42 +35,39 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void I8AreConverted(bool useCompiledXaml)
 			{
 				var p = new I8(useCompiledXaml);
-				Assert.AreEqual(0L, p.l0);
-				Assert.AreEqual((long)int.MaxValue, p.l1);
-				Assert.AreEqual((long)uint.MaxValue, p.l2);
-				Assert.AreEqual(long.MaxValue, p.l3);
-				Assert.AreEqual((long)-int.MaxValue, p.l4);
-				Assert.AreEqual((long)-uint.MaxValue, p.l5);
-				Assert.AreEqual(-long.MaxValue, p.l6);
-				Assert.AreEqual((long)256, p.l7);
-				Assert.AreEqual((long)-256, p.l8);
-				Assert.AreEqual((long)127, p.l9);
-				Assert.AreEqual(0L, p.ul0);
-				Assert.AreEqual((long)int.MaxValue, p.ul1);
-				Assert.AreEqual((long)uint.MaxValue, p.ul2);
-				Assert.AreEqual(long.MaxValue, p.ul3);
-				Assert.AreEqual(ulong.MaxValue, p.ul4);
-				Assert.AreEqual((ulong)256, p.ul5);
+				Assert.Equal(0L, p.l0);
+				Assert.Equal((long)int.MaxValue, p.l1);
+				Assert.Equal((long)uint.MaxValue, p.l2);
+				Assert.Equal(long.MaxValue, p.l3);
+				Assert.Equal((long)-int.MaxValue, p.l4);
+				Assert.Equal((long)-uint.MaxValue, p.l5);
+				Assert.Equal(-long.MaxValue, p.l6);
+				Assert.Equal((long)256, p.l7);
+				Assert.Equal((long)-256, p.l8);
+				Assert.Equal((long)127, p.l9);
+				Assert.Equal(0L, p.ul0);
+				Assert.Equal((long)int.MaxValue, p.ul1);
+				Assert.Equal((long)uint.MaxValue, p.ul2);
+				Assert.Equal(long.MaxValue, p.ul3);
+				Assert.Equal(ulong.MaxValue, p.ul4);
+				Assert.Equal((ulong)256, p.ul5);
 			}
 		}
 	}

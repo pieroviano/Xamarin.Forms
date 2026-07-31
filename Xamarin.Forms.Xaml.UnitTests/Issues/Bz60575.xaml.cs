@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -64,39 +64,36 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			set { SetValue(Collection2Property, value); }
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void CollectionProperties(bool useCompiledXaml)
 			{
 				var layout = new Bz60575(useCompiledXaml);
 
 				//attached BP
 				var col = layout.GetValue(Bz60575Helpers.CollectionProperty) as IList<string>;
-				Assert.That(col.Count, Is.EqualTo(2));
+				Assert.Equal(2, col.Count);
 
 				//attached BP with a single element
 				col = layout.GetValue(Bz60575Helpers.Collection2Property) as IList<string>;
-				Assert.That(col.Count, Is.EqualTo(1));
+				Assert.Equal(1, col.Count);
 
 				//normal BP
-				Assert.That(layout.Collection.Count, Is.EqualTo(3));
+				Assert.Equal(3, layout.Collection.Count);
 
 				//normal BP with a single element
-				Assert.That(layout.Collection2.Count, Is.EqualTo(1));
+				Assert.Equal(1, layout.Collection2.Count);
 			}
 		}
 	}

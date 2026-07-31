@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -27,29 +27,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void DTDoNotInstantiateTheirContent(bool useCompiledXaml)
 			{
 				Bz45179_0.creator_count = 0;
 				Assume.That(Bz45179_0.creator_count, Is.EqualTo(0));
 				var page = new Bz45179(useCompiledXaml);
-				Assert.That(Bz45179_0.creator_count, Is.EqualTo(0));
+				Assert.Equal(0, Bz45179_0.creator_count);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,18 +17,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void DataTriggerInTemplates(bool useCompiledXaml)
 			{
 				var layout = new Bz30074(useCompiledXaml);
 				Assert.Null(layout.image.Source);
 
 				layout.BindingContext = new { IsSelected = true };
-				Assert.AreEqual("Add.png", ((FileImageSource)layout.image.Source).File);
+				Assert.Equal("Add.png", ((FileImageSource)layout.image.Source).File);
 
 				layout.BindingContext = new { IsSelected = false };
 				Assert.Null(layout.image.Source);

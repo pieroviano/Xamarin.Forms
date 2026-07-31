@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Windows.Input;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
 #pragma warning disable 0618 //retaining legacy call to obsolete code
 
-	[TestFixture]
 	public class XamlLoaderCreateTests
-	{
-		[TearDown]
-		public void TearDown()
-		{
+	: IDisposable{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 			XamlLoader.FallbackTypeResolver = null;
 			XamlLoader.ValueCreatedCallback = null;
@@ -21,7 +19,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Xamarin.Forms.Xaml.Internals.XamlLoader.DoNotThrowOnExceptions = false;
 		}
 
-		[Test]
+		[Fact]
 		public void CreateFromXaml()
 		{
 			var xaml = @"
@@ -32,11 +30,11 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</ContentView>";
 
 			var view = XamlLoader.Create(xaml);
-			Assert.That(view, Is.TypeOf<ContentView>());
-			Assert.AreEqual("Foo", ((Label)((ContentView)view).Content).Text);
+			Assert.IsType<ContentView>(view);
+			Assert.Equal("Foo", ((Label)((ContentView)view).Content).Text);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateFromXamlDoesntFailOnMissingEventHandler()
 		{
 			var xaml = @"

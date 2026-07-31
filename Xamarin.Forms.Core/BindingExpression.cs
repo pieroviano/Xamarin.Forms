@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -385,22 +385,7 @@ namespace Xamarin.Forms
 						if (bindablePropertyField != null && bindablePropertyField.FieldType == typeof(BindableProperty) && sourceType.ImplementedInterfaces.Contains(typeof(IElementController)))
 						{
 							MethodInfo setValueMethod = null;
-#if NETSTANDARD1_0
-							foreach (MethodInfo m in sourceType.AsType().GetRuntimeMethods())
-							{
-								if (m.Name.EndsWith("IElementController.SetValueFromRenderer"))
-								{
-									ParameterInfo[] parameters = m.GetParameters();
-									if (parameters.Length == 2 && parameters[0].ParameterType == typeof(BindableProperty))
-									{
-										setValueMethod = m;
-										break;
-									}
-								}
-							}
-#else
 							setValueMethod = typeof(IElementController).GetMethod("SetValueFromRenderer", new[] { typeof(BindableProperty), typeof(object) });
-#endif
 							if (setValueMethod != null)
 							{
 								part.LastSetter = setValueMethod;
@@ -410,7 +395,6 @@ namespace Xamarin.Forms
 						}
 					}
 				}
-#if !NETSTANDARD1_0
 				if (property != null
 					&& part.NextPart != null
 					&& property.PropertyType.IsGenericType
@@ -434,7 +418,6 @@ namespace Xamarin.Forms
 						nextPart.Content = index.ToString();
 					}
 				}
-#endif
 			}
 
 		}

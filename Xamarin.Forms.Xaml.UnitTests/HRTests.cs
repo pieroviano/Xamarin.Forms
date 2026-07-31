@@ -1,23 +1,20 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class HRTests
-	{
-		[SetUp]
-		public void Setup()
-		{
+	: IDisposable{
+		public HRTests()
+{
 			Device.PlatformServices = new MockPlatformServices();
 			Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			Application.Current = null;
 		}
 
-		[TearDown]
-		public void TearDown()
-		{
+		public void Dispose()
+{
 			Device.PlatformServices = null;
 			XamlLoader.FallbackTypeResolver = null;
 			XamlLoader.ValueCreatedCallback = null;
@@ -29,7 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Application.ClearCurrent();
 		}
 
-		[Test]
+		[Fact]
 		public void LoadResources()
 		{
 			var app = @"
@@ -42,18 +39,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					</Application.Resources>
 				</Application>
 			";
-			Assert.That(Application.Current, Is.Null);
+			Assert.Null(Application.Current);
 			var mockApplication = new MockApplication();
 			var rd = XamlLoader.LoadResources(app, mockApplication);
-			Assert.That(rd, Is.TypeOf<ResourceDictionary>());
-			Assert.That(((ResourceDictionary)rd).Count, Is.EqualTo(1));
+			Assert.IsType<ResourceDictionary>(rd);
+			Assert.Equal(1, ((ResourceDictionary)rd).Count);
 
 			//check that the live app hasn't ben modified
-			Assert.That(Application.Current, Is.EqualTo(mockApplication));
-			Assert.That(Application.Current.Resources.Count, Is.EqualTo(0));
+			Assert.Equal(mockApplication, Application.Current);
+			Assert.Equal(0, Application.Current.Resources.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void LoadMultipleResources()
 		{
 			var app = @"
@@ -66,18 +63,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</Application>
 			";
 
-			Assert.That(Application.Current, Is.Null);
+			Assert.Null(Application.Current);
 			var mockApplication = new MockApplication();
 			var rd = XamlLoader.LoadResources(app, mockApplication);
-			Assert.That(rd, Is.TypeOf<ResourceDictionary>());
-			Assert.That(((ResourceDictionary)rd).Count, Is.EqualTo(2));
+			Assert.IsType<ResourceDictionary>(rd);
+			Assert.Equal(2, ((ResourceDictionary)rd).Count);
 
 			//check that the live app hasn't ben modified
-			Assert.That(Application.Current, Is.EqualTo(mockApplication));
-			Assert.That(Application.Current.Resources.Count, Is.EqualTo(0));
+			Assert.Equal(mockApplication, Application.Current);
+			Assert.Equal(0, Application.Current.Resources.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void LoadSingleImplicitResources()
 		{
 			var app = @"
@@ -89,15 +86,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				</Application>
 			";
 
-			Assert.That(Application.Current, Is.Null);
+			Assert.Null(Application.Current);
 			var mockApplication = new MockApplication();
 			var rd = XamlLoader.LoadResources(app, mockApplication);
-			Assert.That(rd, Is.TypeOf<ResourceDictionary>());
-			Assert.That(((ResourceDictionary)rd).Count, Is.EqualTo(1));
+			Assert.IsType<ResourceDictionary>(rd);
+			Assert.Equal(1, ((ResourceDictionary)rd).Count);
 
 			//check that the live app hasn't ben modified
-			Assert.That(Application.Current, Is.EqualTo(mockApplication));
-			Assert.That(Application.Current.Resources.Count, Is.EqualTo(0));
+			Assert.Equal(mockApplication, Application.Current);
+			Assert.Equal(0, Application.Current.Resources.Count);
 		}
 	}
 }

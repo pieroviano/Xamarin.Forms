@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
@@ -17,13 +17,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public static Color Color => Color.Black;
 		public static double Size = 50d;
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void FontImageExtension_Positive(bool useCompiledXaml)
 			{
 				var layout = new FontImageExtension(useCompiledXaml);
@@ -36,23 +35,23 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					if (myTab == null)
 						continue;
 
-					Assert.That(myTab.Icon, Is.TypeOf<FontImageSource>());
+					Assert.IsType<FontImageSource>(myTab.Icon);
 
 					var fontImage = (FontImageSource)myTab.Icon;
-					Assert.AreEqual(FontFamily, fontImage.FontFamily);
-					Assert.AreEqual(Glyph, fontImage.Glyph);
+					Assert.Equal(FontFamily, fontImage.FontFamily);
+					Assert.Equal(Glyph, fontImage.Glyph);
 
 					if (i == 3)
-						Assert.AreEqual(30d, fontImage.Size);
+						Assert.Equal(30d, fontImage.Size);
 					else
-						Assert.AreEqual(Size, fontImage.Size);
+						Assert.Equal(Size, fontImage.Size);
 
-					Assert.AreEqual(Color, fontImage.Color);
+					Assert.Equal(Color, fontImage.Color);
 					i++;
 				}
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void FontImageExtension_Negative(bool useCompiledXaml)
 			{
 				var layout = new FontImageExtension(useCompiledXaml);

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -26,30 +26,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[Test]
+			[Fact]
 			public void ReportSyntaxError([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new Gh5706(useCompiledXaml);
 				layout.searchHandler.BindingContext = new VM();
 
-				Assert.That(layout.searchHandler.CommandParameter, Is.Null);
+				Assert.Null(layout.searchHandler.CommandParameter);
 				layout.searchHandler.Query = "Foo";
-				Assert.That(layout.searchHandler.CommandParameter, Is.EqualTo("Foo"));
+				Assert.Equal("Foo", layout.searchHandler.CommandParameter);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -21,15 +21,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void xArrayCanBeAssignedToIListT(bool useCompiledXaml)
 			{
 				var layout = new Bz36422(useCompiledXaml);
-				Assert.AreEqual(3, layout.control.Views.Count);
+				Assert.Equal(3, layout.control.Views.Count);
 			}
 		}
 	}

@@ -1,8 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net47</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Xamarin.Forms.Xaml.UnitTests</RootNamespace>
     <AssemblyName>Xamarin.Forms.Xaml.UnitTests</AssemblyName>
+    <!-- xUnit v3 test projects are executables, not libraries. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0672;0219;0414;CS0436</NoWarn>
   </PropertyGroup>
@@ -19,10 +23,25 @@
     <ProjectReference Include="..\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.1.20200127.214830" />
-    <PackageReference Include="NUnit" Version="3.13.1" />
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.2.6" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <!--
+      JetBrains.DotMemoryUnit dropped: no source file referenced it.
+      Microsoft.Build.Locator dropped: MSBuild/MSBuildTests.cs used it to discover a
+      Visual Studio install; those tests now drive `dotnet build` instead.
+    -->
+    <!--
+      Needed at RUNTIME, deliberately without ExcludeAssets.
+      Xamarin.Forms.Build.Tasks references these with ExcludeAssets="runtime" because an
+      MSBuild task must never ship MSBuild's own assemblies. This project is a plain
+      consumer of those types (MockCompiler drives XamlCTask, DummyBuildEngine implements
+      IBuildEngine), so the assemblies must be in the test output or NUnit cannot even load
+      the test assembly - it fails with "Could not load ... Microsoft.Build.Framework,
+      Version=15.1.0.0" and silently reports zero tests with exit code 0.
+    -->
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.14.28" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Xamarin.Forms.Core.UnitTests\MockDispatcherProvider.cs">
@@ -34,8 +53,11 @@
     <Compile Include="..\Xamarin.Forms.Core.UnitTests\MockPlatformServices.cs">
       <Link>MockPlatformServices.cs</Link>
     </Compile>
-    <Compile Include="..\Xamarin.Forms.Core.UnitTests\BaseTestFixture.cs">
-      <Link>BaseTestFixture.cs</Link>
-    </Compile>
+    <!--
+      BaseTestFixture is NOT linked from Core.UnitTests any more: that copy is still NUnit
+      ([SetUp]/[TearDown]) and Core.UnitTests has not been migrated yet. Xaml.UnitTests uses
+      its own xUnit version (ctor / IDisposable) until Core follows, at which point the two
+      should be unified again.
+    -->
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,28 +18,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void ParsingCDATA(bool useCompiledXaml)
 			{
 				var page = new Bz40906(useCompiledXaml);
-				Assert.AreEqual("Foo", page.label0.Text);
-				Assert.AreEqual("FooBar>><<", page.label1.Text);
+				Assert.Equal("Foo", page.label0.Text);
+				Assert.Equal("FooBar>><<", page.label1.Text);
 			}
 		}
 	}

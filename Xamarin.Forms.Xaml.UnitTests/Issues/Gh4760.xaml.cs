@@ -1,6 +1,6 @@
 ﻿using System;
 
-using NUnit.Framework;
+using Xunit;
 
 using Xamarin.Forms.Core.UnitTests;
 
@@ -30,19 +30,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
 			[SetUp] public void Setup() => Device.PlatformServices = new MockPlatformServices();
 			[TearDown] public void TearDown() => Device.PlatformServices = null;
 
-			[Test]
+			[Fact]
 			public void GenericBaseClassForMarkups([Values(false, true)] bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4760)));
 				var layout = new Gh4760(useCompiledXaml);
-				Assert.That(layout.label.Scale, Is.EqualTo(6));
+				Assert.Equal(6, layout.label.Scale);
 			}
 		}
 	}

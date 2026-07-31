@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -34,28 +34,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void GenericBaseClassResolution(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
 					Assert.DoesNotThrow(() => MockCompiler.Compile(typeof(Gh4438)));
 				var layout = new Gh4438(useCompiledXaml) { BindingContext = new Gh4438VM() };
-				Assert.That(layout.label.Text, Is.EqualTo("test"));
+				Assert.Equal("test", layout.label.Text);
 			}
 		}
 	}

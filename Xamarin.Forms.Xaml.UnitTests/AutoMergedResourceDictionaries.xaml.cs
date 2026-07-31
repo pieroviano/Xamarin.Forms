@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,28 +16,25 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void SetUp()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void AutoMergedRd(bool useCompiledXaml)
 			{
 				var layout = new AutoMergedResourceDictionaries(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.Purple));
-				Assert.That(layout.label.BackgroundColor, Is.EqualTo(Color.FromHex("#FF96F3")));
+				Assert.Equal(Color.Purple, layout.label.TextColor);
+				Assert.Equal(Color.FromHex("#FF96F3"), layout.label.BackgroundColor);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,24 +16,21 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 				Application.Current = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void Foo(bool useCompiledXaml)
 			{
 				Application.Current = new MockApplication
@@ -44,10 +41,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					}
 				};
 				var layout = new Bz54717(useCompiledXaml);
-				Assert.That(layout.Resources.Count, Is.EqualTo(1));
+				Assert.Equal(1, layout.Resources.Count);
 				var array = layout.Resources["SomeColors"] as Color[];
-				Assert.That(array[0], Is.EqualTo(Color.Red));
-				Assert.That(array[1], Is.EqualTo(Color.Blue));
+				Assert.Equal(Color.Red, array[0]);
+				Assert.Equal(Color.Blue, array[1]);
 			}
 		}
 	}

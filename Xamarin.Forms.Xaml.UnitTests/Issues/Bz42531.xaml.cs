@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 using Xamarin.Forms.Internals;
@@ -19,23 +19,20 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void RDInDataTemplates(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)
@@ -45,9 +42,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var template = lv.ItemTemplate;
 				var cell = template.CreateContent(null, lv) as ViewCell;
 				var sl = cell.View as StackLayout;
-				Assert.AreEqual(1, sl.Resources.Count);
+				Assert.Equal(1, sl.Resources.Count);
 				var label = sl.Children[0] as Label;
-				Assert.AreEqual(LayoutOptions.Center, label.HorizontalOptions);
+				Assert.Equal(LayoutOptions.Center, label.HorizontalOptions);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -16,29 +16,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 #pragma warning disable CS0618 // Type or member is obsolete
 				Xamarin.Forms.Internals.ResourceLoader.ResourceProvider = null;
 #pragma warning restore CS0618 // Type or member is obsolete
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void XamlLoadingUsesResourceLoader(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.FromHex("#368F95")));
+				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
 
 #pragma warning disable CS0618 // Type or member is obsolete
 				Xamarin.Forms.Internals.ResourceLoader.ResourceProvider = (asmName, path) =>
@@ -56,14 +53,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					return null;
 				};
 				layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.Pink));
+				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[Test]
+			[Fact]
 			public void XamlLoadingUsesResourceProvider2([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.FromHex("#368F95")));
+				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
 				object instance = null;
 				Xamarin.Forms.Internals.ResourceLoader.ResourceProvider2 = (rlq) =>
 				{
@@ -90,15 +87,15 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 
 				layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(instance, Is.EqualTo(layout));
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.Pink));
+				Assert.Equal(layout, instance);
+				Assert.Equal(Color.Pink, layout.label.TextColor);
 			}
 
-			[Test]
+			[Fact]
 			public void XamlLoadingUsesResourceProvider2WithDesignProperties([Values(false, true)] bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.FromHex("#368F95")));
+				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
 
 				Xamarin.Forms.Internals.ResourceLoader.ResourceProvider2 = (rlq) =>
 				{
@@ -123,14 +120,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 
 				layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.HotPink));
+				Assert.Equal(Color.HotPink, layout.label.TextColor);
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void RDLoadingUsesResourceLoader(bool useCompiledXaml)
 			{
 				var layout = new ResourceLoader(useCompiledXaml);
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.FromHex("#368F95")));
+				Assert.Equal(Color.FromHex("#368F95"), layout.label.TextColor);
 
 #pragma warning disable CS0618 // Type or member is obsolete
 				Xamarin.Forms.Internals.ResourceLoader.ResourceProvider = (asmName, path) =>
@@ -147,7 +144,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				};
 				layout = new ResourceLoader(useCompiledXaml);
 
-				Assert.That(layout.label.TextColor, Is.EqualTo(Color.FromHex("#36FF95")));
+				Assert.Equal(Color.FromHex("#36FF95"), layout.label.TextColor);
 			}
 		}
 	}

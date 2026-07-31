@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,29 +18,26 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Application.Current = null;
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void SupportUsingXmlns(bool useCompiledXaml)
 			{
 				var page = new TestXmlnsUsing(useCompiledXaml);
-				Assert.That(page.Content, Is.Not.Null);
-				Assert.That(page.Content, Is.TypeOf<CustomXamlView>());
+				Assert.NotNull(page.Content);
+				Assert.IsType<CustomXamlView>(page.Content);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,17 +17,16 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void ImplicitCastIsUsedOnFileImageSource(bool useCompiledXaml)
 			{
 				var layout = new GrialIssue01(useCompiledXaml);
 				var res = (FileImageSource)layout.Resources["image"];
 
-				Assert.AreEqual("path.png", res.File);
+				Assert.Equal("path.png", res.File);
 			}
 		}
 	}

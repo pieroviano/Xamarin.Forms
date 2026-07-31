@@ -1,13 +1,12 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using NUnit.Framework;
+using Xunit;
 using IOPath = System.IO.Path;
 
 namespace Xamarin.Forms.MSBuild.UnitTests
 {
-	[TestFixture]
 	public class AssemblyInfoTests
 	{
 		static readonly string[] references = new[]
@@ -29,7 +28,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		public void AssemblyTitle(string assemblyName)
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
-			Assert.AreEqual(assemblyName, testAssembly.GetName().Name);
+			Assert.Equal(assemblyName, testAssembly.GetName().Name);
 		}
 
 		[Test, TestCaseSource(nameof(references))]
@@ -37,9 +36,9 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			Version actual = testAssembly.GetName().Version;
-			Assert.AreEqual(2, actual.Major, actual.ToString());
-			Assert.AreEqual(0, actual.Minor, actual.ToString());
-			Assert.AreEqual(0, actual.Build, actual.ToString());
+			Assert.Equal(2, actual.Major, actual.ToString());
+			Assert.Equal(0, actual.Minor, actual.ToString());
+			Assert.Equal(0, actual.Build, actual.ToString());
 		}
 
 		[Test, TestCaseSource(nameof(references))]
@@ -48,14 +47,14 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			FileVersionInfo actual = FileVersionInfo.GetVersionInfo(testAssembly.Location);
 			Version expected = Version.Parse(GetFileFromRoot(s_gitInfoFile));
-			Assert.AreEqual(expected.Major, actual.FileMajorPart, $"FileMajorPart is wrong. {actual.ToString()}");
-			Assert.AreEqual(expected.Minor, actual.FileMinorPart, $"FileMinorPart is wrong. {actual.ToString()}");
+			Assert.Equal(expected.Major, actual.FileMajorPart, $"FileMajorPart is wrong. {actual.ToString()}");
+			Assert.Equal(expected.Minor, actual.FileMinorPart, $"FileMinorPart is wrong. {actual.ToString()}");
 			// Fails locally
-			//Assert.AreEqual(expected.Build, actual.FileBuildPart, $"FileBuildPart is wrong. {actual.ToString()}");
+			//Assert.Equal(expected.Build, actual.FileBuildPart, $"FileBuildPart is wrong. {actual.ToString()}");
 			//We need to enable this
-			//	Assert.AreEqual(ThisAssembly.Git.Commits, version.FilePrivatePart);
-			Assert.AreEqual(s_productName, actual.ProductName);
-			Assert.AreEqual(s_company, actual.CompanyName);
+			//	Assert.Equal(ThisAssembly.Git.Commits, version.FilePrivatePart);
+			Assert.Equal(s_productName, actual.ProductName);
+			Assert.Equal(s_company, actual.CompanyName);
 		}
 
 		[Test, TestCaseSource(nameof(references))]
@@ -63,8 +62,8 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		{
 			Assembly testAssembly = System.Reflection.Assembly.Load(assemblyName);
 			FileVersionInfo actual = FileVersionInfo.GetVersionInfo(testAssembly.Location);
-			Assert.AreEqual(s_productName, actual.ProductName);
-			Assert.AreEqual(s_company, actual.CompanyName);
+			Assert.Equal(s_productName, actual.ProductName);
+			Assert.Equal(s_company, actual.CompanyName);
 		}
 
 		static string GetFileFromRoot(string file)

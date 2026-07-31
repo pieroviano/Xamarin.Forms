@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -18,27 +18,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void AllowSetterValueAsElementProperties(bool useCompiledXaml)
 			{
 				var p = new Unreported009(useCompiledXaml);
 				var s = p.Resources["Default"] as Style;
-				Assert.AreEqual("Bananas!", (s.Setters[0].Value as Label).Text);
+				Assert.Equal("Bananas!", (s.Setters[0].Value as Label).Text);
 			}
 		}
 	}

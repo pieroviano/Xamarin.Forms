@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -10,11 +10,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public static class Tests
 		{
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public static void ThrowXamlParseException(bool useCompiledXaml)
 			{
 				Assert.Throws<XamlParseException>(useCompiledXaml ?

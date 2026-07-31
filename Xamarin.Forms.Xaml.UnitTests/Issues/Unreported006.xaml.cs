@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
@@ -23,15 +23,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 		public static readonly BindableProperty GenericPropertyProperty =
 			BindableProperty.Create(nameof(GenericProperty), typeof(Layout<View>), typeof(Unreported006));
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true), TestCase(false)]
+			[InlineData(true), TestCase(false)]
 			public void CanAssignGenericBP(bool useCompiledXaml)
 			{
 				var page = new Unreported006();
 				Assert.NotNull(page.GenericProperty);
-				Assert.That(page.GenericProperty, Is.TypeOf<StackLayout>());
+				Assert.IsType<StackLayout>(page.GenericProperty);
 			}
 		}
 	}

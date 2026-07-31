@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
 
@@ -19,26 +19,24 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void DataTriggerTargetType(bool useCompiledXaml)
 			{
 				var layout = new Issue2489(useCompiledXaml);
 				Assert.NotNull(layout.wimage);
 				Assert.NotNull(layout.wimage.Triggers);
 				Assert.True(layout.wimage.Triggers.Any());
-				Assert.That(layout.wimage.Triggers[0], Is.TypeOf<DataTrigger>());
+				Assert.IsType<DataTrigger>(layout.wimage.Triggers[0]);
 				var trigger = (DataTrigger)layout.wimage.Triggers[0];
-				Assert.AreEqual(typeof(WImage), trigger.TargetType);
+				Assert.Equal(typeof(WImage), trigger.TargetType);
 			}
 		}
 	}

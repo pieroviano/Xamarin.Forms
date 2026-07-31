@@ -1,6 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,29 +16,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
 		{
-			[SetUp]
-			public void SetUp()
-			{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 				Xamarin.Forms.Internals.Registrar.RegisterAll(new Type[0]);
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void EmbeddedStyleSheetsAreLoaded(bool useCompiledXaml)
 			{
 				var layout = new StyleSheet(useCompiledXaml);
 				Assert.That(layout.Resources.StyleSheets[0].Styles.Count, Is.GreaterThanOrEqualTo(1));
 			}
 
-			[TestCase(false), TestCase(true)]
+			[InlineData(false), TestCase(true)]
 			public void StyleSheetsAreApplied(bool useCompiledXaml)
 			{
 				var layout = new StyleSheet(useCompiledXaml);
-				Assert.That(layout.label0.TextColor, Is.EqualTo(Color.Azure));
-				Assert.That(layout.label0.BackgroundColor, Is.EqualTo(Color.AliceBlue));
+				Assert.Equal(Color.Azure, layout.label0.TextColor);
+				Assert.Equal(Color.AliceBlue, layout.label0.BackgroundColor);
 			}
 		}
 	}

@@ -1,13 +1,12 @@
-using System;
-using NUnit.Framework;
+﻿using System;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
 {
-	[TestFixture]
 	public class ViewExtensionsTest : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestGetResource()
 		{
 			var resource = new object();
@@ -18,10 +17,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				},
 			};
 			var found = view.Resources["foo"];
-			Assert.AreSame(resource, found);
+			Assert.Same(resource, found);
 		}
 
-		[Test]
+		[Fact]
 		public void TestResourceNotFound()
 		{
 			var view = new View();
@@ -29,7 +28,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Null(resource);
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetResourceInParents()
 		{
 			var resource = new object();
@@ -53,7 +52,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			};
 
 			var found = stack.Resources["foo"];
-			Assert.AreSame(resource, found);
+			Assert.Same(resource, found);
 		}
 	}
 }

@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using Xunit;
 using Xamarin.Forms.Core.UnitTests;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,32 +18,29 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void Setup()
-			{
+		: IDisposable{
+			public Tests()
+{
 				Device.PlatformServices = new MockPlatformServices();
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 			}
 
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void BindProperties(bool useCompiledXaml)
 			{
 				var layout = new AttachedProperties(useCompiledXaml);
 				var collection1 = StackLayoutProperties.GetStackLayoutCollection(layout.StackLayout1);
 				var collection2 = StackLayoutProperties.GetStackLayoutCollection(layout.StackLayout2);
-				Assert.That(collection1[0].ExampleProperty1, Is.EqualTo("a"));
-				Assert.That(collection1[1].ExampleProperty1, Is.EqualTo("b"));
-				Assert.That(collection2[0].ExampleProperty1, Is.EqualTo("c"));
-				Assert.That(collection2[1].ExampleProperty1, Is.EqualTo("d"));
+				Assert.Equal("a", collection1[0].ExampleProperty1);
+				Assert.Equal("b", collection1[1].ExampleProperty1);
+				Assert.Equal("c", collection2[0].ExampleProperty1);
+				Assert.Equal("d", collection2[1].ExampleProperty1);
 			}
 		}
 	}

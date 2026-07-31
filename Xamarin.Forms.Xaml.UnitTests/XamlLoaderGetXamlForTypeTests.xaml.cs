@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using NUnit.Framework;
+using Xunit;
 
 using Xamarin.Forms;
 
@@ -19,20 +19,17 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		public class Tests
-		{
-			[SetUp]
-			public void SetUp()
-			{
+		: IDisposable{
+			public Tests()
+{
 #pragma warning disable 0618
 				Xamarin.Forms.Xaml.Internals.XamlLoader.XamlFileProvider = null;
 #pragma warning restore 0618
 			}
 
-			[TearDown]
-			public void TearDown()
-			{
+			public void Dispose()
+{
 				Device.PlatformServices = null;
 				XamlLoader.FallbackTypeResolver = null;
 				XamlLoader.ValueCreatedCallback = null;
@@ -44,12 +41,12 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 			}
 
-			[TestCase(false)]
-			[TestCase(true)]
+			[InlineData(false)]
+			[InlineData(true)]
 			public void XamlContentIsReplaced(bool useCompiledXaml)
 			{
 				var layout = new XamlLoaderGetXamlForTypeTests(useCompiledXaml);
-				Assert.That(layout.Content, Is.TypeOf<Button>());
+				Assert.IsType<Button>(layout.Content);
 
 #pragma warning disable 0618
 				Xamarin.Forms.Xaml.Internals.XamlLoader.XamlFileProvider = (t) =>
@@ -66,7 +63,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				};
 
 				layout = new XamlLoaderGetXamlForTypeTests(useCompiledXaml);
-				Assert.That(layout.Content, Is.TypeOf<Label>());
+				Assert.IsType<Label>(layout.Content);
 			}
 		}
 	}

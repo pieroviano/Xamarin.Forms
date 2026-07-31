@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using Xamarin.Forms;
 
 namespace Xamarin.Forms.Xaml.UnitTests
@@ -17,38 +17,37 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			//this stub will be replaced at compile time
 		}
 
-		[TestFixture]
 		class Tests
 		{
-			[TestCase(true)]
-			[TestCase(false)]
+			[InlineData(true)]
+			[InlineData(false)]
 			public void SettersAppliedBeforeTriggers(bool useCompiledXaml)
 			{
 				var layout = new Bz28556(useCompiledXaml);
 
-				Assert.AreEqual(Color.Yellow, layout.entry.TextColor);
-				Assert.AreEqual(Color.Green, layout.entry.BackgroundColor);
+				Assert.Equal(Color.Yellow, layout.entry.TextColor);
+				Assert.Equal(Color.Green, layout.entry.BackgroundColor);
 
-				Assert.AreEqual(Color.Red, layout.disableEntry.TextColor);
-				Assert.AreEqual(Color.Purple, layout.disableEntry.BackgroundColor);
+				Assert.Equal(Color.Red, layout.disableEntry.TextColor);
+				Assert.Equal(Color.Purple, layout.disableEntry.BackgroundColor);
 
 				layout.entry.IsEnabled = false;
 				layout.disableEntry.IsEnabled = true;
 
-				Assert.AreEqual(Color.Yellow, layout.disableEntry.TextColor);
-				Assert.AreEqual(Color.Green, layout.disableEntry.BackgroundColor);
+				Assert.Equal(Color.Yellow, layout.disableEntry.TextColor);
+				Assert.Equal(Color.Green, layout.disableEntry.BackgroundColor);
 
-				Assert.AreEqual(Color.Red, layout.entry.TextColor);
-				Assert.AreEqual(Color.Purple, layout.entry.BackgroundColor);
+				Assert.Equal(Color.Red, layout.entry.TextColor);
+				Assert.Equal(Color.Purple, layout.entry.BackgroundColor);
 
 				layout.entry.IsEnabled = true;
 				layout.disableEntry.IsEnabled = false;
 
-				Assert.AreEqual(Color.Yellow, layout.entry.TextColor);
-				Assert.AreEqual(Color.Green, layout.entry.BackgroundColor);
+				Assert.Equal(Color.Yellow, layout.entry.TextColor);
+				Assert.Equal(Color.Green, layout.entry.BackgroundColor);
 
-				Assert.AreEqual(Color.Red, layout.disableEntry.TextColor);
-				Assert.AreEqual(Color.Purple, layout.disableEntry.BackgroundColor);
+				Assert.Equal(Color.Red, layout.disableEntry.TextColor);
+				Assert.Equal(Color.Purple, layout.disableEntry.BackgroundColor);
 			}
 		}
 	}

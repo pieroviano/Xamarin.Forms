@@ -120,13 +120,7 @@ namespace Xamarin.Forms
 			VisualDiagnostics.OnChildRemoved(this, element, oldLogicalIndex);
 		}
 
-#if NETSTANDARD1_0
-		ReadOnlyCollection<Element> _readOnlyLogicalChildren;
-		internal override ReadOnlyCollection<Element> LogicalChildrenInternal => _readOnlyLogicalChildren ?? 
-			(_readOnlyLogicalChildren = new ReadOnlyCollection<Element>(_logicalChildren));
-#else
 		internal override ReadOnlyCollection<Element> LogicalChildrenInternal => _logicalChildren.AsReadOnly();
-#endif
 
 		internal static readonly BindableProperty InternalItemsLayoutProperty =
 			BindableProperty.Create(nameof(ItemsLayout), typeof(IItemsLayout), typeof(ItemsView),
