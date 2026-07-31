@@ -45,7 +45,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		private IList _itemsSource;
 		private int _selectedIndex;
 		private EventBox _wrapperBox;
-		private Table _root;
+		private Gtk.Grid _root;
 		private ImageControl _image;
 		private List<CarouselPage> _pages;
 		private double _initialPos;
@@ -131,7 +131,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				gtkPage.Container.Shown += OnChildPageShown;
 
 				_pages.Insert(index, new CarouselPage(gtkPage.Container, page));
-				_root.Attach(gtkPage.Container, 0, 1, 0, 1);
+				_root.Attach(gtkPage.Container, 0, 0, 1, 1);
 			}
 
 			ItemsSource = _pages;
@@ -202,7 +202,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			_wrapperBox = new EventBox();
 			_wrapperBox.VisibleWindow = false;
-			_root = new Table(1, 1, true);
+			_root = new Gtk.Grid { RowHomogeneous = true, ColumnHomogeneous = true };
 			_wrapperBox.Add(_root);
 
 			_wrapperBox.ButtonPressEvent += OnCarouselButtonPressEvent;
@@ -253,7 +253,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 					gtkPage.Container.Shown += OnChildPageShown;
 
 					_pages.Add(new CarouselPage(gtkPage.Container, page));
-					_root.Attach(gtkPage.Container, 0, 1, 0, 1);
+					_root.Attach(gtkPage.Container, 0, 0, 1, 1);
 				}
 			}
 

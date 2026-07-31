@@ -5,7 +5,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	public class RadioButton : Gtk.RadioButton
 	{
-		private Gtk.Alignment _container;
+		private Gtk.Box _container;
 		private Gtk.Box _imageAndLabelContainer;
 
 		private Gdk.Color _defaultBorderColor;
@@ -27,7 +27,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			_image = new Gtk.Image();
 			_label = new Gtk.Label();
-			_container = new Gtk.Alignment(0.5f, 0.5f, 0, 0);
+			// GTK3 dropped Gtk.Alignment: Alignment(0.5, 0.5, 0, 0) centred the child
+			// without stretching it, which is Align.Center on the child itself.
+			_container = new Gtk.Box(Gtk.Orientation.Vertical, 0);
 
 
 			Add(_container);
@@ -175,22 +177,22 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			switch (ImagePosition)
 			{
 				case Gtk.PositionType.Left:
-					_imageAndLabelContainer = new Gtk.HBox();
+					_imageAndLabelContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					break;
 				case Gtk.PositionType.Right:
-					_imageAndLabelContainer = new Gtk.HBox();
+					_imageAndLabelContainer = new Gtk.Box(Gtk.Orientation.Horizontal, 0);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					break;
 				case Gtk.PositionType.Top:
-					_imageAndLabelContainer = new Gtk.VBox();
+					_imageAndLabelContainer = new Gtk.Box(Gtk.Orientation.Vertical, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					break;
 				case Gtk.PositionType.Bottom:
-					_imageAndLabelContainer = new Gtk.VBox();
+					_imageAndLabelContainer = new Gtk.Box(Gtk.Orientation.Vertical, 0);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					break;
@@ -198,6 +200,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (_imageAndLabelContainer != null)
 			{
+				_imageAndLabelContainer.Halign = Gtk.Align.Center;
+				_imageAndLabelContainer.Valign = Gtk.Align.Center;
+
 				_container.Add(_imageAndLabelContainer);
 				_container.ShowAll();
 			}

@@ -11,7 +11,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		Gdk.Color _textColor;
 		string _text;
 		string _placeholder;
-		VBox _root;
+		Box _root;
 		Gtk.Label _textLabel;
 		EntryWrapper _entryWrapper;
 
@@ -21,11 +21,12 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			string text,
 			string placeholder)
 		{
-			_root = new VBox();
+			_root = new Box(Gtk.Orientation.Vertical, 0);
 			Add(_root);
 
 			_textLabel = new Gtk.Label();
-			_textLabel.SetAlignment(0, 0);
+			_textLabel.Xalign = 0;
+			_textLabel.Yalign = 0;
 			_textLabel.Text = label ?? string.Empty;
 			_textLabel.SetForegroundColor(labelColor, StateType.Normal);
 

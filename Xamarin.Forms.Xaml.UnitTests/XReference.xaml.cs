@@ -35,17 +35,18 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			{
 				var layout = new XReference(useCompiledXaml);
 
+				var commandParameterWasSelf = false;
 				var button = layout.aButton;
 				button.BindingContext = new
 				{
 					ButtonClickCommand = new Command(o =>
 					{
 						if (o == button)
-							return;
+							commandParameterWasSelf = true;
 					})
 				};
 				((IButtonController)button).SendClicked();
-				Assert.Fail();
+				Assert.True(commandParameterWasSelf, "the command parameter was not the button itself");
 			}
 
 			[Theory]

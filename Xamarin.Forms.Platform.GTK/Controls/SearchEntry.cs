@@ -7,14 +7,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	public class SearchEntry : Gtk.Frame
 	{
-		private HBox _container;
+		private Box _container;
 		private EntryWrapper _entryWrapper;
 		private ImageButton _searchButton;
 		private ImageButton _clearButton;
 
 		public SearchEntry()
 		{
-			_container = new HBox();
+			_container = new Box(Gtk.Orientation.Horizontal, 0);
 			_entryWrapper = new EntryWrapper();
 			_entryWrapper.Entry.HasFrame = false;
 			_searchButton = new ImageButton();

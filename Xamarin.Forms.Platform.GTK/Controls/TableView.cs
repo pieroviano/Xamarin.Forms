@@ -8,7 +8,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	public class TableView : ScrolledWindow
 	{
-		private VBox _root;
+		private Box _root;
 		private TableRoot _source;
 		private List<Container> _cells;
 
@@ -95,7 +95,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			VscrollbarPolicy = PolicyType.Automatic;
 			BorderWidth = 0;
 
-			_root = new VBox(false, 0);
+			_root = new Box(Gtk.Orientation.Vertical, 0);
 
 			Viewport viewPort = new Viewport
 			{
@@ -129,7 +129,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				};
 
 				Gtk.Label title = new Gtk.Label();
-				title.SetAlignment(0, 0);
+				title.Xalign = 0;
+				title.Yalign = 0;
 				title.SetTextFromSpan(titleSpan);
 				_root.PackStart(title, false, false, 0);
 			}
@@ -148,7 +149,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 					// Table Section Title
 					Gtk.Label sectionTitle = new Gtk.Label();
-					sectionTitle.SetAlignment(0, 0);
+					sectionTitle.Xalign = 0;
+					sectionTitle.Yalign = 0;
 					sectionTitle.SetTextFromSpan(tableSectionSpan);
 					_root.PackStart(sectionTitle, false, false, 0);
 

@@ -7,7 +7,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	public sealed class ImageButton : Gtk.Button
 	{
-		private Alignment _container;
+		private Box _container;
 		private Box _imageAndLabelContainer;
 
 		private Gdk.Color _defaultBorderColor;
@@ -29,7 +29,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			_image = new Gtk.Image();
 			_label = new Gtk.Label();
-			_container = new Alignment(0.5f, 0.5f, 0, 0);
+			// GTK3 dropped Gtk.Alignment: a single-child container plus the child's own
+			// Halign/Valign expresses the same thing. The old Alignment(0.5, 0.5, 0, 0)
+			// centred the child without stretching it, which is Align.Center on both axes.
+			_container = new Box(Gtk.Orientation.Vertical, 0);
 
 			Add(_container);
 
@@ -157,22 +160,22 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			switch (ImagePosition)
 			{
 				case PositionType.Left:
-					_imageAndLabelContainer = new HBox();
+					_imageAndLabelContainer = new Box(Gtk.Orientation.Horizontal, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					break;
 				case PositionType.Top:
-					_imageAndLabelContainer = new VBox();
+					_imageAndLabelContainer = new Box(Gtk.Orientation.Vertical, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					break;
 				case PositionType.Right:
-					_imageAndLabelContainer = new HBox();
+					_imageAndLabelContainer = new Box(Gtk.Orientation.Horizontal, 0);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					break;
 				case PositionType.Bottom:
-					_imageAndLabelContainer = new VBox();
+					_imageAndLabelContainer = new Box(Gtk.Orientation.Vertical, 0);
 					_imageAndLabelContainer.PackStart(_label, false, false, 0);
 					_imageAndLabelContainer.PackStart(_image, false, false, _imageSpacing);
 					break;
@@ -180,6 +183,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (_imageAndLabelContainer != null)
 			{
+				_imageAndLabelContainer.Halign = Align.Center;
+				_imageAndLabelContainer.Valign = Align.Center;
+
 				_container.Add(_imageAndLabelContainer);
 				_container.ShowAll();
 			}

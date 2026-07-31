@@ -25,7 +25,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 	public partial class DatePickerWindow : Window
 	{
-		VBox _datebox;
+		Box _datebox;
 		RangeCalendar _calendar;
 
 		public DatePickerWindow()
@@ -131,7 +131,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			SkipPagerHint = true;
 			SkipTaskbarHint = true;
 
-			_datebox = new VBox();
+			_datebox = new Box(Gtk.Orientation.Vertical, 0);
 			_datebox.Spacing = 6;
 			_datebox.BorderWidth = 3;
 
@@ -349,7 +349,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			int x = 0;
 			int y = 0;
 
-			GdkWindow.GetOrigin(out x, out y);
+			Window.GetOrigin(out x, out y);
 			y += Allocation.Height;
 
 			var picker = new DatePickerWindow();

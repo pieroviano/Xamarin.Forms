@@ -66,8 +66,10 @@ namespace Xamarin.Forms.Xaml.UnitTests
 					if (myTab == null)
 						continue;
 
-					// ImageSource is abstract: exactMatch:false is the analyzer-sanctioned form
-					Assert.IsNotType<ImageSource>(myTab.Icon, exactMatch: false);
+					// NUnit's Is.Not.TypeOf<ImageSource>() is an EXACT type check: FontImageSource
+					// satisfies it. Assert.IsNotType(..., exactMatch: false) asks about
+					// assignability instead, which a subclass fails - so compare types directly.
+					Assert.NotEqual(typeof(ImageSource), myTab.Icon.GetType());
 				}
 			}
 		}

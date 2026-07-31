@@ -15,7 +15,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		public override SizeRequest GetDesiredSize(double widthConstraint, double heightConstraint)
 		{
-			var req = Control.SizeRequest();
+			Control.GetPreferredSize(out _, out var req); // GTK3 replacement for gtk_widget_size_request
 
 			var widthFits = widthConstraint >= req.Width;
 			var heightFits = heightConstraint >= req.Height;

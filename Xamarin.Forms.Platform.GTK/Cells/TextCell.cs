@@ -5,7 +5,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 {
 	internal class TextCell : CellBase
 	{
-		VBox _root;
+		Box _root;
 		Gtk.Label _textLabel;
 		Gtk.Label _detailLabel;
 		string _text;
@@ -21,7 +21,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			string detail,
 			Gdk.Color detailColor)
 		{
-			_root = new VBox();
+			_root = new Box(Gtk.Orientation.Vertical, 0);
 
 			var span = new Span()
 			{
@@ -30,14 +30,16 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			};
 
 			_textLabel = new Gtk.Label();
-			_textLabel.SetAlignment(0, 0);
+			_textLabel.Xalign = 0;
+			_textLabel.Yalign = 0;
 			_textLabel.SetForegroundColor(textColor, StateType.Normal);
 			_textLabel.SetTextFromSpan(span);
 
 			_root.PackStart(_textLabel, false, false, 0);
 
 			_detailLabel = new Gtk.Label();
-			_detailLabel.SetAlignment(0, 0);
+			_detailLabel.Xalign = 0;
+			_detailLabel.Yalign = 0;
 			_detailLabel.SetForegroundColor(detailColor, StateType.Normal);
 			_detailLabel.Text = detail ?? string.Empty;
 

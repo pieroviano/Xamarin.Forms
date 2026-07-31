@@ -3,7 +3,7 @@ using Gtk;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
-	public class TabbedPageHeader : HBox
+	public class TabbedPageHeader : Box
 	{
 		private Gtk.Label _label;
 		private Gtk.Image _image;

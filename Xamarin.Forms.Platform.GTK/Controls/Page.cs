@@ -5,18 +5,18 @@ using Xamarin.Forms.Platform.GTK.Extensions;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
-	public class Page : Table
+	public class Page : Gtk.Grid
 	{
 		private Gdk.Rectangle _lastAllocation = Gdk.Rectangle.Zero;
 		private GtkFormsContainer _headerContainer;
 		private GtkFormsContainer _contentContainerWrapper;
 		private Fixed _contentContainer;
-		private HBox _toolbar;
+		private Box _toolbar;
 		private GtkFormsContainer _content;
 		private ImageControl _image;
 		private Gdk.Color _defaultBackgroundColor;
 
-		public HBox Toolbar
+		public Box Toolbar
 		{
 			get
 			{
@@ -46,8 +46,13 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 		}
 
-		public Page() : base(1, 1, true)
+		public Page()
 		{
+			// Was Gtk.Table(1, 1, homogeneous: true). Gtk.Grid grows on demand, so only the
+			// homogeneity carries over; the single cell is created by the Attach in BuildPage.
+			RowHomogeneous = true;
+			ColumnHomogeneous = true;
+
 			BuildPage();
 		}
 
@@ -85,10 +90,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal);
 
-			_toolbar = new HBox();
+			_toolbar = new Box(Gtk.Orientation.Horizontal, 0);
 			_content = new GtkFormsContainer();
 
-			var root = new VBox(false, 0);
+			var root = new Box(Gtk.Orientation.Vertical, 0);
 
 			_headerContainer = new GtkFormsContainer();
 			root.PackStart(_headerContainer, false, false, 0);
@@ -104,12 +109,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			root.PackStart(_contentContainerWrapper, true, true, 0); // Should fill all available space
 
-			Attach(root, 0, 1, 0, 1);
+			Attach(root, 0, 0, 1, 1);
 
 			ShowAll();
 		}
 
-		private void RefreshToolbar(HBox newToolbar)
+		private void RefreshToolbar(Box newToolbar)
 		{
 			_toolbar.Destroy();
 			_toolbar = newToolbar;

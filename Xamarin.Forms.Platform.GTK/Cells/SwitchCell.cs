@@ -7,8 +7,8 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 	{
 		private string _text;
 		private bool _on;
-		private HBox _root;
-		private HBox _labelBox;
+		private Box _root;
+		private Box _labelBox;
 		private Gtk.Label _textLabel;
 		private CheckButton _checkButton;
 
@@ -16,20 +16,23 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			string text,
 			bool on)
 		{
-			_root = new HBox();
+			_root = new Box(Gtk.Orientation.Horizontal, 0);
 			Add(_root);
 
-			_labelBox = new HBox(false, 0);
+			_labelBox = new Box(Gtk.Orientation.Horizontal, 0);
 			_root.PackStart(_labelBox, true, true, 0);
 
 			_textLabel = new Gtk.Label();
-			_textLabel.SetAlignment(0, 0);
+			_textLabel.Xalign = 0;
+			_textLabel.Yalign = 0;
 			_textLabel.Text = text ?? string.Empty;
 
 			_labelBox.PackStart(_textLabel, false, true, 0);
 
 			_checkButton = new CheckButton();
-			_checkButton.SetAlignment(0, 0);
+			// gtk_button_set_alignment has no GTK3 replacement; alignment moves to the widget.
+			_checkButton.Halign = Align.Start;
+			_checkButton.Valign = Align.Start;
 			_checkButton.Active = on;
 			_checkButton.Toggled += OnCheckButtonToggled;
 

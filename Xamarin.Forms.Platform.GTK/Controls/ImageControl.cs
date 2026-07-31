@@ -4,7 +4,7 @@ using Gdk;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
-	public class ImageControl : Gtk.HBox, IDesiredSizeProvider
+	public class ImageControl : Gtk.Box, IDesiredSizeProvider
 	{
 		private Gtk.Image _image;
 		private Pixbuf _original;

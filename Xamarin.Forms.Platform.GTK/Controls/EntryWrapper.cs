@@ -8,14 +8,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 	// Created a custom control to allow combining Gtk.Entry and Gtk.Label to have placeholder text.
 	public class EntryWrapper : EventBox
 	{
-		private Table _table;
+		private Gtk.Grid _table;
 		private Gtk.Entry _entry;
 		private Gtk.Label _placeholder;
 		private EventBox _placeholderContainer;
 
 		public EntryWrapper()
 		{
-			_table = new Table(1, 1, true);
+			_table = new Gtk.Grid { RowHomogeneous = true, ColumnHomogeneous = true };
 			_entry = new Gtk.Entry();
 			_entry.FocusOutEvent += EntryFocusedOut;
 			_entry.Changed += EntryChanged;
@@ -30,8 +30,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			Add(_table);
 
-			_table.Attach(_entry, 0, 1, 0, 1);
-			_table.Attach(_placeholderContainer, 0, 1, 0, 1, AttachOptions.Fill, AttachOptions.Fill, 0, 0);
+			_table.Attach(_entry, 0, 0, 1, 1);
+			_table.Attach(_placeholderContainer, 0, 0, 1, 1);
 		}
 
 		public Gtk.Entry Entry => _entry;
@@ -68,7 +68,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public void SetAlignment(float aligmentValue)
 		{
 			_entry.Alignment = aligmentValue;
-			_placeholder.SetAlignment(aligmentValue, 0.5f);
+			_placeholder.Xalign = aligmentValue;
+			_placeholder.Yalign = 0.5f;
 		}
 
 		public void SetFont(FontDescription fontDescription)
@@ -100,11 +101,11 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			if (string.IsNullOrEmpty(_entry.Text) && !string.IsNullOrEmpty(_placeholder.Text))
 			{
-				_placeholderContainer.GdkWindow?.Raise();
+				_placeholderContainer.Window?.Raise();
 			}
 			else
 			{
-				_entry.GdkWindow?.Raise();
+				_entry.Window?.Raise();
 			}
 		}
 
@@ -114,7 +115,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			{
 				_entry.Sensitive = true;
 				_entry.HasFocus = true;
-				_entry.GdkWindow?.Raise();
+				_entry.Window?.Raise();
 			}
 		}
 

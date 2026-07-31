@@ -1,14 +1,24 @@
-﻿namespace Xamarin.Forms.Platform.GTK.Extensions
+﻿using System;
+
+namespace Xamarin.Forms.Platform.GTK.Extensions
 {
 	public static class ColorExtensions
 	{
 		public static Gdk.Color ToGtkColor(this Color color)
 		{
 			string hex = color.ToRgbaColor();
-			Gdk.Color gtkColor = new Gdk.Color();
-			Gdk.Color.Parse(hex, ref gtkColor);
 
-			return gtkColor;
+			// gdk_color_parse is deprecated; gdk_rgba_parse is the GTK3 entry point. Gdk.Color
+			// keeps 16-bit channels, so scale the RGBA doubles back up rather than truncating.
+			var rgba = new Gdk.RGBA();
+
+			if (!rgba.Parse(hex))
+				return new Gdk.Color();
+
+			return new Gdk.Color(
+				(byte)Math.Round(rgba.Red * 255),
+				(byte)Math.Round(rgba.Green * 255),
+				(byte)Math.Round(rgba.Blue * 255));
 		}
 
 		internal static Xamarin.Forms.Color ToXFColor(this Gdk.Color color, double opacity = 255)

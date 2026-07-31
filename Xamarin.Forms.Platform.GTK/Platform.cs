@@ -271,7 +271,7 @@ namespace Xamarin.Forms.Platform.GTK
 
 					if (page != null)
 					{
-						page.Attach(modalRenderer.Container, 0, 1, 0, 1);
+						page.Attach(modalRenderer.Container, 0, 0, 1, 1);
 
 						if (page.Children != null)
 						{

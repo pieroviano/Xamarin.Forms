@@ -600,7 +600,10 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var projectFile = IOPath.Combine(tempDirectory, "test.csproj");
 			project.Save(projectFile);
 			RestoreIfNeeded(projectFile, sdkStyle);
-			Assert.Throws<Xunit.Sdk.XunitException>(() => Build(projectFile));
+			// ThrowsAny, not Throws: Assert.Throws<T> demands an exact type match, and the
+			// assertion inside Build() raises a derived type (EqualException). NUnit's
+			// Assert.Throws<AssertionException> matched derived types.
+			Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => Build(projectFile));
 		}
 
 		[Theory]

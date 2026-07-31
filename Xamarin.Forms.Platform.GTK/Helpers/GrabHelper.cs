@@ -13,14 +13,14 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 			Grab.Add(window);
 
 			Gdk.GrabStatus grabbed =
-				Gdk.Pointer.Grab(window.GdkWindow, true,
+				Gdk.Pointer.Grab(window.Window, true,
 				Gdk.EventMask.ButtonPressMask
 				| Gdk.EventMask.ButtonReleaseMask
 				| Gdk.EventMask.PointerMotionMask, null, null, CURRENT_TIME);
 
 			if (grabbed == Gdk.GrabStatus.Success)
 			{
-				grabbed = Gdk.Keyboard.Grab(window.GdkWindow, true, CURRENT_TIME);
+				grabbed = Gdk.Keyboard.Grab(window.Window, true, CURRENT_TIME);
 
 				if (grabbed != Gdk.GrabStatus.Success)
 				{

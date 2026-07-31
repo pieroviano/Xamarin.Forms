@@ -27,8 +27,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			{
 				var layout = new Gh13209(useCompiledXaml);
 				Assert.Equal(Color.Chartreuse, layout.MyRect.BackgroundColor);
-				Assert.Single(layout.Root.Resources);
-				Assert.Empty(layout.Root.Resources.MergedDictionaries);
+				// .Count, not Assert.Single/Empty: ResourceDictionary enumeration and Count
+				// differ once merged dictionaries are involved, and the NUnit original
+				// asserted Count. Assert.Single() enumerates and reports the collection empty.
+#pragma warning disable xUnit2013
+				Assert.Equal(1, layout.Root.Resources.Count);
+				Assert.Equal(0, layout.Root.Resources.MergedDictionaries.Count);
+#pragma warning restore xUnit2013
 
 				Assert.NotNull(layout.Root.Resources["Color1"]);
 				Assert.True(layout.Root.Resources.Remove("Color1"));

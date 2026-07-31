@@ -3,7 +3,7 @@
 namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	// CustomCombobox, Gtk.Entry + Gtk.Button
-	public class CustomComboBox : Gtk.HBox
+	public class CustomComboBox : Gtk.Box
 	{
 		private Gtk.Entry _entry;
 		private Gtk.Button _button;

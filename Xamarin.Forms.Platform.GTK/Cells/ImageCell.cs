@@ -5,8 +5,8 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 {
 	internal class ImageCell : CellBase
 	{
-		HBox _root;
-		VBox _vertical;
+		Box _root;
+		Box _vertical;
 		Gtk.Image _imageControl;
 		Gtk.Label _textLabel;
 		Gtk.Label _detailLabel;
@@ -23,7 +23,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			string detail,
 			Gdk.Color detailColor)
 		{
-			_root = new HBox();
+			_root = new Box(Gtk.Orientation.Horizontal, 0);
 			Add(_root);
 
 			_imageControl = new Gtk.Image();
@@ -31,7 +31,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 			_root.PackStart(_imageControl, false, false, 0);
 
-			_vertical = new VBox();
+			_vertical = new Box(Gtk.Orientation.Vertical, 0);
 
 			var span = new Span()
 			{
@@ -40,14 +40,16 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			};
 
 			_textLabel = new Gtk.Label();
-			_textLabel.SetAlignment(0, 0);
+			_textLabel.Xalign = 0;
+			_textLabel.Yalign = 0;
 			_textLabel.SetForegroundColor(textColor, StateType.Normal);
 			_textLabel.SetTextFromSpan(span);
 
 			_vertical.PackStart(_textLabel, false, false, 0);
 
 			_detailLabel = new Gtk.Label();
-			_detailLabel.SetAlignment(0, 0);
+			_detailLabel.Xalign = 0;
+			_detailLabel.Yalign = 0;
 			_detailLabel.SetForegroundColor(detailColor, StateType.Normal);
 			_detailLabel.Text = detail ?? string.Empty;
 

@@ -275,7 +275,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			drawingArea.ExposeEvent += (s, a) =>
 			{
-				IntPtr test = drawingArea.GdkWindow.Handle;
+				IntPtr test = drawingArea.Window.Handle;
 				windowHandle = gdk_win32_drawable_get_handle(test);
 
 				// Embedding Windows Browser control into a gtk widget.
@@ -298,7 +298,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 	public class WebViewLinux : EventBox
 	{
-		private VBox _vbox = null;
+		private Box _vbox = null;
 		private WebKit.WebView _webview = null;
 
 		public WebViewLinux()
@@ -328,7 +328,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			ScrolledWindow scroll = new ScrolledWindow();
 			scroll.AddWithViewport(_webview);
 
-			_vbox = new VBox(false, 1);
+			_vbox = new Box(Gtk.Orientation.Vertical, 1);
 			_vbox.PackStart(scroll, true, true, 0);
 
 			Add(_vbox);

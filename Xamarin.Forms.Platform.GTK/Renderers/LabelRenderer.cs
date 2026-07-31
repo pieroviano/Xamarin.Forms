@@ -164,7 +164,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var hAlignmentValue = Element.HorizontalTextAlignment.ToAlignmentValue();
 			var vAlignmentValue = Element.VerticalTextAlignment.ToAlignmentValue();
 
-			Control.SetAlignment(hAlignmentValue, vAlignmentValue);
+			// gtk_label_set_xalign/yalign (3.16+) replace the deprecated gtk_misc_set_alignment
+			// and keep the same meaning: where the text sits inside the label's allocation.
+			Control.Xalign = hAlignmentValue;
+			Control.Yalign = vAlignmentValue;
 		}
 
 		private void UpdateLineBreakMode()

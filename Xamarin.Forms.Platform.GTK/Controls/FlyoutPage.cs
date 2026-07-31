@@ -1,7 +1,6 @@
 ﻿using System;
 using Gdk;
 using Gtk;
-using Xamarin.Forms.Platform.GTK.Animations;
 using Xamarin.Forms.Platform.GTK.Extensions;
 
 namespace Xamarin.Forms.Platform.GTK.Controls
@@ -17,28 +16,29 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 	{
 		// internal so FlyoutPageRenderer can report matching bounds back to Forms.
 		internal const int DefaultFlyoutWidth = 300;
-		private const int IsPresentedAnimationMilliseconds = 300;
 
 		private Gdk.Rectangle _lastAllocation;
 		private bool _isPresented;
 		private FlyoutPageFlyoutTitleContainer _titleContainer;
 		private EventBox _flyoutContainerWrapper;
-		private VBox _flyoutContainer;
+		private Box _flyoutContainer;
 		private Widget _flyout;
 		private Widget _detail;
 		private FlyoutLayoutBehaviorType _flyoutBehaviorType;
 		private static Pixbuf _hamburgerPixBuf;
 		private bool _displayTitle;
-		private bool _animationsEnabled;
 
 		public FlyoutPage()
 		{
-			_animationsEnabled = false;
 			_flyoutBehaviorType = FlyoutLayoutBehaviorType.Default;
 
 			// Flyout Stuff
 			_flyoutContainerWrapper = new EventBox();
-			_flyoutContainer = new VBox(false, 0);
+
+			// The wrapper's visibility is driven by RefreshFlyoutVisibility, so it must survive
+			// the ShowAll() calls the renderers make on their parents.
+			_flyoutContainerWrapper.NoShowAll = true;
+			_flyoutContainer = new Box(Gtk.Orientation.Vertical, 0);
 			_titleContainer = new FlyoutPageFlyoutTitleContainer();
 			_titleContainer.HamburguerClicked += OnHamburgerClicked;
 			_titleContainer.HeightRequest = GtkToolbarConstants.ToolbarHeight;
@@ -219,6 +219,18 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				{
 					_flyout.WidthRequest = DefaultFlyoutWidth;
 					_flyout.HeightRequest = _detail.HeightRequest = _lastAllocation.Height;
+
+					// The WRAPPER must be constrained too, not just the flyout inside it. It is an
+					// EventBox around a Box holding the title bar and the flyout page, so its
+					// natural width can exceed DefaultFlyoutWidth - and since hiding it means moving
+					// it to -DefaultFlyoutWidth, any excess stays visible as a strip painted over
+					// the detail (a ~45px red band down the left of the ControlGallery).
+					if (_flyoutContainerWrapper != null)
+					{
+						_flyoutContainerWrapper.WidthRequest = DefaultFlyoutWidth;
+						_flyoutContainerWrapper.HeightRequest = _lastAllocation.Height;
+					}
+
 					RefreshFlyoutLayoutBehavior(_flyoutBehaviorType);
 				}
 
@@ -226,12 +238,6 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			});
 		}
 
-		protected override void OnShown()
-		{
-			base.OnShown();
-
-			_animationsEnabled = true;
-		}
 
 
 		private void RefreshFlyoutLayoutBehavior(FlyoutLayoutBehaviorType flyoutBehaviorType)
@@ -252,10 +258,54 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 					break;
 			}
 
+			// Position the flyout as well as the detail. RefreshPresented only runs when
+			// IsPresented CHANGES, so in Popover/Default mode nothing ever moved the flyout
+			// off-screen at start-up: it stayed at x=0 painting over the left edge of the
+			// detail (in the ControlGallery, a red band clipping the first ~70px of every row).
+			if (_flyoutContainerWrapper != null)
+			{
+				var flyoutX = FlyoutVisible ? 0 : -DefaultFlyoutWidth;
+
+				_flyoutContainerWrapper.MoveTo(flyoutX, 0);
+				RefreshFlyoutVisibility();
+			}
+
 			if (detailWidthRequest >= 0)
 			{
 				_detail.WidthRequest = detailWidthRequest;
 				_detail.MoveTo(point.X, point.Y);
+			}
+		}
+
+		// True when the flyout should be on screen: always in Split, only while presented otherwise.
+		private bool FlyoutVisible =>
+			_flyoutBehaviorType == FlyoutLayoutBehaviorType.Split || _isPresented;
+
+		// Parking the wrapper at x=-DefaultFlyoutWidth is NOT enough to hide it. GTK3 caches a
+		// child's allocation, and moving a Gtk.Fixed child does not reliably re-allocate it: the
+		// ControlGallery left the flyout's child property at -300 while its actual allocation
+		// stayed at ~-205, leaking an ~80px strip of the red flyout over the detail and clipping
+		// the first characters of every row. An explicit QueueResize() on the Fixed did not
+		// dislodge it either. Hiding the widget is both reliable and correct - an off-screen
+		// child still paints and still takes events.
+		private void RefreshFlyoutVisibility()
+		{
+			if (_flyoutContainerWrapper == null)
+				return;
+
+			if (FlyoutVisible)
+			{
+				// ShowAll() on the wrapper is a no-op: gtk_widget_show_all skips any widget with
+				// no_show_all set, and the wrapper sets it so a parent's ShowAll cannot reveal a
+				// dismissed flyout. gtk_widget_show does not consult the flag, so show the wrapper
+				// itself explicitly and ShowAll the contents through the inner container.
+				_flyoutContainer.ShowAll();
+				_flyoutContainerWrapper.Show();
+				_flyoutContainerWrapper.Window?.Raise();
+			}
+			else
+			{
+				_flyoutContainerWrapper.Hide();
 			}
 		}
 
@@ -283,36 +333,42 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			Add(_detail);
 
+			// Re-add so the flyout stays above the detail in the Fixed's child order. Gtk.Fixed.Add
+			// drops the child at (0,0), so the position has to be re-applied afterwards or the
+			// flyout reappears over the detail's left edge.
 			Remove(_flyoutContainerWrapper);
 			Add(_flyoutContainerWrapper);
 
 			_detail.ShowAll();
-			_flyoutContainerWrapper.GdkWindow?.Raise(); // Forcing Flyout to be on top
+
+			_flyoutContainerWrapper.MoveTo(FlyoutVisible ? 0 : -DefaultFlyoutWidth, 0);
+			RefreshFlyoutVisibility(); // also raises the GdkWindow, forcing Flyout to be on top
 		}
 
-		private async void RefreshPresented(bool isPresented)
+		// The slide-in/slide-out animation is deliberately gone under GTK3. It drove the flyout by
+		// repeatedly moving a Gtk.Fixed child, and a moved Fixed child does not reliably pick up a
+		// new allocation: the widget's child x reached its target while the actual allocation stayed
+		// at whatever intermediate frame was last allocated (measured: child x=-300, allocation
+		// x=-205, so an ~95px strip of the flyout stayed painted over the detail). Showing a widget,
+		// by contrast, always allocates it afresh - so position first, then toggle visibility.
+		// Restoring the animation needs a mechanism that re-allocates each frame (M6).
+		private void RefreshPresented(bool isPresented)
 		{
 			_isPresented = isPresented;
 
 			if (_flyoutBehaviorType == FlyoutLayoutBehaviorType.Split)
 				return;
 
-			if (_animationsEnabled)
+			if (FlyoutVisible)
 			{
-				var from = (_isPresented) ? -DefaultFlyoutWidth : 0;
-				var to = (_isPresented) ? 0 : -DefaultFlyoutWidth;
-
-				await new FloatAnimation(from, to, TimeSpan.FromMilliseconds(IsPresentedAnimationMilliseconds), true, (f) =>
-				{
-					Gtk.Application.Invoke(delegate
-					{
-						_flyoutContainerWrapper.MoveTo(f, 0);
-					});
-				}).Run();
+				// Position while still hidden, then show, so the show applies the new position.
+				_flyoutContainerWrapper.MoveTo(0, 0);
+				RefreshFlyoutVisibility();
 			}
 			else
 			{
-				_flyoutContainerWrapper.MoveTo(_isPresented ? 0 : -DefaultFlyoutWidth, 0);
+				RefreshFlyoutVisibility();
+				_flyoutContainerWrapper.MoveTo(-DefaultFlyoutWidth, 0);
 			}
 		}
 
@@ -340,7 +396,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		private class FlyoutPageFlyoutTitleContainer : EventBox
 		{
-			private HBox _root;
+			private Box _root;
 			private ToolButton _hamburguerButton;
 			private Gtk.Label _titleLabel;
 			private Gtk.Image _hamburguerIcon;
@@ -351,7 +407,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			{
 				_defaultBackgroundColor = this.GetDefaultBackgroundColor(Gtk.StateFlags.Normal);
 
-				_root = new HBox();
+				_root = new Box(Gtk.Orientation.Horizontal, 0);
 				_hamburguerIcon = new Gtk.Image();
 
 				try

@@ -24,7 +24,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 	public class TimePickerWindow : Gtk.Window
 	{
-		private Gtk.HBox _timeBox;
+		private Gtk.Box _timeBox;
 		private Gtk.Label _labelHour;
 		private Gtk.SpinButton _txtHour;
 		private Gtk.Label _labelMin;
@@ -96,7 +96,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			SkipPagerHint = true;
 			SkipTaskbarHint = true;
 
-			_timeBox = new Gtk.HBox();
+			_timeBox = new Gtk.Box(Gtk.Orientation.Horizontal, 0);
 			_timeBox.Spacing = 6;
 			_timeBox.BorderWidth = 3;
 
@@ -334,7 +334,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			int x = 0;
 			int y = 0;
 
-			GdkWindow.GetOrigin(out x, out y);
+			Window.GetOrigin(out x, out y);
 			y += Allocation.Height;
 
 			var picker = new TimePickerWindow();

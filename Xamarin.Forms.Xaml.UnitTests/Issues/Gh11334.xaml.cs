@@ -45,11 +45,13 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				VisualDiagnostics.VisualTreeChanged -= OnVTChanged;
 			}
 
+			bool _visualTreeChanged;
+
 			void OnVTChanged(object sender, VisualTreeChangeEventArgs e)
 			{
 				Assert.Equal(VisualTreeChangeType.Remove, e.ChangeType);
 				Assert.Equal(0, e.ChildIndex);
-				return;
+				_visualTreeChanged = true;
 			}
 
 			[Theory]
@@ -60,7 +62,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 				var layout = new Gh11334(useCompiledXaml);
 				VisualDiagnostics.VisualTreeChanged += OnVTChanged;
 				layout.Remove(null, EventArgs.Empty);
-				Assert.Fail();
+				Assert.True(_visualTreeChanged, "VisualTreeChanged was never raised");
 			}
 		}
 	}

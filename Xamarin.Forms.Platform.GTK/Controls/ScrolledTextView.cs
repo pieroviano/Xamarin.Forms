@@ -5,7 +5,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 {
 	public class ScrolledTextView : EventBox
 	{
-		private Table _table;
+		private Gtk.Grid _table;
 		private ScrolledWindow _scrolledWindow;
 		private Gtk.Label _placeholder;
 		private EventBox _placeholderContainer;
@@ -13,7 +13,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public ScrolledTextView()
 		{
-			_table = new Table(1, 1, true);
+			_table = new Gtk.Grid { RowHomogeneous = true, ColumnHomogeneous = true };
 
 			TextView = new TextView
 			{
@@ -34,7 +34,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_scrolledWindow.Add(TextView);
 
 			_placeholder = new Gtk.Label();
-			_placeholder.SetAlignment(0, 0);
+			_placeholder.Xalign = 0;
+			_placeholder.Yalign = 0;
 
 			_placeholderContainer = new EventBox
 			{
@@ -49,8 +50,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			Add(_table);
 
-			_table.Attach(_placeholderContainer, 0, 1, 0, 1, AttachOptions.Fill, AttachOptions.Fill, 0, 0);
-			_table.Attach(_scrolledWindow, 0, 1, 0, 1);
+			_table.Attach(_placeholderContainer, 0, 0, 1, 1);
+			_table.Attach(_scrolledWindow, 0, 0, 1, 1);
 		}
 
 		public TextView TextView { get; }
@@ -129,7 +130,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			{
 				TextView.Sensitive = true;
 				TextView.HasFocus = true;
-				TextView.GdkWindow?.Raise();
+				TextView.Window?.Raise();
 			}
 		}
 	}

@@ -20,7 +20,7 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			}
 			else
 			{
-				var req = self.SizeRequest();
+				self.GetPreferredSize(out _, out var req); // GTK3 replacement for gtk_widget_size_request
 				desiredSize = new Gdk.Size(
 					req.Width > 0 ? req.Width : 0,
 					req.Height > 0 ? req.Height : 0);
@@ -38,7 +38,7 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			{
 				self.SetSize((int)widthConstraint, -1);
 
-				var req = self.SizeRequest();
+				self.GetPreferredSize(out _, out var req); // GTK3 replacement for gtk_widget_size_request
 				desiredSize = new Gdk.Size(
 					req.Width > 0 ? req.Width : 0,
 					req.Height > 0 ? req.Height : 0);

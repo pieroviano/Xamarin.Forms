@@ -17,11 +17,11 @@ namespace Xamarin.Forms.Platform.GTK
 		private readonly string _defaultBackButtonTitle = "Back";
 
 		private readonly ToolbarTracker _toolbarTracker;
-		private HBox _toolbar;
-		private HBox _toolbarNavigationSection;
-		private Alignment _toolbarTitleSectionWrapper;
-		private HBox _toolbarTitleSection;
-		private HBox _toolbarSection;
+		private Box _toolbar;
+		private Box _toolbarNavigationSection;
+		private Box _toolbarTitleSectionWrapper;
+		private Box _toolbarTitleSection;
+		private Box _toolbarSection;
 		private Gtk.Label _toolbarTitle;
 		private ImageControl _toolbarIcon;
 		private NavigationPage _navigation;
@@ -35,7 +35,7 @@ namespace Xamarin.Forms.Platform.GTK
 			_toolbarTracker.CollectionChanged += ToolbarTrackerOnCollectionChanged;
 		}
 
-		public HBox Toolbar
+		public Box Toolbar
 		{
 			get { return _toolbar; }
 		}
@@ -106,20 +106,27 @@ namespace Xamarin.Forms.Platform.GTK
 			}
 		}
 
-		protected virtual HBox ConfigureToolbar()
+		protected virtual Box ConfigureToolbar()
 		{
-			var toolbar = new HBox();
+			var toolbar = new Box(Gtk.Orientation.Horizontal, 0);
 			toolbar.HeightRequest = GtkToolbarConstants.ToolbarHeight;
 
-			_toolbarNavigationSection = new HBox();
+			_toolbarNavigationSection = new Box(Gtk.Orientation.Horizontal, 0);
 			toolbar.PackStart(_toolbarNavigationSection, false, true, 0);
 
-			_toolbarTitleSectionWrapper = new Alignment(0f, 0.5f, 0, 0);
-			_toolbarTitleSection = new HBox();
+			// GTK3 dropped Gtk.Alignment. The old Alignment(0, 0.5, 0, 0) left-aligned and
+			// vertically centred the title section without stretching it, which is now
+			// Halign/Valign on the section itself.
+			_toolbarTitleSectionWrapper = new Box(Gtk.Orientation.Horizontal, 0);
+			_toolbarTitleSection = new Box(Gtk.Orientation.Horizontal, 0)
+			{
+				Halign = Align.Start,
+				Valign = Align.Center
+			};
 			_toolbarTitleSectionWrapper.Add(_toolbarTitleSection);
 			toolbar.PackStart(_toolbarTitleSectionWrapper, true, true, 0);
 
-			_toolbarSection = new HBox();
+			_toolbarSection = new Box(Gtk.Orientation.Horizontal, 0);
 			toolbar.PackStart(_toolbarSection, false, true, 0);
 
 			return toolbar;

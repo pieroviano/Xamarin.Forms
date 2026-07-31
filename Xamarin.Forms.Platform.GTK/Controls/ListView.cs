@@ -88,17 +88,17 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 	{
 		private const int RefreshHeight = 48;
 
-		private VBox _root;
+		private Box _root;
 		private EventBox _headerContainer;
 		private Widget _header;
-		private VBox _list;
+		private Box _list;
 		private EventBox _footerContainer;
 		private Widget _footer;
 		private Viewport _viewPort;
 		private IEnumerable<Widget> _cells;
 		private List<ListViewSeparator> _separators;
 		private object _selectedItem;
-		private Table _refreshHeader;
+		private Gtk.Grid _refreshHeader;
 		private ImageButton _refreshButton;
 		private Gtk.Label _refreshLabel;
 		private bool _isPullToRequestEnabled;
@@ -291,7 +291,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (Refreshing)
 			{
-				_refreshHeader.Attach(_refreshLabel, 0, 1, 0, 1);
+				_refreshHeader.Attach(_refreshLabel, 0, 0, 1, 1);
 			}
 			else
 			{
@@ -322,8 +322,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			HscrollbarPolicy = PolicyType.Never;
 			VscrollbarPolicy = PolicyType.Automatic;
 
-			_root = new VBox();
-			_refreshHeader = new Table(1, 1, true);
+			_root = new Box(Gtk.Orientation.Vertical, 0);
+			_refreshHeader = new Gtk.Grid { RowHomogeneous = true, ColumnHomogeneous = true };
 			_refreshHeader.HeightRequest = RefreshHeight;
 
 			// Refresh Loading
@@ -344,7 +344,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				OnRefresh?.Invoke(this, new EventArgs());
 			};
 
-			_refreshHeader.Attach(_refreshButton, 0, 1, 0, 1);
+			_refreshHeader.Attach(_refreshButton, 0, 0, 1, 1);
 
 			_root.PackStart(_refreshHeader, false, false, 0);
 
@@ -353,7 +353,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_root.PackStart(_headerContainer, false, false, 0);
 
 			// List
-			_list = new VBox();
+			_list = new Box(Gtk.Orientation.Vertical, 0);
 			_separators = new List<ListViewSeparator>();
 			_root.PackStart(_list, true, true, 0);
 
