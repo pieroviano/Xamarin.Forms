@@ -1,19 +1,25 @@
 <Project>
   <PropertyGroup>
     <!--
-      Source builds load the XAML build tasks straight from Build.Tasks' own output.
-      This must set _XFBuildTasksLocation (ONE underscore): that is the property
-      Xamarin.Forms.targets feeds to its <UsingTask AssemblyFile=...>. Its own default is
-      $(MSBuildThisFileDirectory)<tfm>\, which is correct for the packaged layout
+      Source builds load the XAML build tasks from artifacts\build-tasks\, published there
+      by Build.Tasks' _PublishBuildTasks target.
+
+      NOT from Xamarin.Forms.Build.Tasks\bin\: MSBuild holds a loaded task assembly open for
+      the lifetime of the node, so with the solution open in Visual Studio that DLL stays
+      locked and Build.Tasks can never be rebuilt ("Access to the path ... is denied").
+      Loading from a separate copy puts the lock on the copy instead. This is what the old
+      .nuspec\<tfm>\ drop was for; the difference is that a failed refresh now warns loudly
+      instead of silently leaving a stale task behind.
+
+      Must set _XFBuildTasksLocation (ONE underscore) - that is the property
+      Xamarin.Forms.targets feeds to its <UsingTask AssemblyFile=...>. Its own default,
+      $(MSBuildThisFileDirectory)<tfm>\, is correct for the packaged layout
       (build/Xamarin.Forms.targets next to build/netstandard2.0/) but wrong in-tree.
 
-      Previously the tasks were copied into .nuspec/<tfm>/ and loaded from there; a failed
-      or skipped copy silently left a STALE task assembly in place, which is how an
-      XamlCTask crash and the Windows MSB3021 warnings arose.
-
-      Build.Tasks is netstandard2.0-only now, so one path serves both MSBuild runtimes.
+      Configuration-independent on purpose: the path is fixed, so it does not matter that
+      Directory.Build.props is evaluated before the SDK defaults $(Configuration).
     -->
-    <_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)Xamarin.Forms.Build.Tasks\bin\$(Configuration)\netstandard2.0\</_XFBuildTasksLocation>
+    <_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)artifacts\build-tasks\netstandard2.0\</_XFBuildTasksLocation>
     <__XFBuildTasksLocation>$(_XFBuildTasksLocation)</__XFBuildTasksLocation>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>portable</DebugType>

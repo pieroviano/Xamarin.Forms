@@ -7,6 +7,14 @@
     <!-- Exe, not WinExe: WinExe is a Windows-subsystem concept and there is no such
          distinction on Linux; it also suppresses the console output we rely on. -->
     <OutputType>Exe</OutputType>
+    <!--
+      net10.0, NOT netstandard2.0. Verified empirically: with netstandard2.0 this project
+      still compiles to a .dll, but no runtimeconfig.json is emitted (netstandard names no
+      runtime), so the host treats it as self-contained and fails at launch with
+      "The library 'libhostpolicy.so' required to execute the application was not found".
+      Libraries target netstandard; an application must name a concrete runtime.
+      Xamarin.Forms.Platform.GTK IS netstandard2.0 - that is the reusable half.
+    -->
     <TargetFramework>net10.0</TargetFramework>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

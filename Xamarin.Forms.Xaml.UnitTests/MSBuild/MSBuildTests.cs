@@ -63,8 +63,12 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			// is qualified, so take the last segment to keep the old short directory names.
 			var testName = TestContext.Current.Test?.TestDisplayName ?? Guid.NewGuid().ToString("N");
 			testName = testName.Substring(testName.LastIndexOf('.') + 1);
+			// xUnit's display name includes the argument list - "BuildAProject(sdkStyle: False)" -
+			// so strip whitespace and punctuation as well as the OS-invalid characters, keeping
+			// the directory name shell-safe. NUnit's Test.Name had no spaces.
 			foreach (var c in IOPath.GetInvalidFileNameChars())
 				testName = testName.Replace(c, '_');
+			testName = new string(testName.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
 
 			tempDirectory = IOPath.Combine(testDirectory, "temp", testName);
 			intermediateDirectory = IOPath.Combine(tempDirectory, "obj", "Debug");
@@ -205,8 +209,11 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		// what lets these tests run in the Linux CI at all.
 		const string MSBuildExe = "dotnet";
 
+		// projectFile is quoted: it is an absolute path under a per-test temp directory, and
+		// an unquoted path containing a space makes MSBuild treat it as two positional
+		// arguments ("MSB1008: Only one project can be specified").
 		static string MSBuildArgs(string projectFile, string target, string verbosity, string additionalArgs) =>
-			$"msbuild /v:{verbosity} /nologo {projectFile} /t:{target} /bl {additionalArgs}";
+			$"msbuild /v:{verbosity} /nologo \"{projectFile}\" /t:{target} /bl {additionalArgs}";
 
 		void RestoreIfNeeded(string projectFile, bool sdkStyle)
 		{

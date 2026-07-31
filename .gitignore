@@ -76,3 +76,5 @@ TestResult.xml
 build/packages
 WriteDevopsVariables.csproj
 !Microsoft.VisualStudio.DesignTools.Extensibility.dll
+# Build tasks published for in-tree consumption (see Directory.Build.props)
+artifacts/

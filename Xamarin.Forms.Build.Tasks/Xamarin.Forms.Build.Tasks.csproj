@@ -121,11 +121,38 @@
   </Target>
 
   <!--
-    _CopyToNuspecDir removed: consumers now load the tasks directly from this project's
-    output (see __XFBuildTasksLocation in Directory.Build.props). The copy ran with
-    ContinueOnError="true", so a locked destination silently left a stale task assembly
-    behind - which is exactly how an XamlCTask crash and the Windows MSB3021 warnings arose.
+    Publish the tasks to a stable folder OUTSIDE any build output, and have consumers load
+    them from there (see _XFBuildTasksLocation in Directory.Build.props).
+
+    Consumers cannot load them from this project's own bin/: MSBuild keeps a loaded task
+    assembly open for the lifetime of the node, so with the solution open in Visual Studio
+    the DLL is locked indefinitely and Build.Tasks can never be rebuilt ("Access to the path
+    ... is denied"). Loading from a separate copy means VS locks the COPY, leaving this
+    project's output free to rebuild.
+
+    That is what the old .nuspec/<tfm>/ copy was for. The difference here is that a failed
+    copy is REPORTED: it used to be ContinueOnError with no message, so a locked destination
+    silently left a stale task in place - which is how an XamlCTask crash appeared earlier.
   -->
+  <Target Name="_PublishBuildTasks" AfterTargets="Build" Condition="'$(TargetPath)' != ''">
+    <PropertyGroup>
+      <_XFTasksPublishDir>$(MSBuildThisFileDirectory)..\artifacts\build-tasks\$(TargetFramework)\</_XFTasksPublishDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_XFTaskFiles Include="$(TargetDir)*.dll" />
+    </ItemGroup>
+    <MakeDir Directories="$(_XFTasksPublishDir)" />
+    <Copy SourceFiles="@(_XFTaskFiles)"
+          DestinationFolder="$(_XFTasksPublishDir)"
+          SkipUnchangedFiles="true"
+          ContinueOnError="WarnAndContinue"
+          Retries="3"
+          RetryDelayMilliseconds="200">
+      <Output TaskParameter="CopiedFiles" ItemName="_XFCopiedTaskFiles" />
+    </Copy>
+    <Warning Condition="'@(_XFCopiedTaskFiles)' == '' AND Exists('$(_XFTasksPublishDir)Xamarin.Forms.Build.Tasks.dll')"
+             Text="Could not refresh the XAML build tasks in $(_XFTasksPublishDir) - they are locked, most likely by an open Visual Studio or a running MSBuild node. The build is continuing with the PREVIOUS copy, so XAML compilation may not reflect your Build.Tasks changes. Close the solution (or run 'dotnet build-server shutdown') and rebuild." />
+  </Target>
 
   <!--
     Packaged as an MSBuild task package, not a library:
