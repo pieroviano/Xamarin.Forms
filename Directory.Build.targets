@@ -1,4 +1,21 @@
 <Project>
   <Import Condition="'$(SampleProject)' != 'true'" Project="Git.Build.targets" />
   <Import Condition="'$(SampleProject)' != 'true'" Project="Version.targets" />
+
+  <!--
+    Net4x.NuGetUtility's build\Net4x.NuGetUtility.props packs the solution-root README.md at
+    the package root, while every packable project here packs its own README.md at
+    \README.md. Two files claiming \README.md is NU5118, which TreatWarningsAsErrors turns
+    into a build failure. The per-project README is the one to keep, so drop the item the
+    package added.
+
+    Removed from .targets, not .props: the item does not exist yet when Directory.Build.props
+    is evaluated. $(NuGetUtility) is set by those same package props, so this is a no-op for
+    projects that do not reference the package. The expression also matches the case of a
+    project built outside the solution, where SolutionDir is empty and the package's
+    Exists() check resolves README.md relative to the project directory.
+  -->
+  <ItemGroup Condition="'$(NuGetUtility)' == 'true'">
+    <None Remove="$(SolutionDir)README.md" />
+  </ItemGroup>
  </Project>

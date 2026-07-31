@@ -164,7 +164,18 @@
         <IncludeSymbols>false</IncludeSymbols>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="build\*.props;build\*.targets" Pack="true" PackagePath="build\" />
+        <None Include="build\*.props;build\*.targets" Exclude="build\Xamarin.Forms.Build.Tasks.props;build\Xamarin.Forms.Build.Tasks.targets" Pack="true" PackagePath="build\" />
+        <!--
+          The auto-import entry points, renamed on the way into the package: NuGet imports
+          build\$(PackageId).props|.targets and nothing else, and $(PackageId) is now
+          Net4x.Xamarin.Forms.Build.Tasks rather than the assembly name the files carry on
+          disk. Packing them under their own names instead leaves build\ with props/targets
+          that NuGet would never import - NU5129, an error here because of
+          TreatWarningsAsErrors. Deriving the packed name from $(PackageId) keeps the entry
+          point correct if the id changes again.
+        -->
+        <None Include="build\Xamarin.Forms.Build.Tasks.props" Pack="true" PackagePath="build\$(PackageId).props" />
+        <None Include="build\Xamarin.Forms.Build.Tasks.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
     </ItemGroup>
     <Target Name="_PackBuildTaskAssemblies" BeforeTargets="_GetPackageFiles">
         <ItemGroup>

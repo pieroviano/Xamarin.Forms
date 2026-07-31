@@ -194,7 +194,7 @@
     <nugetoptimizerVersion>1.0.0</nugetoptimizerVersion>
     <NugetOptimizerVersion>1.0.0</NugetOptimizerVersion>
     <NuGetUploaderVersion>1.0.0</NuGetUploaderVersion>
-    <NuGetUtilityPocVersion>1.0.13</NuGetUtilityPocVersion>
+    <NuGetUtilityPocVersion>1.0.8</NuGetUtilityPocVersion>
     <NuGetUtilityVersion>1.0.9</NuGetUtilityVersion>
     <NumberConverterLibVersion>1.2.0</NumberConverterLibVersion>
     <NUnitToXunitConverterVersion>1.0.0</NUnitToXunitConverterVersion>
@@ -312,7 +312,7 @@
     <WindowsLibraryVersion>1.1.0</WindowsLibraryVersion>
     <WpfAdornedControlVersion>1.2.0</WpfAdornedControlVersion>
     <WrapperGeneratorVersion>1.2.0</WrapperGeneratorVersion>
-    <XamarinFormsGtkVersion>1.0.0</XamarinFormsGtkVersion>
+    <XamarinFormsGtkVersion>5.0.0</XamarinFormsGtkVersion>
     <Xsd2DbLibraryVersion>1.1.0</Xsd2DbLibraryVersion>
     <Xsd2DbVersion>1.4.0</Xsd2DbVersion>
     <xunitassertVersion>1.0.0</xunitassertVersion>

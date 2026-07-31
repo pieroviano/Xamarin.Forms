@@ -3,6 +3,13 @@
     <PackageId>Net4x.Xamarin.Forms.Platform</PackageId>
     <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
     <IsPackable>true</IsPackable>
+    <!--
+      Same expression as every other packable project here. Without it the SDK default
+      applies - $(VersionPrefix)-$(VersionSuffix), i.e. the prerelease 5.0.0-0 - and
+      Xamarin.Forms.Core, which packs as the stable 5.0.0.0, then carries a prerelease
+      dependency: NU5104, which TreatWarningsAsErrors turns into a build failure.
+    -->
+    <Version>$(VersionPrefix).$(VersionSuffix)</Version>
 
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>

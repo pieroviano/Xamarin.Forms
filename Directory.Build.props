@@ -1,4 +1,30 @@
 <Project>
+
+  <PropertyGroup>
+    <!--
+      Seven projects carry <Version>$(VersionPrefix).$(VersionSuffix)</Version>, injected by the
+      Net4x.NuGetUtility tooling. That package is not restored here, so its NuGet.Utility.props -
+      which is what would normally define these two - never gets imported, and Version evaluates
+      to the bare string "." which fails restore with:
+          NuGet.targets(198,5): error : '.' is not a valid version string. (Parameter 'value')
+      Supplying defaults keeps the tooling's expression valid without editing those csproj files
+      or requiring the package. Both are conditional, so a real restore (or an explicit
+      -p:VersionPrefix=) still wins. 5.0.0 is the branch version, from GitInfo.txt.
+    -->
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">5.0.0</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">0</VersionSuffix>
+
+    <!--
+      Same tooling, second symptom: it also injected
+          <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" />
+      into seven projects. The property that feeds it lives in the generated Directory.Nuget.Props,
+      which nothing imports (MSBuild auto-imports Directory.Build.props/.targets, not that file), so
+      the version was empty and restore failed with
+          NU1015: The following PackageReference item(s) do not have a version specified.
+    -->
+    <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)' == ''">1.0.13</NuGetUtilityVersion>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!--
       Source builds load the XAML build tasks from artifacts\build-tasks\, published there
