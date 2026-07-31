@@ -1,0 +1,9 @@
+﻿<Project>
+  <!--
+    NuGet auto-import entry point. A package's build/ folder is imported automatically only
+    via build/$(PackageId).props|.targets, so this forwards to the historically-named files
+    that carry the actual logic (they keep their names because projects in this repo, and
+    existing consumers, import Xamarin.Forms.props/targets directly).
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)Xamarin.Forms.props" />
+</Project>

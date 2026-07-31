@@ -1,0 +1,9 @@
+﻿<Project>
+  <!--
+    NuGet auto-import entry point - see Xamarin.Forms.Build.Tasks.props.
+    Xamarin.Forms.targets resolves the task assembly from $(_XFBuildTasksLocation), whose
+    default is $(MSBuildThisFileDirectory)<tfm>\ - correct for this packaged layout, where
+    the task assemblies sit in build/<tfm>/ next to these files.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)Xamarin.Forms.targets" />
+</Project>
