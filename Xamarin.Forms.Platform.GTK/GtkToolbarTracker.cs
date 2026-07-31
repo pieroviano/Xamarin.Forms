@@ -225,7 +225,7 @@ namespace Xamarin.Forms.Platform.GTK
 
 			if (secondaryToolBarItems.Any())
 			{
-				ToolButton secondaryButton = ToolButtonHelper.CreateToolButton(Stock.Add);
+				ToolButton secondaryButton = ToolButtonHelper.CreateToolButtonFromIconName("list-add-symbolic");
 				_toolbarSection.PackStart(secondaryButton, false, false, 0);
 
 				Gtk.Menu menu = new Gtk.Menu();
@@ -284,7 +284,7 @@ namespace Xamarin.Forms.Platform.GTK
 
 				if (string.IsNullOrEmpty(_backButton))
 				{
-					navigationButton = ToolButtonHelper.CreateToolButton(Stock.GoBack);
+					navigationButton = ToolButtonHelper.CreateToolButtonFromIconName("go-previous-symbolic");
 				}
 				else
 				{
@@ -419,9 +419,11 @@ namespace Xamarin.Forms.Platform.GTK
 
 		static class ToolButtonHelper
 		{
-			public static ToolButton CreateToolButton(string stockId)
+			// Was ToolButton(stockId). GTK3 deprecates the stock-id constructor along with the
+			// stock system itself, so the icon comes from the icon theme by name instead.
+			public static ToolButton CreateToolButtonFromIconName(string iconName)
 			{
-				ToolButton button = new ToolButton(stockId);
+				ToolButton button = new ToolButton(new Gtk.Image(iconName, IconSize.SmallToolbar), null);
 				ApplyDefaultDimensions(button);
 
 				return button;

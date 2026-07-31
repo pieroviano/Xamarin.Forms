@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-    <PackageId>Xamarin.Forms.Build.Tasks</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Build.Tasks</PackageId>
     <Description>MSBuild tasks and targets for Xamarin.Forms XAML compilation.</Description>
     <IsPackable>true</IsPackable>
 

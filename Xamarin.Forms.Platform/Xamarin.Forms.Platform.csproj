@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Xamarin.Forms.Platform</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Platform</PackageId>
     <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
     <IsPackable>true</IsPackable>
 

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Xamarin.Forms.Xaml</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Xaml</PackageId>
     <Description>XAML loader and markup support for Xamarin.Forms.</Description>
     <IsPackable>true</IsPackable>
 

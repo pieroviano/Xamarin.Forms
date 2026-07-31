@@ -19,11 +19,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_entryWrapper.Entry.HasFrame = false;
 			_searchButton = new ImageButton();
 			_searchButton.SetImagePosition(PositionType.Left);
-			_searchButton.ImageWidget.Pixbuf = RenderIcon("gtk-find", IconSize.SmallToolbar, null); // Search icon
+			// GTK3: gtk_widget_render_icon is deprecated along with stock IDs; load themed icons.
+			_searchButton.ImageWidget.Pixbuf = LoadThemedIcon("edit-find-symbolic");
 
 			_clearButton = new ImageButton();
 			_clearButton.SetImagePosition(PositionType.Left);
-			_clearButton.ImageWidget.Pixbuf = RenderIcon("gtk-close", IconSize.SmallToolbar, null); // Cancel icon
+			_clearButton.ImageWidget.Pixbuf = LoadThemedIcon("edit-clear-symbolic");
 
 			_container.PackStart(_searchButton, false, false, 0);
 			_container.PackStart(_entryWrapper, true, true, 0);
@@ -192,6 +193,21 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		private void CancelButtonClicked(object sender, EventArgs e)
 		{
 			_entryWrapper.Entry.Text = string.Empty;
+		}
+
+		// Replaces Widget.RenderIcon, which is deprecated in GTK3 together with the stock-id
+		// system it looked icons up in. Missing icons throw rather than returning null, and a
+		// search box without its glyphs is preferable to a crash on an unusual icon theme.
+		private static Gdk.Pixbuf LoadThemedIcon(string iconName)
+		{
+			try
+			{
+				return IconTheme.Default.LoadIcon(iconName, 16, IconLookupFlags.ForceSize);
+			}
+			catch
+			{
+				return null;
+			}
 		}
 	}
 }

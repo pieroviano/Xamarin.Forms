@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace Xamarin.Forms.Platform.GTK.Renderers
 {
-	public class SliderRenderer : ViewRenderer<Slider, Gtk.HScale>
+	public class SliderRenderer : ViewRenderer<Slider, Gtk.Scale>
 	{
 		private double _minimum;
 		private double _maximum;
@@ -34,8 +34,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					_maximum = e.NewElement.Maximum;
 					double stepping = Math.Min((e.NewElement.Maximum - e.NewElement.Minimum) / 10, 1);
 
-					// Use gtk.HScale, a horizontal slider widget for selecting a value from a range.
-					SetNativeControl(new Gtk.HScale(_minimum, _maximum, stepping)
+					// A horizontal slider for selecting a value from a range. GTK3 replaces the
+					// separate Gtk.HScale class with an orientation on Gtk.Scale.
+					SetNativeControl(new Gtk.Scale(Gtk.Orientation.Horizontal, _minimum, _maximum, stepping)
 					{
 						// Do not show a label in order to mimic the rest of the Xamarin.Forms backends
 						DrawValue = false

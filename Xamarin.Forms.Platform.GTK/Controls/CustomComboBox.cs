@@ -7,7 +7,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 	{
 		private Gtk.Entry _entry;
 		private Gtk.Button _button;
-		private Gtk.Arrow _arrow;
+		private Gtk.Image _arrow;
 		private Gdk.Color _color;
 
 		public CustomComboBox()
@@ -57,7 +57,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_button = new Gtk.Button();
 			_button.WidthRequest = 30;
 			_button.CanFocus = true;
-			_arrow = new Gtk.Arrow(Gtk.ArrowType.Down, Gtk.ShadowType.EtchedOut);
+			// GTK3 deprecates Gtk.Arrow; the themed "pan-down" icon is the replacement it
+			// recommends, and it follows the icon theme instead of drawing a fixed glyph.
+			_arrow = new Gtk.Image("pan-down-symbolic", Gtk.IconSize.Button);
 			_button.Add(_arrow);
 			PackEnd(_button, false, false, 0);
 		}

@@ -130,12 +130,24 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		{
 			foreach (MenuItem item in Cell.ContextActions)
 			{
-				var menuItem = new ImageMenuItem(item.Text);
+				// GTK3 deprecates Gtk.ImageMenuItem and its Image property: a menu item is now a
+				// plain MenuItem whose child is whatever box of widgets you want. Build that box
+				// up front so the async icon load only has to fill in the Pixbuf.
+				var menuItem = new Gtk.MenuItem();
+				var menuItemImage = new Gtk.Image();
+				var menuItemBox = new Gtk.Box(Gtk.Orientation.Horizontal, 6);
+
+				menuItemBox.PackStart(menuItemImage, false, false, 0);
+				menuItemBox.PackStart(new Gtk.Label(item.Text) { Xalign = 0 }, true, true, 0);
+				menuItem.Add(menuItemBox);
 
 				_ = item.ApplyNativeImageAsync(MenuItem.IconImageSourceProperty, icon =>
 				{
 					if (icon != null)
-						menuItem.Image = new Gtk.Image(icon);
+					{
+						menuItemImage.Pixbuf = icon;
+						menuItemImage.Show();
+					}
 				});
 
 				menuItem.ButtonPressEvent += (sender, args) =>

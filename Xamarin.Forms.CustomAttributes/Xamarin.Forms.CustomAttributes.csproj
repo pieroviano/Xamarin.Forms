@@ -11,5 +11,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169</NoWarn>
+    <PackageId>Net4x.$(AssemblyName)</PackageId>
   </PropertyGroup>
 </Project>

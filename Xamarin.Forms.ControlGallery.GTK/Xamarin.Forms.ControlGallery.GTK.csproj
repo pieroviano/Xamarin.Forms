@@ -21,6 +21,7 @@
     <LangVersion>latest</LangVersion>
     <!-- Matches Xamarin.Forms.Platform.GTK; see the note on CS0612/CS0618 there. -->
     <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
+    <PackageId>Net4x.$(AssemblyName)</PackageId>
   </PropertyGroup>
   <!-- HAVE_OPENTK dropped: the OpenGL gallery pages need OpenGLView, which is quarantined
        behind EnableGtkOpenGL in Xamarin.Forms.Platform.GTK until M6. -->

@@ -182,9 +182,19 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 
 		// ---- theme-default readers (replacing Gtk.Style.* arrays) ----------------------
 
-		/// <summary>Replaces <c>Style.Backgrounds[(int)state]</c>.</summary>
-		public static Gdk.Color GetDefaultBackgroundColor(this Widget widget, StateFlags state = StateFlags.Normal) =>
-			widget == null ? new Gdk.Color(0, 0, 0) : widget.StyleContext.GetBackgroundColor(state).ToGdkColor();
+		/// <summary>
+		/// Replaces <c>Style.Backgrounds[(int)state]</c>. Reads the CSS property directly:
+		/// gtk_style_context_get_background_color is deprecated, while the generic property
+		/// getter is not, and both return the same "background-color" value.
+		/// </summary>
+		public static Gdk.Color GetDefaultBackgroundColor(this Widget widget, StateFlags state = StateFlags.Normal)
+		{
+			if (widget == null)
+				return new Gdk.Color(0, 0, 0);
+
+			using (var value = widget.StyleContext.GetProperty("background-color", state))
+				return ((Gdk.RGBA)value.Val).ToGdkColor();
+		}
 
 		/// <summary>Replaces <c>Style.Foregrounds[(int)state]</c>.</summary>
 		public static Gdk.Color GetDefaultForegroundColor(this Widget widget, StateFlags state = StateFlags.Normal) =>
@@ -201,9 +211,18 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 		public static Gdk.Color GetDefaultTextColor(this Widget widget, StateFlags state = StateFlags.Normal) =>
 			widget.GetDefaultForegroundColor(state);
 
-		/// <summary>Replaces <c>Style.FontDescription</c>.</summary>
-		public static Pango.FontDescription GetDefaultFont(this Widget widget, StateFlags state = StateFlags.Normal) =>
-			widget?.StyleContext.GetFont(state);
+		/// <summary>
+		/// Replaces <c>Style.FontDescription</c>. As above, the generic property getter stands in
+		/// for the deprecated gtk_style_context_get_font.
+		/// </summary>
+		public static Pango.FontDescription GetDefaultFont(this Widget widget, StateFlags state = StateFlags.Normal)
+		{
+			if (widget == null)
+				return null;
+
+			using (var value = widget.StyleContext.GetProperty("font", state))
+				return value.Val as Pango.FontDescription;
+		}
 
 		// ---- conversions ---------------------------------------------------------------
 

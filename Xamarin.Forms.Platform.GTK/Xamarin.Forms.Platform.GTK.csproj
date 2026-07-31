@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>Xamarin.Forms.Platform.GTK</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
     <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
     <IsPackable>true</IsPackable>
 
@@ -35,17 +35,6 @@
   <PropertyGroup>
     <DefineConstants Condition="'$(EnableGtkWebView)' == 'true'">$(DefineConstants);ENABLE_GTK_WEBVIEW</DefineConstants>
     <DefineConstants Condition="'$(EnableGtkOpenGL)' == 'true'">$(DefineConstants);ENABLE_GTK_OPENGL</DefineConstants>
-  </PropertyGroup>
-
-  <!--
-    TEMPORARY (plan V4 / M2 exit criterion): GTK3 marks Table/Alignment/Misc/HBox/VBox/
-    Widget.Style/SizeRequest obsolete, and Directory.Build.props sets TreatWarningsAsErrors
-    for every project. CS0612 is [Obsolete] without a message (most of the GtkSharp3
-    deprecations), CS0618 is [Obsolete("...")]. Delete these once the deprecated APIs
-    are migrated.
-  -->
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

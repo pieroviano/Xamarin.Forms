@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-    <PackageId>Xamarin.Forms.Core</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Core</PackageId>
     <Description>Core assembly of Xamarin.Forms: the cross-platform UI abstraction.</Description>
     <IsPackable>true</IsPackable>
 

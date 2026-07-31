@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-    <PackageId>Xamarin.Forms.Maps</PackageId>
+    <PackageId>Net4x.Xamarin.Forms.Maps</PackageId>
     <Description>Map control abstraction for Xamarin.Forms.</Description>
     <IsPackable>true</IsPackable>
 

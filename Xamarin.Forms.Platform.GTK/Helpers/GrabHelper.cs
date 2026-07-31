@@ -1,34 +1,29 @@
-﻿using Gtk;
+using Gtk;
 
 namespace Xamarin.Forms.Platform.GTK.Helpers
 {
 	public class GrabHelper
 	{
-		private static uint CURRENT_TIME = 0;
-
 		public static void GrabWindow(Window window)
 		{
 			window.GrabFocus();
 
 			Grab.Add(window);
 
-			Gdk.GrabStatus grabbed =
-				Gdk.Pointer.Grab(window.Window, true,
-				Gdk.EventMask.ButtonPressMask
-				| Gdk.EventMask.ButtonReleaseMask
-				| Gdk.EventMask.PointerMotionMask, null, null, CURRENT_TIME);
+			// GTK 3.20 replaced the separate Gdk.Pointer.Grab / Gdk.Keyboard.Grab pair with a
+			// single seat grab that covers both device classes, so what used to be a nested
+			// pointer-then-keyboard sequence is now one call with one failure path.
+			var seat = window.Display?.DefaultSeat;
 
-			if (grabbed == Gdk.GrabStatus.Success)
-			{
-				grabbed = Gdk.Keyboard.Grab(window.Window, true, CURRENT_TIME);
+			var grabbed = seat?.Grab(
+				window.Window,
+				Gdk.SeatCapabilities.AllPointing | Gdk.SeatCapabilities.Keyboard,
+				true,
+				null,
+				null,
+				null);
 
-				if (grabbed != Gdk.GrabStatus.Success)
-				{
-					Grab.Remove(window);
-					window.Destroy();
-				}
-			}
-			else
+			if (grabbed != Gdk.GrabStatus.Success)
 			{
 				Grab.Remove(window);
 				window.Destroy();
@@ -38,8 +33,7 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 		public static void RemoveGrab(Window window)
 		{
 			Grab.Remove(window);
-			Gdk.Pointer.Ungrab(CURRENT_TIME);
-			Gdk.Keyboard.Ungrab(CURRENT_TIME);
+			window.Display?.DefaultSeat?.Ungrab();
 		}
 	}
 }
