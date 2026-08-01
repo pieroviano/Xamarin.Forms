@@ -130,9 +130,45 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_content.ShowAll();
 		}
 
+		bool _imageResizeQueued;
+
+		/// <summary>
+		/// Keeps the background image the size of the content area.
+		/// </summary>
+		/// <remarks>
+		/// Deferred to idle, never applied inline - and this one is the root of the resize wedge the
+		/// plan records under "The resize wedge under Controls.Page's Gtk.Fixed". SetSizeRequest
+		/// calls gtk_widget_queue_resize, and doing that from inside a size-allocate handler does not
+		/// merely lose the resize: the alloc-needed flag is left standing on this widget's ancestors,
+		/// and gtk_widget_queue_resize_internal bails out at the first ancestor that already carries
+		/// it. Every later queue_resize raised anywhere in the page subtree was therefore swallowed,
+		/// which is exactly the measured boundary in that section - a QueueResize at or below
+		/// _contentContainer did nothing, one above it re-allocated the whole subtree.
+		///
+		/// The visible consequence: the page's content kept the natural size a Gtk.Fixed hands an
+		/// unconstrained child no matter what Forms asked for. In the ControlGallery that was a
+		/// detail page laid out 257px wide inside a 500px detail area, with the AbsoluteLayout's
+		/// proportional children painted at their natural heights and overlapping each other.
+		/// </remarks>
 		private void OnContentContainerWrapperSizeAllocated(object o, SizeAllocatedArgs args)
 		{
-			_image.SetSizeRequest(args.Allocation.Width, args.Allocation.Height);
+			if (_lastAllocation == args.Allocation)
+				return;
+
+			_lastAllocation = args.Allocation;
+
+			if (_imageResizeQueued)
+				return;
+
+			_imageResizeQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_imageResizeQueued = false;
+				_image?.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+				return false;
+			});
 		}
 	}
 }

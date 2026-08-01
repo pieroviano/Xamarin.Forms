@@ -166,20 +166,43 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			_listView.SetBackgroundColor(backgroundColor);
 		}
 
+		bool _cellWidthQueued;
+
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
 
-			if (_lastAllocation != allocation)
+			if (_lastAllocation == allocation)
+				return;
+
+			_lastAllocation = allocation;
+
+			// Deferred, never inline. Assigning WidthRequest calls gtk_widget_queue_resize, and
+			// raising a resize from inside size-allocate leaves the alloc-needed flag standing on
+			// this widget's ancestors; gtk_widget_queue_resize_internal then bails out at the first
+			// ancestor that already carries it, so every later resize queued anywhere in the page
+			// subtree is swallowed. That is the "resize wedge" in the plan, and with two ListViews
+			// on the ControlGallery's detail page this ran on every allocation.
+			if (_cellWidthQueued)
+				return;
+
+			_cellWidthQueued = true;
+
+			GLib.Idle.Add(() =>
 			{
-				_lastAllocation = allocation;
+				_cellWidthQueued = false;
+
+				if (_disposed || _cells == null)
+					return false;
 
 				foreach (var cell in _cells)
 				{
 					cell.WidthRequest = _lastAllocation.Width;
 					cell.QueueDraw();
 				}
-			}
+
+				return false;
+			});
 		}
 
 		private void UpdateItems()

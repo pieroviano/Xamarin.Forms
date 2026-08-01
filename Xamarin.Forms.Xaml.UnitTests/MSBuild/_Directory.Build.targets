@@ -1,4 +1,11 @@
-﻿<Project>
-  <Import Project="..\..\..\..\..\..\.nuspec\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true' AND Exists('$(__XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll')" />
-  <Import Project="..\..\..\..\..\..\.nuspec\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
+<Project>
+  <!--
+    See _Directory.Build.props for why this imports Xamarin.Forms.Build.Tasks\build\ directly
+    instead of the .gitignore'd .nuspec\ forwarding stub, and where $(XFRepoRoot) comes from.
+  -->
+  <PropertyGroup>
+    <XFRepoRoot Condition="'$(XFRepoRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\..\..\</XFRepoRoot>
+  </PropertyGroup>
+  <Import Project="$(XFRepoRoot)Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true' AND Exists('$(__XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll')" />
+  <Import Project="$(XFRepoRoot)Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.targets" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
 </Project>

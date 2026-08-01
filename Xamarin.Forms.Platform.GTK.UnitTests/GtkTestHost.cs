@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.GTK;
@@ -82,6 +83,42 @@ public class GtkTestHost
 	{
 		while (Gtk.Application.EventsPending())
 			Gtk.Application.RunIteration();
+	}
+
+	/// <summary>
+	/// Waits for a task by pumping GTK, instead of blocking the thread.
+	///
+	/// MEASURED: an <c>async</c> test method deadlocks this suite outright. <see cref="FormsWindow"/>'s
+	/// constructor installs a <see cref="GtkSynchronizationContext"/> on whatever thread creates it
+	/// (FormsWindow.cs:22), which is the NUnit test thread; every subsequent <c>await</c>
+	/// continuation is then posted to the GTK main loop, and nothing runs that loop during a test.
+	/// The run hangs with no failure and no output - the first version of this suite stopped dead
+	/// after PlatformServiceTests.IdiomIsDesktop and had to be killed.
+	///
+	/// So: no <c>async</c> test methods in this assembly. Await through here.
+	/// </summary>
+	public static T Await<T>(Task<T> task, int timeoutMs = 10000)
+	{
+		var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+		while (!task.IsCompleted && DateTime.UtcNow < deadline)
+			Pump(null, 1);
+
+		Assert.That(task.IsCompleted, Is.True, $"task did not complete within {timeoutMs}ms");
+
+		return task.GetAwaiter().GetResult();
+	}
+
+	public static void Await(Task task, int timeoutMs = 10000)
+	{
+		var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+		while (!task.IsCompleted && DateTime.UtcNow < deadline)
+			Pump(null, 1);
+
+		Assert.That(task.IsCompleted, Is.True, $"task did not complete within {timeoutMs}ms");
+
+		task.GetAwaiter().GetResult();
 	}
 
 	/// <summary>
