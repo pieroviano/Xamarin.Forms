@@ -1,0 +1,74 @@
+name: linux-gtk
+
+# The GTK backend is the only one of this fork's platform legs that builds and runs on Linux,
+# so it is the only one with CI here. The existing azure-pipelines.yml / build/steps/*.yml are
+# Windows and macOS and do not cover any of this.
+on:
+  push:
+    branches: [ 5.0.0 ]
+  pull_request:
+    branches: [ 5.0.0 ]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # GitInfo derives the package version from the history; a shallow clone makes it
+          # guess, and the build then emits MSB3073 "could not retrieve first commit" noise.
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install GTK 3, WebKitGTK, Mesa and a headless X server
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libgtk-3-dev \
+            libwebkit2gtk-4.1-0 \
+            libgl1-mesa-dri libglx-mesa0 \
+            xvfb dbus-x11 fonts-dejavu-core
+
+      # libwebkit2gtk-4.1 is bound by hand in Controls/WebKit2.cs and every entry point is
+      # resolved lazily, so its absence degrades WebView to a placeholder rather than failing
+      # the build - but the renderer tests should exercise the real thing.
+      - name: Report native versions
+        run: |
+          pkg-config --modversion gtk+-3.0 || true
+          ls /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so.0 || true
+
+      - name: Build
+        run: dotnet build Xamarin.Forms.Gtk.sln -c Release
+
+      - name: Core unit tests
+        run: dotnet test Xamarin.Forms.Core.UnitTests -c Release --no-build --logger trx
+
+      - name: XAML unit tests
+        run: dotnet test Xamarin.Forms.Xaml.UnitTests -c Release --no-build --logger trx
+
+      # These are real GTK widgets: they need an X server, and GDK_BACKEND=x11 because the
+      # GTK backend's screenshot/pixbuf paths are unsupported under Wayland.
+      - name: GTK renderer tests (headless)
+        env:
+          GDK_BACKEND: x11
+        run: xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
+
+      # Same suite, with GTK criticals promoted to fatal. Kept separate and non-blocking-by-
+      # position (it runs last) so a criticals-only regression is visibly distinct from a real
+      # assertion failure above.
+      - name: GTK renderer tests (fatal criticals)
+        env:
+          GDK_BACKEND: x11
+          G_DEBUG: fatal-criticals
+        run: xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: '**/*.trx'
