@@ -23,7 +23,16 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          # 10.0.x is the SDK everything targets. 8.0.x is installed alongside it purely to
+          # carry the .NET 8 runtime, which Net4x.NuGetUtility's MSBuild tasks need: seven
+          # csproj files carry that PackageReference. On Linux all three of its touch points
+          # (the two NuGet.Utility.props/.targets imports and the PackageReference itself)
+          # are guarded with '$(OS)' == 'Windows_NT', so this job should never load it - the
+          # runtime is here so that a future un-guarding, or a Windows job added to this
+          # workflow, fails on its own merits rather than on a missing framework.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Install GTK 3, WebKitGTK, Mesa and a headless X server
         run: |
@@ -52,20 +61,26 @@ jobs:
         run: dotnet test Xamarin.Forms.Xaml.UnitTests -c Release --no-build --logger trx
 
       # These are real GTK widgets: they need an X server, and GDK_BACKEND=x11 because the
-      # GTK backend's screenshot/pixbuf paths are unsupported under Wayland.
+      # GTK backend's screenshot/pixbuf paths are unsupported under Wayland. The screen has to
+      # be big enough for the 800x600 test windows - xvfb-run's 640x480 default would clamp
+      # them and every allocation assertion would be measuring the wrong thing.
       - name: GTK renderer tests (headless)
         env:
           GDK_BACKEND: x11
-        run: xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
+        run: |
+          xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+            dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
 
-      # Same suite, with GTK criticals promoted to fatal. Kept separate and non-blocking-by-
-      # position (it runs last) so a criticals-only regression is visibly distinct from a real
-      # assertion failure above.
+      # Same suite, with GTK criticals promoted to fatal - the stricter gate of plan §10.2
+      # coverage target 4. Kept as a separate step so a criticals-only regression is visibly
+      # distinct from an assertion failure above. Verified green on this tree.
       - name: GTK renderer tests (fatal criticals)
         env:
           GDK_BACKEND: x11
           G_DEBUG: fatal-criticals
-        run: xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
+        run: |
+          xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+            dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Release --no-build --logger trx
 
       - uses: actions/upload-artifact@v4
         if: always()
