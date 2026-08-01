@@ -238,18 +238,43 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Test]
 		public void AbsoluteLayoutProportionalChildrenAreAllocatedWhereFormsPutThem()
 		{
-			var top = new BoxView { Color = Color.Red };
-			var middle = new StackLayout { Children = { new Button { Text = "b" } } };
-			var bottom = new BoxView { Color = Color.Blue };
+			// Mirrors CoreRootPage as closely as a unit test can: two ListViews whose rows are
+			// appended by an idle loader (so their natural size is small and arrives late) with a
+			// button stack between them, and the whole thing inside NavigationPage -> FlyoutPage,
+			// which is the nesting the gallery actually runs.
+			ListView MakeList() => new ListView
+			{
+				ItemsSource = Enumerable.Range(1, 12).Select(i => $"row {i}").ToList(),
+				ItemTemplate = new DataTemplate(() =>
+				{
+					var cell = new TextCell();
+					cell.SetBinding(TextCell.TextProperty, ".");
+					return cell;
+				})
+			};
+
+			var top = MakeList();
+			var middle = new StackLayout
+			{
+				Children = { new Button { Text = "Go to Test Cases" }, new SearchBar(), new Button { Text = "Click to Force GC" } }
+			};
+			var bottom = MakeList();
 
 			var abs = new AbsoluteLayout();
 			abs.Children.Add(top, new Rectangle(0, 0.0, 1, 0.35), AbsoluteLayoutFlags.All);
 			abs.Children.Add(middle, new Rectangle(0, 0.5, 1, 0.30), AbsoluteLayoutFlags.All);
 			abs.Children.Add(bottom, new Rectangle(0, 1.0, 1, 0.35), AbsoluteLayoutFlags.All);
 
-			using (var host = GtkTestHost.HostPage(new ContentPage { Content = abs }, 800, 600))
+			var detail = new NavigationPage(new ContentPage { Title = "Gallery", Content = abs });
+			var flyout = new FlyoutPage
 			{
-				host.Pump(12);
+				Flyout = new ContentPage { Title = "Flyout", Content = new Label { Text = "flyout" } },
+				Detail = detail
+			};
+
+			using (var host = GtkTestHost.HostPage(flyout, 1024, 768))
+			{
+				host.Pump(20);
 
 				var children = new View[] { top, middle, bottom };
 
