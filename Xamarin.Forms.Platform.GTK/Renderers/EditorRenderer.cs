@@ -14,6 +14,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private bool _disposed;
 
+		/// <summary>
+		/// True while <see cref="UpdateText"/> is pushing the element's text into the buffer, so
+		/// the buffer's own change notifications are not mistaken for the user typing.
+		/// </summary>
+		private bool _updatingTextFromElement;
+
 		protected IEditorController EditorController => Element as IEditorController;
 
 		protected override void UpdateBackgroundColor()
@@ -100,11 +106,26 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			TextBuffer buffer = Control.TextView.Buffer;
 
 			var text = Element.UpdateFormsText(Element.Text, Element.TextTransform);
-			if (buffer.Text != text)
+			if (buffer.Text == text)
+				return;
+
+			// gtk_text_buffer_set_text deletes the existing contents and then inserts the new
+			// ones, and BOTH steps raise Changed. Without this guard the delete's notification
+			// reaches TextViewBufferChanged while the buffer is momentarily empty, which writes
+			// "" back into Element.Text - so a programmatic `editor.Text = "x"` ends with an
+			// empty control, and any binding on Text observes a spurious empty value first.
+			_updatingTextFromElement = true;
+
+			try
 			{
 				buffer.Text = text;
-				UpdateTextColor();
 			}
+			finally
+			{
+				_updatingTextFromElement = false;
+			}
+
+			UpdateTextColor();
 		}
 
 		private void UpdateFont()
@@ -131,6 +152,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void TextViewBufferChanged(object sender, EventArgs e)
 		{
+			if (_updatingTextFromElement)
+				return;
+
 			TextBuffer buffer = Control.TextView.Buffer;
 
 			if (Element.Text != buffer.Text)
