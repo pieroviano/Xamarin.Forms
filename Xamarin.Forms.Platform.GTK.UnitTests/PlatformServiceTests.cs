@@ -1,10 +1,8 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Platform.GTK.UnitTests
 {
@@ -13,19 +11,18 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 	/// goes through the public <c>Device</c> surface - which is also how application code reaches
 	/// it, so a break here is a break users would actually see.
 	/// </summary>
-	[TestFixture]
-	public class PlatformServiceTests
+	public class PlatformServiceTests : GtkTestBase
 	{
-		[Test]
+		[Fact]
 		public void RuntimePlatformIsGtk()
 		{
-			Assert.That(Device.RuntimePlatform, Is.EqualTo(Device.GTK));
+			Assert.Equal(Device.GTK, Device.RuntimePlatform);
 		}
 
-		[Test]
+		[Fact]
 		public void IdiomIsDesktop()
 		{
-			Assert.That(Device.Idiom, Is.EqualTo(TargetIdiom.Desktop));
+			Assert.Equal(TargetIdiom.Desktop, Device.Idiom);
 		}
 
 		/// <summary>
@@ -33,28 +30,25 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// FlyoutPage split-mode bug (M3 root cause 6) hide: Core and the native widget disagreed
 		/// about split mode only once a real screen size arrived.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void DeviceInfoReportsARealScreen()
 		{
 			var scaled = Device.Info.ScaledScreenSize;
 			var pixels = Device.Info.PixelScreenSize;
 
-			Assert.Multiple(() =>
-			{
-				Assert.That(scaled.Width, Is.GreaterThan(0));
-				Assert.That(scaled.Height, Is.GreaterThan(0));
-				Assert.That(pixels.Width, Is.GreaterThan(0));
-				Assert.That(pixels.Height, Is.GreaterThan(0));
-				Assert.That(Device.Info.ScalingFactor, Is.GreaterThan(0));
+			Assert.True(scaled.Width > 0, $"scaled width {scaled.Width}");
+			Assert.True(scaled.Height > 0, $"scaled height {scaled.Height}");
+			Assert.True(pixels.Width > 0, $"pixel width {pixels.Width}");
+			Assert.True(pixels.Height > 0, $"pixel height {pixels.Height}");
+			Assert.True(Device.Info.ScalingFactor > 0, "scaling factor");
 
-				// Whatever Xvfb was started at, the screen has to be self-consistent:
-				// pixels = scaled * scale. The old stub could not satisfy this.
-				Assert.That(pixels.Width, Is.EqualTo(scaled.Width * Device.Info.ScalingFactor).Within(1));
-				Assert.That(pixels.Height, Is.EqualTo(scaled.Height * Device.Info.ScalingFactor).Within(1));
-			});
+			// Whatever Xvfb was started at, the screen has to be self-consistent:
+			// pixels = scaled * scale. The old stub could not satisfy this.
+			Assert.Equal(scaled.Width * Device.Info.ScalingFactor, pixels.Width, 0);
+			Assert.Equal(scaled.Height * Device.Info.ScalingFactor, pixels.Height, 0);
 		}
 
-		[Test]
+		[Fact]
 		public void NamedSizesAreOrdered()
 		{
 			var micro = Device.GetNamedSize(NamedSize.Micro, typeof(Label));
@@ -62,27 +56,27 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			var medium = Device.GetNamedSize(NamedSize.Medium, typeof(Label));
 			var large = Device.GetNamedSize(NamedSize.Large, typeof(Label));
 
-			Assert.Multiple(() =>
-			{
-				Assert.That(micro, Is.GreaterThan(0));
-				Assert.That(small, Is.GreaterThan(micro));
-				Assert.That(medium, Is.GreaterThan(small));
-				Assert.That(large, Is.GreaterThan(medium));
-			});
+			Assert.True(micro > 0, $"micro {micro}");
+			Assert.True(small > micro, $"small {small} <= micro {micro}");
+			Assert.True(medium > small, $"medium {medium} <= small {small}");
+			Assert.True(large > medium, $"large {large} <= medium {medium}");
 		}
 
-		[Test]
+		[Fact]
 		public void RequestedThemeIsAnswered()
 		{
-			Assert.That(Application.Current?.RequestedTheme ?? OSAppTheme.Unspecified,
-				Is.AnyOf(OSAppTheme.Unspecified, OSAppTheme.Light, OSAppTheme.Dark));
+			var theme = Application.Current?.RequestedTheme ?? OSAppTheme.Unspecified;
+
+			Assert.True(
+				theme == OSAppTheme.Unspecified || theme == OSAppTheme.Light || theme == OSAppTheme.Dark,
+				$"unexpected theme {theme}");
 		}
 
 		/// <summary>
 		/// Isolated storage on Linux, verified as a round-trip rather than by "it did not throw" -
 		/// the plan records this being checked at runtime for M4 (§7.5).
 		/// </summary>
-		[Test]
+		[Fact]
 		public void IsolatedStorageRoundTrips()
 		{
 			var store = Device.PlatformServices.GetUserStoreForApplication();
@@ -96,13 +90,12 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				writer.Write(Payload);
 			}
 
-			Assert.That(GtkTestHost.Await(store.GetFileExistsAsync(name)), Is.True,
-				"the file was not created");
+			Assert.True(GtkTestHost.Await(store.GetFileExistsAsync(name)), "the file was not created");
 
 			using (var stream = GtkTestHost.Await(store.OpenFileAsync(name, FileMode.Open, FileAccess.Read)))
 			using (var reader = new StreamReader(stream))
 			{
-				Assert.That(reader.ReadToEnd(), Is.EqualTo(Payload));
+				Assert.Equal(Payload, reader.ReadToEnd());
 			}
 		}
 
@@ -110,7 +103,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// The ticker is what drives every Forms animation, including the flyout slide. A ticker
 		/// that never fires makes animations silently instant.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void TickerFires()
 		{
 			var fired = false;
@@ -125,15 +118,15 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			while (!fired && DateTime.UtcNow < deadline)
 				GtkTestHost.Pump(null, 1);
 
-			Assert.That(fired, Is.True, "Device.StartTimer never fired within 5s");
+			Assert.True(fired, "Device.StartTimer never fired within 5s");
 		}
 
 		/// <summary>
 		/// M4 changed <c>IsInvokeRequired</c> from a <c>Thread.IsBackground</c> guess to a
-		/// comparison against the thread that ran <c>Forms.Init</c>. On the test thread - which is
-		/// that thread - no invoke should be required, and the action must run inline.
+		/// comparison against the thread that ran <c>Forms.Init</c>. Either way the action has to
+		/// actually run - inline if no invoke is required, off the GTK idle queue if one is.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void BeginInvokeOnMainThreadRunsTheAction()
 		{
 			var ran = false;
@@ -141,16 +134,16 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			Device.BeginInvokeOnMainThread(() => ran = true);
 			GtkTestHost.Pump(null, 3);
 
-			Assert.That(ran, Is.True);
+			Assert.True(ran, "Device.BeginInvokeOnMainThread never ran the action");
 		}
 
-		[Test]
+		[Fact]
 		public void GetHashIsStable()
 		{
 			var services = Device.PlatformServices;
 
-			Assert.That(services.GetHash("xamarin"), Is.EqualTo(services.GetHash("xamarin")));
-			Assert.That(services.GetHash("xamarin"), Is.Not.EqualTo(services.GetHash("forms")));
+			Assert.Equal(services.GetHash("xamarin"), services.GetHash("xamarin"));
+			Assert.NotEqual(services.GetHash("xamarin"), services.GetHash("forms"));
 		}
 
 		/// <summary>
@@ -158,12 +151,11 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// needed no porting because it is a <c>DataContractSerializer</c> rather than
 		/// <c>BinaryFormatter</c> (which .NET 10 removes outright).
 		/// </summary>
-		[Test]
-		public void SerializerIsResolvableAndRoundTripsProperties()
+		[Fact]
+		public void SerializerIsResolvable()
 		{
-			var serializer = DependencyService.Get<IDeserializer>();
-
-			Assert.That(serializer, Is.Not.Null, "no IDeserializer registered for GTK");
+			Assert.True(DependencyService.Get<IDeserializer>() != null,
+				"no IDeserializer registered for GTK");
 		}
 	}
 }

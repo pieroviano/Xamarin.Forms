@@ -1,22 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.GTK;
-
-// GTK is not thread-safe: every widget touch has to happen on the thread that ran
-// Gtk.Application.Init (Forms.MainThread). Running fixtures in parallel would spread them
-// across NUnit's worker threads, so the whole assembly is serialized.
-[assembly: NonParallelizable]
-[assembly: LevelOfParallelism(1)]
+using Xunit;
 
 /// <summary>
-/// Assembly-wide GTK + Forms bootstrap. Deliberately in the global namespace so NUnit applies
-/// it to every fixture.
+/// Assembly-wide GTK + Forms bootstrap and the layout pump. Deliberately in the global namespace
+/// so every fixture can reach it without a using.
+///
+/// xUnit has no <c>[SetUpFixture]</c>/<c>[OneTimeSetUp]</c>, so the bootstrap is a latched static
+/// initializer instead. <see cref="GtkTestBase"/> calls it from its constructor, which xUnit runs
+/// before every test; the latch makes all but the first call free. That is on purpose rather than
+/// an assembly fixture: it keeps the failure ("no DISPLAY") attached to a test rather than to
+/// fixture construction, where xUnit reports it once and skips the rest.
 /// </summary>
-[SetUpFixture]
-public class GtkTestHost
+public static class GtkTestHost
 {
 	/// <summary>
 	/// The number of Pump rounds a layout assertion needs. Geometry is pushed to GTK from a
@@ -25,27 +24,26 @@ public class GtkTestHost
 	/// </summary>
 	public const int DefaultPumpRounds = 6;
 
-	[OneTimeSetUp]
-	public void Init()
+	static bool s_initialized;
+	static readonly object s_gate = new object();
+
+	public static void EnsureInitialized()
 	{
-		if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")))
+		lock (s_gate)
 		{
-			Assert.Fail(
+			if (s_initialized)
+				return;
+
+			Assert.True(
+				!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")),
 				"No DISPLAY. These are real GTK widget tests and need an X server: " +
 				"run them as `xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests`.");
+
+			Gtk.Application.Init();
+			Forms.Init();
+
+			s_initialized = true;
 		}
-
-		Gtk.Application.Init();
-		Forms.Init();
-	}
-
-	[OneTimeTearDown]
-	public void Teardown()
-	{
-		// Nothing owns the main loop here - Gtk.Application.Run is never called - so there is
-		// no Quit to issue. Draining what is left keeps a pending idle callback from running
-		// against a torn-down fixture.
-		Drain();
 	}
 
 	/// <summary>
@@ -90,10 +88,10 @@ public class GtkTestHost
 	///
 	/// MEASURED: an <c>async</c> test method deadlocks this suite outright. <see cref="FormsWindow"/>'s
 	/// constructor installs a <see cref="GtkSynchronizationContext"/> on whatever thread creates it
-	/// (FormsWindow.cs:22), which is the NUnit test thread; every subsequent <c>await</c>
-	/// continuation is then posted to the GTK main loop, and nothing runs that loop during a test.
-	/// The run hangs with no failure and no output - the first version of this suite stopped dead
-	/// after PlatformServiceTests.IdiomIsDesktop and had to be killed.
+	/// (FormsWindow.cs:22), which is the test thread; every subsequent <c>await</c> continuation is
+	/// then posted to the GTK main loop, and nothing runs that loop during a test. The run hangs
+	/// with no failure and no output - the first version of this suite stopped dead after
+	/// PlatformServiceTests.IdiomIsDesktop and had to be killed.
 	///
 	/// So: no <c>async</c> test methods in this assembly. Await through here.
 	/// </summary>
@@ -104,7 +102,7 @@ public class GtkTestHost
 		while (!task.IsCompleted && DateTime.UtcNow < deadline)
 			Pump(null, 1);
 
-		Assert.That(task.IsCompleted, Is.True, $"task did not complete within {timeoutMs}ms");
+		Assert.True(task.IsCompleted, $"task did not complete within {timeoutMs}ms");
 
 		return task.GetAwaiter().GetResult();
 	}
@@ -116,7 +114,7 @@ public class GtkTestHost
 		while (!task.IsCompleted && DateTime.UtcNow < deadline)
 			Pump(null, 1);
 
-		Assert.That(task.IsCompleted, Is.True, $"task did not complete within {timeoutMs}ms");
+		Assert.True(task.IsCompleted, $"task did not complete within {timeoutMs}ms");
 
 		task.GetAwaiter().GetResult();
 	}
@@ -135,8 +133,8 @@ public class GtkTestHost
 	/// the CLR runs on the finalizer thread - not the GTK main thread - and by then
 	/// <c>gtk_widget_destroy</c> has already freed the GObject. That is plan risk R8
 	/// ("GtkSharp Dispose interacting with Gtk.Widget.Destroy()") reproduced deterministically.
-	/// Holding a reference keeps the finalizer from ever running, which is what makes an 85-test
-	/// run survive. The windows are small and the process is short-lived.
+	/// Holding a reference keeps the finalizer from ever running, which is what makes a
+	/// hundred-test run survive. The windows are small and the process is short-lived.
 	/// </summary>
 	static void Retire(Gtk.Window window)
 	{
@@ -153,7 +151,7 @@ public class GtkTestHost
 
 	/// <summary>
 	/// Creates a renderer for a standalone view and parents it in a real toplevel, which is what
-	/// makes the widget realizable and its allocation meaningful. Dispose the handle to destroy
+	/// makes the widget realizable and its allocation meaningful. Dispose the handle to retire
 	/// the window.
 	/// </summary>
 	public static ViewHost<TView> HostView<TView>(TView view, int width = 400, int height = 300)
@@ -195,6 +193,20 @@ public class GtkTestHost
 		return found;
 	}
 
+	/// <summary>
+	/// True when GTK never gave the widget a real allocation. GTK3's sentinel for
+	/// "not allocated yet" is (-1, -1, 1, 1), and every M3 layout bug in this backend showed up
+	/// as exactly this while the widget still reported <c>Visible == true</c>.
+	/// </summary>
+	public static bool IsUnallocated(Gtk.Widget widget) =>
+		widget == null || (widget.Allocation.Width <= 1 && widget.Allocation.Height <= 1);
+
+	public static string Describe(Gtk.Widget widget) =>
+		widget == null
+			? "<null>"
+			: $"{widget.GetType().Name}[{widget.Allocation.X},{widget.Allocation.Y} " +
+			  $"{widget.Allocation.Width}x{widget.Allocation.Height} visible={widget.Visible}]";
+
 	public sealed class ViewHost<TView> : IDisposable where TView : View
 	{
 		public ViewHost(TView view, int width, int height)
@@ -227,10 +239,10 @@ public class GtkTestHost
 		{
 			var native = Renderer as IVisualNativeElementRenderer;
 
-			Assert.That(native, Is.Not.Null,
+			Assert.True(native != null,
 				$"{Renderer.GetType().Name} does not expose a native control");
 
-			return (TNative)(object)native.Control;
+			return Assert.IsAssignableFrom<TNative>(native.Control);
 		}
 
 		public void Pump(int rounds = DefaultPumpRounds) => GtkTestHost.Pump(Window, rounds);
@@ -270,4 +282,13 @@ public class GtkTestHost
 		{
 		}
 	}
+}
+
+/// <summary>
+/// Base class for every fixture here. Its constructor runs the GTK/Forms bootstrap, which xUnit
+/// guarantees happens before each test method.
+/// </summary>
+public abstract class GtkTestBase
+{
+	protected GtkTestBase() => GtkTestHost.EnsureInitialized();
 }

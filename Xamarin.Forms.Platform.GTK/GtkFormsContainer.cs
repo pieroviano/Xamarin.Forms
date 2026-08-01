@@ -49,8 +49,21 @@ namespace Xamarin.Forms.Platform.GTK
 		{
 			var area = new Gdk.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
 
-			// Draw first the background with the color defined in BackgroundColor
+			// Draw first the background with the color defined in BackgroundColor.
+			//
+			// Clipped to this widget's allocation, and that is not optional. cairo_paint() fills the
+			// WHOLE current clip region, and for a VisibleWindow = false EventBox - which is what
+			// every one of these containers is - the context arriving here is clipped to the damage
+			// region of the SHARED parent GdkWindow, not to this widget. An unclipped Paint()
+			// therefore painted this element's background straight over its siblings: measured with
+			// three AbsoluteLayout children stacked 72..257 / 257..415 / 415..600, the middle one's
+			// green filled a solid band from y=80 to y=414, hiding the list above it entirely
+			// (scratchpad/m3-overlap.sh, "nothing green is painted above the middle block's top
+			// edge"). It only ever showed on a layout with an explicit BackgroundColor, because the
+			// default here is Color.Transparent and painting that is a no-op.
 			cr.Save();
+			cr.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
+			cr.Clip();
 			cr.SetSourceRGBA(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, BackgroundColor.A);
 			cr.Operator = Operator.Over;
 			cr.Paint();

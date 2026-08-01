@@ -1,6 +1,7 @@
+using System;
 using System.Linq;
-using NUnit.Framework;
 using Xamarin.Forms;
+using Xunit;
 
 namespace Xamarin.Forms.Platform.GTK.UnitTests
 {
@@ -12,10 +13,9 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 	/// <c>Widget.Allocation</c> - the thing that was wrong - and never on Forms bounds alone,
 	/// which would have passed throughout the entire M3 outage.
 	/// </summary>
-	[TestFixture]
-	public class LayoutTests
+	public class LayoutTests : GtkTestBase
 	{
-		[Test]
+		[Fact]
 		public void PageFillsTheWindow()
 		{
 			var page = new ContentPage
@@ -25,14 +25,14 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostPage(page, 800, 600))
 			{
-				Assert.That(page.Width, Is.GreaterThan(0), "the page never received a size");
-				Assert.That(page.Height, Is.GreaterThan(0));
+				Assert.True(page.Width > 0, "the page never received a size");
+				Assert.True(page.Height > 0, "the page never received a height");
 
 				var renderer = Platform.GetRenderer(page);
 				var widget = (Gtk.Widget)renderer;
 
-				Assert.That(widget.Allocation.Width, Is.GreaterThan(1),
-					"the page widget is still at GTK's unallocated sentinel");
+				Assert.True(widget.Allocation.Width > 1,
+					$"the page widget is still at GTK's unallocated sentinel: {GtkTestHost.Describe(widget)}");
 			}
 		}
 
@@ -41,7 +41,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// When geometry never reached GTK, every child stacked at (0,0) at its natural size
 		/// while Forms' own bounds were perfect.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void StackLayoutChildrenAreAllocatedAtDistinctPositions()
 		{
 			var first = new BoxView { Color = Color.Red, HeightRequest = 40 };
@@ -64,15 +64,15 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 					.Select(w => w.Allocation.Y)
 					.ToArray();
 
-				Assert.That(ys.Distinct().Count(), Is.EqualTo(3),
+				Assert.True(ys.Distinct().Count() == 3,
 					$"children stacked on top of each other at y = [{string.Join(", ", ys)}]");
 
-				Assert.That(ys[0], Is.LessThan(ys[1]));
-				Assert.That(ys[1], Is.LessThan(ys[2]));
+				Assert.True(ys[0] < ys[1], $"y = [{string.Join(", ", ys)}] is not in order");
+				Assert.True(ys[1] < ys[2], $"y = [{string.Join(", ", ys)}] is not in order");
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void StackLayoutChildAllocationsAgreeWithFormsBounds()
 		{
 			var box = new BoxView { Color = Color.Red, HeightRequest = 50 };
@@ -87,16 +87,15 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				var widget = (Gtk.Widget)Platform.GetRenderer(box);
 
 				// One pixel of slack: Forms works in doubles, GTK in ints.
-				Assert.Multiple(() =>
-				{
-					Assert.That(widget.Allocation.Width, Is.EqualTo((int)box.Width).Within(1),
-						"native width disagrees with Forms - geometry did not reach GTK");
-					Assert.That(widget.Allocation.Height, Is.EqualTo((int)box.Height).Within(1));
-				});
+				Assert.True(Math.Abs(widget.Allocation.Width - (int)box.Width) <= 1,
+					$"native width {widget.Allocation.Width} disagrees with Forms {(int)box.Width} - " +
+					"geometry did not reach GTK");
+				Assert.True(Math.Abs(widget.Allocation.Height - (int)box.Height) <= 1,
+					$"native height {widget.Allocation.Height} disagrees with Forms {(int)box.Height}");
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void GridPlacesChildrenInTheirCells()
 		{
 			var topLeft = new BoxView { Color = Color.Red };
@@ -127,13 +126,10 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				var tr = ((Gtk.Widget)Platform.GetRenderer(topRight)).Allocation;
 				var bl = ((Gtk.Widget)Platform.GetRenderer(bottomLeft)).Allocation;
 
-				Assert.Multiple(() =>
-				{
-					Assert.That(tr.X, Is.GreaterThan(tl.X), "column 1 must sit right of column 0");
-					Assert.That(bl.Y, Is.GreaterThan(tl.Y), "row 1 must sit below row 0");
-					Assert.That(tr.Y, Is.EqualTo(tl.Y).Within(1), "same row, same y");
-					Assert.That(bl.X, Is.EqualTo(tl.X).Within(1), "same column, same x");
-				});
+				Assert.True(tr.X > tl.X, $"column 1 (x={tr.X}) must sit right of column 0 (x={tl.X})");
+				Assert.True(bl.Y > tl.Y, $"row 1 (y={bl.Y}) must sit below row 0 (y={tl.Y})");
+				Assert.True(Math.Abs(tr.Y - tl.Y) <= 1, $"same row, same y: {tr.Y} vs {tl.Y}");
+				Assert.True(Math.Abs(bl.X - tl.X) <= 1, $"same column, same x: {bl.X} vs {tl.X}");
 			}
 		}
 
@@ -142,7 +138,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// queue a GTK resize, so a child added below an already-allocated parent kept its
 		/// natural size forever.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void NestedLayoutsPropagateGeometryToTheDeepestChild()
 		{
 			var leaf = new BoxView { Color = Color.Purple };
@@ -169,7 +165,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			{
 				var widget = (Gtk.Widget)Platform.GetRenderer(leaf);
 
-				Assert.That(widget.Allocation.Width, Is.GreaterThan(100),
+				Assert.True(widget.Allocation.Width > 100,
 					$"leaf allocated {widget.Allocation.Width}px wide inside a 600px window - " +
 					"it is still at its natural size, i.e. geometry stopped propagating");
 			}
@@ -180,7 +176,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// (they sat at GTK's -1,-1 1x1 sentinel while reporting Visible == true). ListView was
 		/// the visible casualty, so it is the shape asserted here.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void ListViewRowsAddedAfterTheFirstAllocationAreStillAllocated()
 		{
 			var items = Enumerable.Range(1, 8).Select(i => $"row {i}").ToList();
@@ -206,20 +202,20 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 					.Where(l => l.Text != null && l.Text.StartsWith("row "))
 					.ToList();
 
-				Assert.That(labels.Count, Is.GreaterThanOrEqualTo(2),
-					"fewer than two rows were realized at all");
+				Assert.True(labels.Count >= 2,
+					$"fewer than two rows were realized at all ({labels.Count})");
 
 				var unallocated = labels
-					.Where(l => l.Allocation.Width <= 1 && l.Allocation.Height <= 1)
+					.Where(GtkTestHost.IsUnallocated)
 					.Select(l => l.Text)
 					.ToList();
 
-				Assert.That(unallocated, Is.Empty,
+				Assert.True(unallocated.Count == 0,
 					$"rows left at GTK's unallocated sentinel: {string.Join(", ", unallocated)}");
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void ResizingTheWindowRelaysTheContent()
 		{
 			var box = new BoxView { Color = Color.Red };
@@ -235,7 +231,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 				var after = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
 
-				Assert.That(after, Is.GreaterThan(before),
+				Assert.True(after > before,
 					$"content did not follow the window: {before}px -> {after}px");
 			}
 		}

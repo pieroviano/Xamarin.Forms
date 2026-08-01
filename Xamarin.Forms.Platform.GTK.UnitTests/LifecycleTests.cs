@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using Xamarin.Forms;
+using Xunit;
 
 namespace Xamarin.Forms.Platform.GTK.UnitTests
 {
@@ -11,22 +11,21 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 	/// suite under <c>G_DEBUG=fatal-criticals</c> to make a GTK critical abort the run instead of
 	/// scrolling past.
 	/// </summary>
-	[TestFixture]
-	public class LifecycleTests
+	public class LifecycleTests : GtkTestBase
 	{
-		[Test]
+		[Fact]
 		public void RenderersCanBeCreatedAndDestroyedRepeatedly()
 		{
 			for (int i = 0; i < 20; i++)
 			{
 				using (var host = GtkTestHost.HostView(new Entry { Text = $"pass {i}" }))
 				{
-					Assert.That(host.Renderer, Is.Not.Null);
+					Assert.NotNull(host.Renderer);
 				}
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void PagesCanBeLoadedAndTornDownRepeatedly()
 		{
 			for (int i = 0; i < 5; i++)
@@ -46,7 +45,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 				using (var host = GtkTestHost.HostPage(page))
 				{
-					Assert.That(Platform.GetRenderer(page), Is.Not.Null);
+					Assert.NotNull(Platform.GetRenderer(page));
 				}
 			}
 		}
@@ -56,7 +55,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// leaves the stack; if it leaves the attached renderer behind, the element stays
 		/// <c>IsPlatformEnabled</c> and the next navigation renders against a destroyed widget.
 		/// </summary>
-		[Test]
+		[Fact]
 		public void DisposingAPageClearsItsChildrenRenderers()
 		{
 			var label = new Label { Text = "child" };
@@ -64,13 +63,13 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostPage(page))
 			{
-				Assert.That(Platform.GetRenderer(label), Is.Not.Null, "precondition");
+				Assert.True(Platform.GetRenderer(label) != null, "precondition");
 			}
 
 			GtkTestHost.Pump(null, 3);
 		}
 
-		[Test]
+		[Fact]
 		public void DestroyingARendererDoesNotThrowOnSubsequentPumps()
 		{
 			var views = new List<View>
@@ -89,7 +88,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			foreach (var view in views)
 			{
-				Assert.DoesNotThrow(() =>
+				var exception = Record.Exception(() =>
 				{
 					using (var host = GtkTestHost.HostView(view))
 					{
@@ -97,7 +96,10 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 					}
 
 					GtkTestHost.Pump(null, 2);
-				}, $"{view.GetType().Name} threw during create/destroy");
+				});
+
+				Assert.True(exception == null,
+					$"{view.GetType().Name} threw during create/destroy: {exception}");
 			}
 		}
 	}
