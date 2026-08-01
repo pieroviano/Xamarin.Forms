@@ -243,6 +243,49 @@ namespace Xamarin.Forms.Platform.GTK
 				_layoutUpdateQueued = false;
 
 				if (!_disposed)
+				{
+					UpdateElementLayout();
+					QueueLayoutVerify();
+				}
+
+				return false;
+			});
+		}
+
+		bool _layoutVerifyQueued;
+
+		/// <summary>
+		/// Runs the geometry application a second time, once GTK has had its turn.
+		/// </summary>
+		/// <remarks>
+		/// Setting a size request is only a REQUEST for a resize, and GTK3 drops the one it queues
+		/// if it is raised while an allocation is already in flight. gtk_widget_set_size_request then
+		/// never queues another, because on the next pass the value is unchanged - so a single lost
+		/// resize pins the widget at its natural size for the lifetime of the window. Forms will not
+		/// rescue it either: it raises BatchCommitted only when bounds actually CHANGE, so a page
+		/// whose layout has settled never calls back in (measured: ForceLayout() on the settled
+		/// ControlGallery detail page left the content at 257x230 against a 500x528 request).
+		///
+		/// This second pass is what closes that hole. <see cref="UpdateElementLayout"/> is
+		/// idempotent, and <c>WidgetExtensions.SetSize</c> re-queues the resize when it finds a
+		/// widget allocated smaller than its request. A plain idle is deliberately the right
+		/// priority: G_PRIORITY_DEFAULT_IDLE (200) is below GTK_PRIORITY_RESIZE (110), so any
+		/// resize GTK did accept has already been serviced by the time this runs and the check sees
+		/// the settled allocation rather than a stale one. It schedules no further pass, so this
+		/// costs exactly one extra idle per layout update and cannot loop.
+		/// </remarks>
+		void QueueLayoutVerify()
+		{
+			if (_layoutVerifyQueued || _disposed)
+				return;
+
+			_layoutVerifyQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutVerifyQueued = false;
+
+				if (!_disposed)
 					UpdateElementLayout();
 
 				return false;

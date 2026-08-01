@@ -1,19 +1,32 @@
 <Project>
   <PropertyGroup>
     <!--
-      The projects these tests generate live under the test assembly's own output directory
-      (bin\Debug\net10.0\temp\<test>\) and the tests assert on obj\Debug\... paths.
+      The projects these tests generate are throwaway: they are created fresh per test run and
+      the tests assert on their obj\Debug\... layout.
 
       The repo-root Directory.Build.props - imported below - redirects intermediate and output
       paths to obj-wsl\ / bin-wsl\ whenever the tree is built from Unix off a /mnt/ (drvfs)
       mount, so a Windows and a WSL build of the same working tree do not share obj\. That is
-      right for the real projects and wrong for these throwaway ones: they are created fresh
-      per test run, are never built from both sides at once, and their output layout is part
-      of what the tests assert. Setting the switch here - before the import, so it wins - keeps
-      them on the conventional obj\ and bin\ on every OS.
+      right for the real projects and wrong for these: their output layout is part of what the
+      tests assert. Setting the switch here - before the import, so it wins - keeps them on the
+      conventional obj\ and bin\ on every OS.
     -->
     <UseOSSpecificOutputPaths>false</UseOSSpecificOutputPaths>
+    <!--
+      MSBuildTests.Build() passes XFRepoRoot on the command line, because the generated
+      projects no longer live at a fixed depth below the repository (they are built under the
+      OS temp directory - see MSBuildTests.tempDirectory for why). The relative fallback is
+      what this file used to hard-code, and keeps it working if it is ever copied back to its
+      historical bin\Debug\<tfm>\temp\<test>\ location.
+    -->
+    <XFRepoRoot Condition="'$(XFRepoRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\..\..\</XFRepoRoot>
   </PropertyGroup>
-  <Import Project="..\..\..\..\..\..\.nuspec\Xamarin.Forms.props" />
-  <Import Project="..\..\..\..\..\..\Directory.Build.props" />
+  <!--
+    Imported from Xamarin.Forms.Build.Tasks\build\ - where the real files live - and not through
+    the .nuspec\ forwarding stubs. The .nuspec directory is in .gitignore, so those stubs exist
+    only in a working tree that has already been built by hand: on a fresh clone every one of
+    these tests failed with "The imported project .../.nuspec/Xamarin.Forms.props was not found".
+  -->
+  <Import Project="$(XFRepoRoot)Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.props" />
+  <Import Project="$(XFRepoRoot)Directory.Build.props" />
 </Project>

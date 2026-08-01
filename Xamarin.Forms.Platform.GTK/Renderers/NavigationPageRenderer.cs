@@ -119,7 +119,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			// unconstrained child (measured 194x302 for the ControlGallery's detail page inside a
 			// 500x600 NavigationPage). AbstractPageRenderer.SetPageSize then wrote that natural
 			// size straight back into Forms, so the page laid its content out at 194x230 and the
-			// AbsoluteLayout's proportional children overlapped each other. See UpdateChildrenLayout.
+			// AbsoluteLayout's proportional children overlapped each other.
+			// ContainerArea is also set from there, and its setter calls ForceLayout().
 			if (_childSizeQueued)
 				return;
 
@@ -137,15 +138,26 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		bool _childSizeQueued;
 
 		/// <summary>
-		/// Sizes the navigation host and every page in the stack to this renderer's allocation.
+		/// Sizes the navigation host and every page in the stack to this renderer's allocation, and
+		/// tells Forms how much of that is actually available to a page.
 		/// </summary>
 		/// <remarks>
-		/// A page in a navigation stack always fills its NavigationPage, so its container's size is
-		/// a fact of THIS renderer's allocation - it is not something to be read back off the child.
+		/// The native toolbar is drawn INSIDE the current page's <see cref="Controls.Page"/> header,
+		/// so a page's content gets the allocation minus <c>GtkToolbarConstants.ToolbarHeight</c> -
+		/// but Forms' own <see cref="Xamarin.Forms.NavigationPage"/> knows nothing about that and
+		/// lays its child pages out at the NavigationPage's full height. The two then disagreed by
+		/// exactly the toolbar height, and because the page's container is sized from the Forms
+		/// bounds its natural height became toolbar + full height: the whole window grew by 72px
+		/// once and stayed there (measured 800x600 -> 800x672, scratchpad/m3-timeline.log).
+		///
+		/// <c>ContainerArea</c> is Core's own mechanism for exactly this - it is what iOS uses to
+		/// inset a page under a native navigation bar - so setting it makes the two sides agree
+		/// instead of ratcheting against each other. It must not be set inline from size-allocate:
+		/// its setter calls <c>ForceLayout()</c>.
 		/// </remarks>
 		void ApplyChildPageSizes()
 		{
-			if (_disposed || Widget == null)
+			if (_disposed || Widget == null || Element == null)
 				return;
 
 			// An un-allocated widget reports 1x1; stamping that on the children would pin them at
@@ -153,32 +165,21 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_lastAllocation.Width <= 1 || _lastAllocation.Height <= 1)
 				return;
 
-			Widget.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+			// Deliberately NOT a SetSizeRequest on the host Fixed or on the page containers, which is
+			// what this used to do. A size request is a MINIMUM, and it propagates all the way up to
+			// the toplevel's minimum size - so requesting the child page at the navigation page's
+			// full height made the window's minimum (toolbar + that height) and the window grew by
+			// exactly the toolbar height and could never shrink back (measured 800x600 -> 800x672).
+			// The page container does not need a request: its own natural size is toolbar + content,
+			// and the content is sized from the Forms bounds that ContainerArea below establishes.
 
-			foreach (var child in Widget.Children)
-				child.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
-		}
+			// Same condition AbstractPageRenderer.SetPageSize uses to decide whether to subtract the
+			// toolbar, so the inset Forms lays out to and the size the page renderer reports back
+			// cannot drift apart.
+			var toolbarHeight = NavigationPage.GetHasNavigationBar(Page) ? GtkToolbarConstants.ToolbarHeight : 0;
 
-		/// <summary>
-		/// Overrides the generic page-child propagation, which is wrong for a navigation stack.
-		/// </summary>
-		/// <remarks>
-		/// <see cref="AbstractPageRenderer{TWidget,TPage}.UpdateChildrenLayout"/> sizes each child
-		/// container to the CHILD's Forms bounds. For a page hosted here that is wrong twice over:
-		/// <list type="bullet">
-		/// <item>the container holds the native toolbar as well as the page content, so the child's
-		/// Forms bounds are short by exactly <c>GtkToolbarConstants.ToolbarHeight</c>;</item>
-		/// <item>the child's Forms bounds are themselves derived from this container's allocation by
-		/// <c>SetPageSize</c>, so pushing them back onto the container closes a feedback loop. Once
-		/// a bogus allocation had been written into Forms it was re-asserted on every batch commit
-		/// and the page never recovered - not on a window resize, not ever.</item>
-		/// </list>
-		/// The allocation is the single source of truth in this direction; Forms is downstream of it.
-		/// Positions are deliberately not touched here: push/pop own them while an animation runs.
-		/// </remarks>
-		protected override void UpdateChildrenLayout()
-		{
-			ApplyChildPageSizes();
+			((IPageController)Element).ContainerArea = new Rectangle(
+				0, 0, _lastAllocation.Width, Math.Max(0, _lastAllocation.Height - toolbarHeight));
 		}
 
 		protected override void OnElementChanged(VisualElementChangedEventArgs e)

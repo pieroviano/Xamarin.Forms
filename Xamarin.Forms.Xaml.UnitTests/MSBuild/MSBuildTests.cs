@@ -34,6 +34,32 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				.FirstOrDefault(a => a.Key == "NetFrameworkReferenceAssemblies")
 				?.Value;
 
+		// Repository root, found by walking up from the test assembly until Xamarin.Forms.sln
+		// shows up. The generated projects are no longer at a fixed depth below it (they build
+		// under the OS temp directory), so _Directory.Build.[props|targets] cannot get here with
+		// "..\..\.." any more - Build() passes this down as the XFRepoRoot property instead.
+		// Forward slashes with a trailing one: MSBuild accepts them on every platform, and a
+		// trailing backslash immediately before a closing quote would escape that quote on a
+		// Windows command line.
+		static readonly string repoRoot = FindRepoRoot();
+
+		static string FindRepoRoot()
+		{
+			for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+			{
+				if (File.Exists(IOPath.Combine(dir.FullName, "Xamarin.Forms.sln")))
+					return dir.FullName.Replace('\\', '/').TrimEnd('/') + "/";
+			}
+			// VSTS may run the tests from a staging directory that is not under the sources.
+			var sourcesDirectory = Environment.GetEnvironmentVariable("BUILD_SOURCESDIRECTORY");
+			if (!string.IsNullOrEmpty(sourcesDirectory))
+				return sourcesDirectory.Replace('\\', '/').TrimEnd('/') + "/";
+
+			throw new InvalidOperationException(
+				$"Could not find Xamarin.Forms.sln above {AppContext.BaseDirectory}, and "
+				+ "BUILD_SOURCESDIRECTORY is not set.");
+		}
+
 		class Xaml
 		{
 			const string XamarinFormsDefaultNamespace = "http://xamarin.com/schemas/2014/forms";
@@ -82,8 +108,23 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				testName = testName.Replace(c, '_');
 			testName = new string(testName.Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray());
 
-			tempDirectory = IOPath.Combine(testDirectory, "temp", testName);
+			// The generated projects are built under the OS temp directory rather than under the
+			// test assembly's own output directory. TargetsShouldSkip asserts that a second build
+			// leaves XamlC.stamp untouched, and that only holds on a filesystem that keeps
+			// sub-second file timestamps. A WSL /mnt/<drive> (drvfs) mount does not: MSBuild's
+			// <Touch> writes a whole-second mtime there while ordinary writes keep nanoseconds,
+			// so XamlC.stamp lands up to a second *before* the assembly it was stamped for and
+			// the XamlC target is never up-to-date - it re-ran on every incremental build. The OS
+			// temp directory is a native filesystem on every platform we run on (ext4 on Linux,
+			// NTFS on Windows), which restores the precision the incrementality check needs.
+			tempDirectory = IOPath.Combine(IOPath.GetTempPath(), "Xamarin.Forms.MSBuild.UnitTests", testName);
 			intermediateDirectory = IOPath.Combine(tempDirectory, "obj", "Debug");
+			// The temp directory now outlives `dotnet clean` and a bin\ wipe, and Dispose()
+			// deliberately leaves it behind when a test fails, so start each test from an empty
+			// one - otherwise a stale XamlC.stamp or obj\ from the previous run would be
+			// mistaken for output of this one.
+			if (Directory.Exists(tempDirectory))
+				Directory.Delete(tempDirectory, true);
 			Directory.CreateDirectory(tempDirectory);
 
 			//copy _Directory.Build.[props|targets] in test/
@@ -199,7 +240,9 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				var reference = NewElement("Reference").WithAttribute("Include", assembly);
 				if (assembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
 				{
-					reference.Add(NewElement("HintPath").WithValue(IOPath.Combine("..", "..", assembly)));
+					// Absolute: the generated project no longer sits two levels below the test
+					// assembly's output directory, so "..\..\" cannot reach these any more.
+					reference.Add(NewElement("HintPath").WithValue(IOPath.Combine(testDirectory, assembly)));
 				}
 				else if (sdkStyle)
 				{
@@ -241,7 +284,8 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		// an unquoted path containing a space makes MSBuild treat it as two positional
 		// arguments ("MSB1008: Only one project can be specified").
 		static string MSBuildArgs(string projectFile, string target, string verbosity, string additionalArgs) =>
-			$"msbuild /v:{verbosity} /nologo \"{projectFile}\" /t:{target} /bl {additionalArgs}";
+			$"msbuild /v:{verbosity} /nologo \"{projectFile}\" /t:{target} /bl " +
+			$"/p:XFRepoRoot=\"{repoRoot}\" {additionalArgs}";
 
 		void RestoreIfNeeded(string projectFile, bool sdkStyle)
 		{

@@ -100,6 +100,28 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			if (calcWidth != self.WidthRequest || calcHeight != self.HeightRequest)
 			{
 				self.SetSizeRequest(calcWidth, calcHeight);
+				return;
+			}
+
+			// The request already IS what we want, yet the widget is allocated smaller than it. That
+			// means the resize gtk_widget_set_size_request queued the first time round was lost, and
+			// it will not queue another one for an unchanged value - so without this the widget stays
+			// pinned at its natural size for the lifetime of the window, however many layout passes
+			// Forms runs.
+			//
+			// The guard is what keeps this from becoming a resize storm: inside a Gtk.Fixed - which
+			// is what every Forms layout and every page's content sits in - a child is allocated its
+			// PREFERRED size, i.e. never less than its request, so "allocated smaller than requested"
+			// is not a state that occurs in steady operation. It is only ever the lost-resize
+			// signature. Measured on the ControlGallery's detail page: request (500,528) with the
+			// allocation still at the natural 257x230, no wedge (a bare QueueResize() fixed it
+			// immediately, and so did nudging the request to a different value and back) - see
+			// scratchpad/m3-wedge.log.
+			if (self.Parent is Fixed
+				&& ((calcWidth >= 0 && self.Allocation.Width < calcWidth)
+					|| (calcHeight >= 0 && self.Allocation.Height < calcHeight)))
+			{
+				self.QueueResize();
 			}
 		}
 

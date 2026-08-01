@@ -204,6 +204,38 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				_layoutUpdateQueued = false;
 				UpdateChildrenLayout();
+				QueueChildrenLayoutVerify();
+
+				return false;
+			});
+		}
+
+		bool _layoutVerifyQueued;
+
+		/// <summary>
+		/// Runs <see cref="UpdateChildrenLayout"/> a second time, once GTK has had its turn.
+		/// </summary>
+		/// <remarks>
+		/// Same hole, and same reasoning, as VisualElementRenderer.QueueLayoutVerify: a size request
+		/// whose queued resize GTK drops is never re-queued, because the value does not change on
+		/// the next pass, and Forms raises no BatchCommitted for a layout that did not move
+		/// anything. Without this the page's content stayed at its natural size for good - the
+		/// ControlGallery's detail page sat at 257x230 inside a 500x528 content area.
+		/// </remarks>
+		void QueueChildrenLayoutVerify()
+		{
+			if (_layoutVerifyQueued || _disposed)
+				return;
+
+			_layoutVerifyQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutVerifyQueued = false;
+
+				if (!_disposed)
+					UpdateChildrenLayout();
+
 				return false;
 			});
 		}

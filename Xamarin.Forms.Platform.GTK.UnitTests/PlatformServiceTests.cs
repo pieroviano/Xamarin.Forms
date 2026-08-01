@@ -83,31 +83,26 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// the plan records this being checked at runtime for M4 (§7.5).
 		/// </summary>
 		[Test]
-		public async Task IsolatedStorageRoundTrips()
+		public void IsolatedStorageRoundTrips()
 		{
 			var store = Device.PlatformServices.GetUserStoreForApplication();
 			var name = $"gtk-unit-tests-{Guid.NewGuid():N}.txt";
 			const string Payload = "round trip";
 
-			try
+			// Deliberately not an async test method - see GtkTestHost.Await.
+			using (var stream = GtkTestHost.Await(store.OpenFileAsync(name, FileMode.Create, FileAccess.Write)))
+			using (var writer = new StreamWriter(stream))
 			{
-				using (var stream = await store.OpenFileAsync(name, FileMode.Create, FileAccess.Write))
-				using (var writer = new StreamWriter(stream))
-				{
-					await writer.WriteAsync(Payload);
-				}
-
-				Assert.That(await store.GetFileExistsAsync(name), Is.True, "the file was not created");
-
-				using (var stream = await store.OpenFileAsync(name, FileMode.Open, FileAccess.Read))
-				using (var reader = new StreamReader(stream))
-				{
-					Assert.That(await reader.ReadToEndAsync(), Is.EqualTo(Payload));
-				}
+				writer.Write(Payload);
 			}
-			finally
+
+			Assert.That(GtkTestHost.Await(store.GetFileExistsAsync(name)), Is.True,
+				"the file was not created");
+
+			using (var stream = GtkTestHost.Await(store.OpenFileAsync(name, FileMode.Open, FileAccess.Read)))
+			using (var reader = new StreamReader(stream))
 			{
-				// No delete on IIsolatedStorageFile; the temp name keeps runs from colliding.
+				Assert.That(reader.ReadToEnd(), Is.EqualTo(Payload));
 			}
 		}
 
