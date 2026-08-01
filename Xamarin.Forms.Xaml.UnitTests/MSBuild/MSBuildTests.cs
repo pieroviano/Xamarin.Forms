@@ -156,6 +156,23 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 
 			File.Copy(props, IOPath.Combine(tempDirectory, "Directory.Build.props"), true);
 			File.Copy(targets, IOPath.Combine(tempDirectory, "Directory.Build.targets"), true);
+
+			// ...and the repository's NuGet.config with them. The generated projects import the
+			// repo-root Directory.Build.props, which pulls in SourceLink.Build.props and its
+			// *floating* <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-*" />.
+			// A floating version is resolved against the configured feeds on every restore, so a
+			// warm ~/.nuget/packages does not save it. Since these projects moved out of the
+			// repository and under the OS temp directory, NuGet no longer walks up into the repo
+			// root and so never sees its NuGet.config: restore then runs with whatever the
+			// user-level config holds. On a machine whose user-level config has no nuget.org - a
+			// Visual Studio install leaves only a disabled offline source there - every
+			// sdkStyle:true case died in RestoreIfNeeded with
+			//     error NU1101: Unable to find package Microsoft.SourceLink.GitHub.
+			// Copying the repo config in makes the restore feed list a property of the repository
+			// rather than of the machine, on every OS.
+			var nugetConfig = IOPath.Combine(repoRoot, "NuGet.config");
+			if (File.Exists(nugetConfig))
+				File.Copy(nugetConfig, IOPath.Combine(tempDirectory, "NuGet.config"), true);
 		}
 
 		public void Dispose()
@@ -514,9 +531,14 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			project.Save(projectFile);
 			RestoreIfNeeded(projectFile, sdkStyle);
 
-			//NOTE: CompileDesignTime target only exists on Windows
-			var target = Environment.OSVersion.Platform == PlatformID.Win32NT ? "CompileDesignTime" : "Compile";
-			Build(projectFile, target, additionalArgs: "/p:DesignTimeBuild=True /p:BuildingInsideVisualStudio=True /p:SkipCompilerExecution=True /p:ProvideCommandLineArgs=True");
+			// "Compile" on every OS now. The old code asked for "CompileDesignTime" on Windows,
+			// which is defined by the *full* MSBuild that ships with Visual Studio; the SDK's
+			// MSBuild - which is what `dotnet msbuild` runs, and what this harness has driven
+			// since MSBuildLocator was dropped - does not define it, so that branch failed with
+			//     error MSB4057: The target "CompileDesignTime" does not exist in the project.
+			// Nothing is lost: CompileDesignTime is Compile plus exactly the design-time
+			// properties passed below, and those are what the test is actually asserting on.
+			Build(projectFile, "Compile", additionalArgs: "/p:DesignTimeBuild=True /p:BuildingInsideVisualStudio=True /p:SkipCompilerExecution=True /p:ProvideCommandLineArgs=True");
 
 			var assembly = IOPath.Combine(intermediateDirectory, "test.dll");
 			var mainPageXamlG = IOPath.Combine(intermediateDirectory, "Pages", "MainPage.xaml.g.cs");

@@ -15,9 +15,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 	/// driven by <c>GoToAsync</c>, <c>PushAsync</c>/<c>PopAsync</c> and the nav bar's back arrow.
 	/// </summary>
 	/// <remarks>
-	/// Scope, deliberately: stages one to three of the plan. Still <b>not</b> rendered are the
-	/// <see cref="SearchHandler"/>, toolbar items, <c>TitleView</c>, modal presentation and the
-	/// flyout transition; see the plan's "not implemented" table.
+	/// Scope: stages one to three of the plan, plus stage four's nav bar surface - page/Shell
+	/// <see cref="ToolbarItem"/>s (primary on the bar, secondary behind an overflow),
+	/// <c>Shell.TitleView</c> and the <see cref="SearchHandler"/> search box with its suggestion
+	/// list. Still <b>not</b> rendered are modal presentation and the flyout transition; see the
+	/// plan's "not implemented" table.
 	///
 	/// Structure it relies on (identical to the UWP and Android renderers):
 	/// <code>
@@ -42,10 +44,19 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			public View View;
 			public IVisualElementRenderer Renderer;
 			public Gtk.EventBox Host;
+
+			/// <summary>
+			/// Whether this renderer is the one that parented <see cref="View"/>, and may therefore
+			/// un-parent it again. A <c>Shell.TitleView</c> is parented by Core to the page that
+			/// declares it; clearing that would cut the view off from its own binding context.
+			/// </summary>
+			public bool OwnsParent = true;
 		}
 
 		readonly List<FlyoutHost> _flyoutHosts = new List<FlyoutHost>();
+		readonly List<FlyoutHost> _suggestionHosts = new List<FlyoutHost>();
 		readonly List<Gtk.Widget> _separators = new List<Gtk.Widget>();
+		readonly List<ToolbarItem> _toolbarItems = new List<ToolbarItem>();
 		readonly Dictionary<FormsPage, IVisualElementRenderer> _pageRenderers =
 			new Dictionary<FormsPage, IVisualElementRenderer>();
 
@@ -55,9 +66,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		FlyoutHost _headerHost;
 		FlyoutHost _footerHost;
+		FlyoutHost _titleViewHost;
+
+		FormsPage _toolbarPage;
+		SearchHandler _searchHandler;
+		INotifyCollectionChanged _searchItemsSource;
 
 		FlyoutBehavior _behavior = FlyoutBehavior.Flyout;
 		bool _updatingPresented;
+		bool _updatingQuery;
 		int _pageId;
 
 		Shell ShellElement => Element as Shell;
@@ -84,6 +101,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			Widget.BackRequested += OnBackRequested;
 			Widget.SectionTabs.TabSelected += OnSectionTabSelected;
 			Widget.ContentTabs.TabSelected += OnContentTabSelected;
+			Widget.ToolbarItemActivated += OnToolbarItemActivated;
+			Widget.SuggestionSelected += OnSuggestionSelected;
+			Widget.ClearPlaceholderClicked += OnClearPlaceholderClicked;
+			Widget.SearchExpandedChanged += OnSearchExpandedChanged;
+			Widget.SearchEntry.SearchTextChanged += OnSearchTextChanged;
+			Widget.SearchEntry.SearchButtonClicked += OnSearchConfirmed;
+			Widget.SearchEntry.Entry.Activated += OnSearchConfirmed;
 
 			ShellController.StructureChanged += OnStructureChanged;
 			ShellController.FlyoutItemsChanged += OnFlyoutItemsChanged;
@@ -120,6 +144,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			else if (e.PropertyName == Shell.ItemTemplateProperty.PropertyName ||
 				e.PropertyName == Shell.MenuItemTemplateProperty.PropertyName)
 				RebuildFlyoutItems();
+			else if (e.PropertyName == Shell.TitleViewProperty.PropertyName)
+				UpdateTitleView();
+			else if (e.PropertyName == Shell.SearchHandlerProperty.PropertyName)
+				UpdateSearchHandler();
 		}
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
@@ -146,6 +174,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					Widget.BackRequested -= OnBackRequested;
 					Widget.SectionTabs.TabSelected -= OnSectionTabSelected;
 					Widget.ContentTabs.TabSelected -= OnContentTabSelected;
+					Widget.ToolbarItemActivated -= OnToolbarItemActivated;
+					Widget.SuggestionSelected -= OnSuggestionSelected;
+					Widget.ClearPlaceholderClicked -= OnClearPlaceholderClicked;
+					Widget.SearchExpandedChanged -= OnSearchExpandedChanged;
+					Widget.SearchEntry.SearchTextChanged -= OnSearchTextChanged;
+					Widget.SearchEntry.SearchButtonClicked -= OnSearchConfirmed;
+					Widget.SearchEntry.Entry.Activated -= OnSearchConfirmed;
 				}
 
 				if (ShellController != null)
@@ -159,10 +194,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				if (_currentPage != null)
 					_currentPage.PropertyChanged -= OnCurrentPagePropertyChanged;
 
+				DetachToolbarPage();
+				DetachSearchHandler();
 				DetachShellItem();
 				ClearFlyoutItems();
+				ClearSuggestions();
 				DestroyFlyoutHost(ref _headerHost);
 				DestroyFlyoutHost(ref _footerHost);
+				DestroyFlyoutHost(ref _titleViewHost);
 
 				foreach (var pair in _pageRenderers.ToList())
 				{
@@ -424,9 +463,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_currentPage != null)
 				_currentPage.PropertyChanged += OnCurrentPagePropertyChanged;
 
+			AttachToolbarPage(page);
+
 			if (page == null)
 			{
 				UpdateTitle();
+				UpdateToolbarItems();
+				UpdateTitleView();
+				UpdateSearchHandler();
 				return;
 			}
 
@@ -455,6 +499,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			UpdateFlyoutSelection();
 			UpdateTabs();
 			UpdateBackButton();
+			UpdateToolbarItems();
+			UpdateTitleView();
+			UpdateSearchHandler();
 			QueueFlyoutLayout();
 		}
 
@@ -466,6 +513,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				UpdateNavBarVisibility();
 			else if (e.PropertyName == FormsPage.TitleProperty.PropertyName)
 				UpdateTitle();
+			else if (e.PropertyName == Shell.TitleViewProperty.PropertyName)
+				UpdateTitleView();
+			else if (e.PropertyName == Shell.SearchHandlerProperty.PropertyName)
+				UpdateSearchHandler();
 		}
 
 		void UpdateTitle()
@@ -1066,7 +1117,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (entry.View != null)
 			{
 				Platform.SetRenderer(entry.View, null);
-				entry.View.Parent = null;
+
+				if (entry.OwnsParent)
+					entry.View.Parent = null;
 			}
 
 			entry.Host.Destroy();
@@ -1077,6 +1130,468 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			if (widget?.Parent is Gtk.Container container)
 				container.Remove(widget);
+		}
+
+		// ---- effective attached values -----------------------------------------------------
+
+		/// <summary>
+		/// Walks the displayed page up to the <see cref="Shell"/> looking for the first element that
+		/// has <paramref name="property"/> set - the pivot walk <c>Shell.GetEffectiveValue</c> does
+		/// internally, reimplemented because that method is <c>internal</c> to Core.
+		/// </summary>
+		/// <remarks>
+		/// Android reads these attached properties off the displayed <c>Page</c> only. Walking up
+		/// additionally honours a <c>SearchHandler</c>/<c>TitleView</c> declared on the
+		/// <c>ShellContent</c>, the <c>ShellSection</c> or the <c>Shell</c> itself, which is what
+		/// the XAML in the Shell templates actually does, and it still lets the page win.
+		/// </remarks>
+		T GetEffective<T>(BindableProperty property) where T : class
+		{
+			Element element = _currentPage;
+
+			while (element != null)
+			{
+				if (element.IsSet(property))
+					return element.GetValue(property) as T;
+
+				if (ReferenceEquals(element, Element))
+					break;
+
+				element = element.Parent;
+			}
+
+			return null;
+		}
+
+		// ---- toolbar items -------------------------------------------------------------------
+
+		void AttachToolbarPage(FormsPage page)
+		{
+			if (ReferenceEquals(page, _toolbarPage))
+				return;
+
+			DetachToolbarPage();
+
+			_toolbarPage = page;
+
+			if (_toolbarPage?.ToolbarItems is INotifyCollectionChanged observable)
+				observable.CollectionChanged += OnToolbarItemsChanged;
+		}
+
+		void DetachToolbarPage()
+		{
+			if (_toolbarPage?.ToolbarItems is INotifyCollectionChanged observable)
+				observable.CollectionChanged -= OnToolbarItemsChanged;
+
+			foreach (var item in _toolbarItems)
+				item.PropertyChanged -= OnToolbarItemPropertyChanged;
+
+			_toolbarItems.Clear();
+			_toolbarPage = null;
+		}
+
+		void OnToolbarItemsChanged(object sender, NotifyCollectionChangedEventArgs e) => UpdateToolbarItems();
+
+		void OnToolbarItemPropertyChanged(object sender, PropertyChangedEventArgs e) => UpdateToolbarItems();
+
+		/// <summary>
+		/// Flattens the displayed page's <see cref="ToolbarItem"/>s onto the nav bar: primary first,
+		/// then secondary behind the overflow, each group ordered by <c>Priority</c>.
+		/// </summary>
+		/// <remarks>
+		/// <c>ToolbarItemOrder.Default</c> counts as primary, which is what the Android and iOS
+		/// trackers do; only <c>Secondary</c> goes to the overflow. The order of this flattened list
+		/// is the index the widget reports back, so it is built once and kept.
+		/// </remarks>
+		void UpdateToolbarItems()
+		{
+			if (Widget == null || _disposed)
+				return;
+
+			foreach (var item in _toolbarItems)
+				item.PropertyChanged -= OnToolbarItemPropertyChanged;
+
+			_toolbarItems.Clear();
+
+			var source = _currentPage?.ToolbarItems;
+
+			if (source != null)
+			{
+				_toolbarItems.AddRange(source
+					.Where(i => i != null && i.Order != ToolbarItemOrder.Secondary)
+					.OrderBy(i => i.Priority));
+
+				_toolbarItems.AddRange(source
+					.Where(i => i != null && i.Order == ToolbarItemOrder.Secondary)
+					.OrderBy(i => i.Priority));
+			}
+
+			var infos = new List<Controls.ShellToolbarItemInfo>(_toolbarItems.Count);
+
+			foreach (var item in _toolbarItems)
+			{
+				item.PropertyChanged += OnToolbarItemPropertyChanged;
+
+				infos.Add(new Controls.ShellToolbarItemInfo
+				{
+					Text = item.Text,
+					Icon = item.IconImageSource == null ? null : item.IconImageSource.ToPixbuf(new Size(24, 24)),
+					IsEnabled = item.IsEnabled,
+					IsSecondary = item.Order == ToolbarItemOrder.Secondary
+				});
+			}
+
+			Widget.SetToolbarItems(infos);
+		}
+
+		void OnToolbarItemActivated(object sender, Controls.ShellToolbarItemActivatedEventArgs e)
+		{
+			if (_disposed || e.Index < 0 || e.Index >= _toolbarItems.Count)
+				return;
+
+			// Activate(), not Command.Execute(): it is what raises Clicked as well, and it is the
+			// contract every other backend drives a ToolbarItem through.
+			((IMenuItemController)_toolbarItems[e.Index]).Activate();
+		}
+
+		// ---- TitleView -----------------------------------------------------------------------
+
+		/// <summary>
+		/// Puts <c>Shell.TitleView</c> in the nav bar in place of the title label.
+		/// </summary>
+		/// <remarks>
+		/// The host is packed expand/fill, so GTK hands it whatever the back/hamburger, the search
+		/// box and the toolbar leave over; that allocation - not a guess - is the width the Forms
+		/// view is measured and laid out against, in <see cref="LayoutTitleView"/>, on idle.
+		/// </remarks>
+		void UpdateTitleView()
+		{
+			if (Widget == null || _disposed)
+				return;
+
+			var view = GetEffective<View>(Shell.TitleViewProperty);
+
+			if (_titleViewHost != null && ReferenceEquals(_titleViewHost.View, view))
+				return;
+
+			DestroyFlyoutHost(ref _titleViewHost);
+
+			if (view != null)
+			{
+				// Core's Shell.OnTitleViewChanged has usually already parented the view to whatever
+				// declared it, and that parent is where its binding context comes from - so adopt it
+				// only when there is none, and record that so it is not un-parented on the way out.
+				var adopted = view.Parent == null;
+
+				if (adopted)
+					view.Parent = Element;
+
+				_titleViewHost = CreateHost(null, view);
+				_titleViewHost.OwnsParent = adopted;
+
+				// CreateHost already ShowAll()s the inner host, and that is the only thing that can
+				// show it: ShowAll() on Widget.TitleViewHost would be a NO-OP, because it carries
+				// NoShowAll so a stray parent ShowAll cannot resurrect a title view that has been
+				// cleared. The wrapper itself is shown by TitleViewVisible, below.
+				Widget.TitleViewHost.Add(_titleViewHost.Host);
+			}
+
+			Widget.TitleViewVisible = view != null;
+
+			QueueFlyoutLayout();
+		}
+
+		// ---- SearchHandler -------------------------------------------------------------------
+
+		void UpdateSearchHandler()
+		{
+			if (Widget == null || _disposed)
+				return;
+
+			var handler = GetEffective<SearchHandler>(Shell.SearchHandlerProperty);
+
+			if (!ReferenceEquals(handler, _searchHandler))
+			{
+				DetachSearchHandler();
+
+				_searchHandler = handler;
+
+				if (_searchHandler != null)
+				{
+					_searchHandler.PropertyChanged += OnSearchHandlerPropertyChanged;
+					((ISearchHandlerController)_searchHandler).ListProxyChanged += OnSearchListProxyChanged;
+				}
+
+				AttachSearchItemsSource();
+			}
+
+			ApplySearchHandler();
+		}
+
+		void DetachSearchHandler()
+		{
+			if (_searchItemsSource != null)
+			{
+				_searchItemsSource.CollectionChanged -= OnSearchItemsChanged;
+				_searchItemsSource = null;
+			}
+
+			if (_searchHandler == null)
+				return;
+
+			_searchHandler.PropertyChanged -= OnSearchHandlerPropertyChanged;
+			((ISearchHandlerController)_searchHandler).ListProxyChanged -= OnSearchListProxyChanged;
+			_searchHandler = null;
+		}
+
+		void AttachSearchItemsSource()
+		{
+			if (_searchItemsSource != null)
+			{
+				_searchItemsSource.CollectionChanged -= OnSearchItemsChanged;
+				_searchItemsSource = null;
+			}
+
+			// The proxy Core hands out is the live view of ItemsSource; an app that re-filters in
+			// OnQueryChanged mutates it rather than replacing it, so the collection event is the
+			// only signal that the suggestions changed.
+			_searchItemsSource = (_searchHandler as ISearchHandlerController)?.ListProxy as INotifyCollectionChanged;
+
+			if (_searchItemsSource != null)
+				_searchItemsSource.CollectionChanged += OnSearchItemsChanged;
+		}
+
+		void OnSearchListProxyChanged(object sender, ListProxyChangedEventArgs e)
+		{
+			AttachSearchItemsSource();
+			RebuildSuggestions();
+		}
+
+		void OnSearchItemsChanged(object sender, NotifyCollectionChangedEventArgs e) => RebuildSuggestions();
+
+		void OnSearchHandlerPropertyChanged(object sender, PropertyChangedEventArgs e) => ApplySearchHandler();
+
+		void ApplySearchHandler()
+		{
+			if (Widget == null || _disposed)
+				return;
+
+			var entry = Widget.SearchEntry;
+
+			if (_searchHandler == null)
+			{
+				Widget.SearchMode = Controls.ShellSearchBoxMode.Hidden;
+				Widget.ClearPlaceholderVisible = false;
+				RebuildSuggestions();
+
+				return;
+			}
+
+			switch (_searchHandler.SearchBoxVisibility)
+			{
+				case SearchBoxVisibility.Hidden:
+					Widget.SearchMode = Controls.ShellSearchBoxMode.Hidden;
+					break;
+				case SearchBoxVisibility.Collapsible:
+					Widget.SearchMode = Controls.ShellSearchBoxMode.Collapsible;
+					break;
+				default:
+					Widget.SearchMode = Controls.ShellSearchBoxMode.Expanded;
+					break;
+			}
+
+			// Guarded: writing the text raises Gtk.Entry.Changed, which is the same handler that
+			// pushes the text back into Query.
+			_updatingQuery = true;
+
+			try
+			{
+				var query = _searchHandler.UpdateFormsText(_searchHandler.Query, _searchHandler.TextTransform) ?? string.Empty;
+
+				if (!string.Equals(entry.SearchText, query, StringComparison.Ordinal))
+					entry.SearchText = query;
+			}
+			finally
+			{
+				_updatingQuery = false;
+			}
+
+			entry.PlaceholderText = _searchHandler.Placeholder ?? string.Empty;
+			entry.Sensitive = _searchHandler.IsSearchEnabled;
+
+			if (!_searchHandler.TextColor.IsDefaultOrTransparent())
+				entry.SetTextColor(_searchHandler.TextColor.ToGtkColor());
+
+			if (!_searchHandler.PlaceholderColor.IsDefaultOrTransparent())
+				entry.SetPlaceholderTextColor(_searchHandler.PlaceholderColor.ToGtkColor());
+
+			if (!_searchHandler.BackgroundColor.IsDefaultOrTransparent())
+				entry.SetBackgroundColor(_searchHandler.BackgroundColor.ToGtkColor());
+
+			if (!_searchHandler.CancelButtonColor.IsDefaultOrTransparent())
+				entry.SetCancelButtonColor(_searchHandler.CancelButtonColor.ToGtkColor());
+
+			entry.SetFont(Helpers.FontDescriptionHelper.CreateFontDescription(
+				_searchHandler.FontSize, _searchHandler.FontFamily, _searchHandler.FontAttributes));
+
+			Widget.ClearPlaceholderVisible = _searchHandler.ClearPlaceholderEnabled;
+
+			RebuildSuggestions();
+		}
+
+		void OnSearchTextChanged(object sender, EventArgs e)
+		{
+			if (_disposed || _updatingQuery || _searchHandler == null)
+				return;
+
+			_updatingQuery = true;
+
+			try
+			{
+				_searchHandler.Query = Widget.SearchEntry.SearchText;
+			}
+			finally
+			{
+				_updatingQuery = false;
+			}
+
+			RebuildSuggestions();
+		}
+
+		void OnSearchConfirmed(object sender, EventArgs e)
+		{
+			if (_disposed || _searchHandler == null)
+				return;
+
+			((ISearchHandlerController)_searchHandler).QueryConfirmed();
+		}
+
+		void OnClearPlaceholderClicked(object sender, EventArgs e)
+		{
+			if (_disposed || _searchHandler == null)
+				return;
+
+			((ISearchHandlerController)_searchHandler).ClearPlaceholderClicked();
+		}
+
+		void OnSearchExpandedChanged(object sender, EventArgs e) => RebuildSuggestions();
+
+		void OnSuggestionSelected(object sender, Controls.ShellSuggestionSelectedEventArgs e)
+		{
+			if (_disposed || _searchHandler == null)
+				return;
+
+			var items = ((ISearchHandlerController)_searchHandler).ListProxy;
+
+			if (items == null || e.Index < 0 || e.Index >= items.Count)
+				return;
+
+			((ISearchHandlerController)_searchHandler).ItemSelected(items[e.Index]);
+		}
+
+		/// <summary>
+		/// Rebuilds the suggestion rows under the nav bar from the handler's <c>ListProxy</c>.
+		/// </summary>
+		/// <remarks>
+		/// The list is only offered when the handler asks for it (<c>ShowsResults</c>) and the box is
+		/// actually open, which is what stops a <c>Collapsible</c> handler from dropping a result
+		/// list over the page while its box is still a magnifier.
+		/// </remarks>
+		void RebuildSuggestions()
+		{
+			if (Widget == null || _disposed)
+				return;
+
+			ClearSuggestions();
+
+			var controller = _searchHandler as ISearchHandlerController;
+			var items = controller?.ListProxy;
+
+			var show = _searchHandler != null && _searchHandler.ShowsResults && Widget.SearchExpanded
+				&& items != null && items.Count > 0;
+
+			if (!show)
+			{
+				Widget.SetSuggestionRows(null);
+				Widget.SuggestionsVisible = false;
+
+				return;
+			}
+
+			var rows = new List<Gtk.Widget>(items.Count);
+
+			foreach (var item in items)
+			{
+				var view = CreateSuggestionView(item);
+
+				if (view != null)
+				{
+					var entry = CreateHost(null, view);
+
+					_suggestionHosts.Add(entry);
+					rows.Add(entry.Host);
+
+					continue;
+				}
+
+				var label = new Gtk.Label(SuggestionText(item)) { Xalign = 0f, Margin = 8 };
+				var host = new Gtk.EventBox { VisibleWindow = false };
+
+				host.Add(label);
+				rows.Add(host);
+			}
+
+			Widget.SetSuggestionRows(rows);
+			Widget.SuggestionsVisible = true;
+
+			QueueFlyoutLayout();
+		}
+
+		View CreateSuggestionView(object item)
+		{
+			var template = _searchHandler?.ItemTemplate;
+
+			if (template is DataTemplateSelector selector)
+				template = selector.SelectTemplate(item, ShellElement);
+
+			var view = template?.CreateContent() as View;
+
+			if (view == null)
+				return null;
+
+			view.Parent = Element;
+			view.BindingContext = item;
+
+			return view;
+		}
+
+		string SuggestionText(object item)
+		{
+			if (item == null)
+				return string.Empty;
+
+			var member = _searchHandler?.DisplayMemberName;
+
+			if (!string.IsNullOrEmpty(member))
+			{
+				var property = item.GetType().GetProperty(member);
+
+				if (property != null)
+					return property.GetValue(item)?.ToString() ?? string.Empty;
+			}
+
+			return item.ToString() ?? string.Empty;
+		}
+
+		void ClearSuggestions()
+		{
+			foreach (var entry in _suggestionHosts.ToList())
+			{
+				var e = entry;
+				DestroyFlyoutHost(ref e);
+			}
+
+			_suggestionHosts.Clear();
 		}
 
 		// ---- flyout layout ---------------------------------------------------------------
@@ -1119,6 +1634,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (Widget == null || _disposed)
 				return;
 
+			LayoutTitleView();
+			LayoutSuggestions();
+
 			var width = Widget.FlyoutWidth;
 
 			if (width <= 1)
@@ -1130,6 +1648,70 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				LayoutFlyoutView(entry, width);
 
 			LayoutFlyoutView(_footerHost, width);
+		}
+
+		/// <summary>
+		/// Lays the <c>TitleView</c> out to the width GTK gave its nav bar host.
+		/// </summary>
+		/// <remarks>
+		/// Only the <b>height</b> is pushed back as a size request. Setting a width request equal to
+		/// the allocation is the size-request ratchet of plan 8.2.2: the host would never be able to
+		/// shrink again when a toolbar item or the search box appears beside it.
+		/// </remarks>
+		void LayoutTitleView()
+		{
+			if (_titleViewHost?.View == null)
+				return;
+
+			var allocation = Widget.TitleViewHost.Allocation;
+			var width = allocation.Width;
+
+			if (width <= 1)
+				return;
+
+			var height = Math.Max(1, Math.Min(allocation.Height, Controls.ShellWidget.NavBarHeight));
+
+			_titleViewHost.View.Layout(new Rectangle(0, 0, width, height));
+			_titleViewHost.Host.SetSizeRequest(-1, height);
+		}
+
+		void LayoutSuggestions()
+		{
+			if (!Widget.SuggestionsVisible)
+				return;
+
+			var width = Widget.SuggestionsWrapper.Allocation.Width;
+
+			if (width <= 1)
+				width = Widget.ContentStack.Allocation.Width;
+
+			if (width <= 1)
+				return;
+
+			var total = 0;
+
+			foreach (var entry in _suggestionHosts)
+			{
+				LayoutFlyoutView(entry, width);
+				total += NaturalHeight(entry.Host);
+			}
+
+			foreach (var row in Widget.SuggestionsBox.Children)
+			{
+				if (_suggestionHosts.All(h => !ReferenceEquals(h.Host, row)))
+					total += NaturalHeight(row);
+			}
+
+			Widget.SuggestionsWrapper.HeightRequest =
+				Math.Max(1, Math.Min(total, Controls.ShellWidget.MaxSuggestionsHeight));
+		}
+
+		/// <summary>Natural height of a widget. <c>Widget.SizeRequest()</c> is GTK2 and deprecated.</summary>
+		static int NaturalHeight(Gtk.Widget widget)
+		{
+			widget.GetPreferredHeight(out _, out var natural);
+
+			return natural;
 		}
 
 		static void LayoutFlyoutView(FlyoutHost entry, int width)

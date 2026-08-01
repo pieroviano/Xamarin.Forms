@@ -9,32 +9,47 @@ using Xamarin.Forms.Platform.GTK.Extensions;
 namespace Xamarin.Forms.Platform.GTK.Renderers
 {
 	/// <summary>
-	/// CollectionView on GTK: a <see cref="Gtk.Box"/> of per-item hosts (optionally grouped into
-	/// per-line boxes for <see cref="GridItemsLayout"/>) inside a <see cref="Gtk.Viewport"/> inside a
-	/// <see cref="Gtk.ScrolledWindow"/>.
+	/// CollectionView on GTK: a <see cref="Gtk.ScrolledWindow"/> over a <see cref="Gtk.Viewport"/>
+	/// over a <see cref="Gtk.Box"/> that holds only the <b>visible window</b> of items - one
+	/// <see cref="Gtk.EventBox"/> host per materialized item (optionally grouped into per-line boxes
+	/// for a <see cref="GridItemsLayout"/>), bracketed by two spacer widgets that stand in for
+	/// everything scrolled off either end.
 	/// </summary>
 	/// <remarks>
-	/// <para><b>Not virtualized.</b> Every item in <c>ItemsSource</c> is materialized: a Forms view
-	/// from the template, a renderer for it, and a <see cref="Gtk.EventBox"/> host. That is
-	/// pathological on large sources and the plan says so explicitly (§8) - it is recorded as a
-	/// known limitation rather than hidden. Virtualizing needs item extents *before* materializing,
-	/// which the Forms measure API cannot give without instantiating the view, so it needs a
-	/// uniform-extent fast path plus scroll-driven recycling; that is a separate piece of work.</para>
+	/// <para><b>Virtualized.</b> <c>ItemsSource</c> is turned into a flat list of lightweight
+	/// <c>Slot</c> records - no view, no renderer, no widget - and only the slots inside the visible
+	/// line window plus <see cref="BufferLines"/> lines of margin on each side are materialized.
+	/// Scrolling releases the hosts that left the window into a recycle pool <b>keyed by
+	/// DataTemplate</b> and re-binds pooled hosts for the slots that entered it, so a scroll does not
+	/// call <c>DataTemplate.CreateContent()</c> at all. Keying by template is not optional: a
+	/// <see cref="DataTemplateSelector"/> makes a recycled view reusable only for the template that
+	/// produced it.</para>
+	///
+	/// <para><b>Extents.</b> Virtualization needs a line's extent before the line is materialized,
+	/// which the Forms measure API cannot supply without instantiating the view. Lines therefore
+	/// carry a measured extent once they have been laid out and a single frozen <i>estimate</i>
+	/// (the first item line ever measured, i.e. <see cref="ItemSizingStrategy.MeasureFirstItem"/>
+	/// semantics) until then. The estimate is deliberately frozen rather than continuously averaged:
+	/// a moving estimate changes the content size on every pass, which changes the allocation, which
+	/// re-runs this pass - an oscillation, not a refinement.</para>
 	///
 	/// <para>Item views are not children of a Forms <see cref="Layout"/>, so nothing lays them out.
 	/// This renderer measures and calls <c>view.Layout(...)</c> itself, exactly as
 	/// <see cref="CarouselViewRenderer"/> does, and for the same reason sets <c>view.Parent</c>
 	/// <b>before</b> <c>view.BindingContext</c> - parenting makes the view inherit the
-	/// CollectionView's binding context and would otherwise overwrite the item.</para>
+	/// CollectionView's binding context and would otherwise overwrite the item. On <i>recycle</i> the
+	/// parent never changes, so re-binding is only the context assignment - but it must still be
+	/// followed by the explicit measure/layout that <c>LayoutLine</c> performs in the same pass, or
+	/// the recycled row paints its previous occupant's geometry.</para>
 	///
 	/// <para>Geometry is only ever mutated from a <see cref="GLib.Idle"/> callback, never from
 	/// inside a size-allocate: GTK3 discards resizes queued during allocation and can wedge the
 	/// subtree's resize machinery.</para>
 	///
 	/// <para><b>Widget-tree ownership.</b> Hosts are created detached and the deferred layout pass
-	/// re-packs them (<see cref="RepackHosts"/>) whenever the structure changes. That is what lets
-	/// one code path serve linear, grid and grouped layouts: the *only* thing that changes between
-	/// them is how the flat host list is cut into lines.</para>
+	/// re-packs them (<see cref="RepackHosts"/>) whenever the structure or the window changes. That
+	/// is what lets one code path serve linear, grid and grouped layouts: the *only* thing that
+	/// changes between them is how the flat slot list is cut into lines.</para>
 	/// </remarks>
 	public class CollectionViewRenderer : ViewRenderer<CollectionView, Gtk.ScrolledWindow>
 	{
@@ -45,16 +60,71 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			GroupFooter
 		}
 
-		sealed class ItemHost
+		/// <summary>
+		/// One position in the flattened list - an item, a group header or a group footer. A slot
+		/// exists whether or not anything is materialized for it; <see cref="Host"/> is non-null only
+		/// while the slot is inside the materialized window.
+		/// </summary>
+		sealed class Slot
 		{
 			public object Item;
 			public object Group;
 			public int GroupIndex = -1;
 			public int IndexInGroup = -1;
+			public int Index = -1;
 			public HostKind Kind;
+
+			/// <summary>Resolved up front for group headers/footers only: a null template means the
+			/// slot does not exist at all, which cannot be decided lazily. Item templates are resolved
+			/// at materialization time so a 10,000-item source costs 10,000 records and nothing else.</summary>
+			public DataTemplate Template;
+
+			public ItemHost Host;
+		}
+
+		/// <summary>A materialized view + renderer + native host. Recyclable; see <see cref="PoolKey"/>.</summary>
+		sealed class ItemHost
+		{
+			public PoolKey Key;
 			public View View;
 			public IVisualElementRenderer Renderer;
-			public Gtk.EventBox Host;
+			public HostBox Host;
+			public Slot Slot;
+
+			/// <summary>The no-template fallback <see cref="Label"/> carries no binding, so its text
+			/// has to be re-assigned by hand when the host is recycled.</summary>
+			public bool IsFallbackLabel;
+		}
+
+		/// <summary>
+		/// A recycled view is only reusable for the same template <b>and</b> the same kind: an
+		/// application may legitimately use one <see cref="DataTemplate"/> for both items and group
+		/// headers, and an item host carries a button-press handler a header host must not have.
+		/// </summary>
+		readonly struct PoolKey : IEquatable<PoolKey>
+		{
+			public PoolKey(DataTemplate template, HostKind kind)
+			{
+				Template = template;
+				Kind = kind;
+			}
+
+			public DataTemplate Template { get; }
+
+			public HostKind Kind { get; }
+
+			public bool Equals(PoolKey other) => ReferenceEquals(Template, other.Template) && Kind == other.Kind;
+
+			public override bool Equals(object obj) => obj is PoolKey other && Equals(other);
+
+			public override int GetHashCode()
+			{
+				var hash = Template == null
+					? 0
+					: System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Template);
+
+				return (hash * 397) ^ (int)Kind;
+			}
 		}
 
 		/// <summary>
@@ -87,6 +157,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		/// renderer sets on every layout pass be the only minimum it has
 		/// (<c>gtk_widget_adjust_size_request</c> folds the request back in with a MAX). A stale
 		/// child size can then no longer push anything wider than the pass that set it.</para>
+		///
+		/// <para>Recycling makes this stricter, not looser: a host arriving from the pool still
+		/// carries the previous occupant's child, so without the zero minimum a recycled row could
+		/// widen the control on the way in.</para>
 		/// </remarks>
 		sealed class HostBox : Gtk.EventBox
 		{
@@ -104,25 +178,53 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		}
 
 		/// <summary>
-		/// One run of hosts across the cross axis. Lines stack along the scrolling axis.
+		/// One run of slots across the cross axis. Lines stack along the scrolling axis, and the
+		/// window this renderer materializes is a range of <i>lines</i>, never of items.
 		/// </summary>
 		sealed class Line
 		{
-			public readonly List<ItemHost> Hosts = new List<ItemHost>();
+			public int Start;
+			public int Count;
 
 			/// <summary>The line owns the whole cross axis: linear items, and group headers/footers.</summary>
 			public bool Spanning;
+
+			/// <summary>Extent along the scrolling axis, valid only while <see cref="Measured"/>.</summary>
+			public double Extent;
+
+			public bool Measured;
 		}
 
 		static readonly Gdk.Color DefaultSelectionColor = Color.FromHex("#3498DB").ToGtkColor();
 
-		readonly List<ItemHost> _hosts = new List<ItemHost>();
+		/// <summary>
+		/// Lines materialized above and below the visible range. Big enough that every list short
+		/// enough to fit a screen and a half is materialized in full - which is what keeps small
+		/// lists behaving exactly as they did before virtualization - and small enough that the
+		/// materialized set stays bounded at a couple of dozen hosts on a 10,000-item source.
+		/// </summary>
+		const int BufferLines = 8;
+
+		/// <summary>Recycled hosts kept per template, so a long scroll cannot grow the pool forever.</summary>
+		const int MaxPooledPerTemplate = 16;
+
+		readonly List<Slot> _slots = new List<Slot>();
 		readonly List<object> _items = new List<object>();
+		readonly List<Line> _lines = new List<Line>();
+		readonly List<ItemHost> _live = new List<ItemHost>();
+		readonly Dictionary<PoolKey, Stack<ItemHost>> _pool = new Dictionary<PoolKey, Stack<ItemHost>>();
 		readonly List<Gtk.Box> _lineBoxes = new List<Gtk.Box>();
 		readonly List<INotifyCollectionChanged> _groupSources = new List<INotifyCollectionChanged>();
 
 		Gtk.Viewport _viewport;
 		Gtk.Box _itemsBox;
+
+		// Gtk.Fixed, not Gtk.EventBox: a spacer must not be mistaken for a host by anything that
+		// walks the tree, and Gtk.Fixed is windowless, paints nothing and has a zero minimum.
+		Gtk.Fixed _leadSpacer;
+		Gtk.Fixed _trailSpacer;
+
+		Gtk.Adjustment _watchedAdjustment;
 
 		Decoration _header;
 		Decoration _footer;
@@ -137,7 +239,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		double _withinLineSpacing;
 		bool _layoutQueued;
 		bool _repackNeeded = true;
+		bool _linesDirty = true;
 		bool _disposed;
+
+		int _windowFirst;
+		int _windowLast = -1;
+
+		/// <summary>Frozen after the first item line is measured; see the class remarks.</summary>
+		double _estimate;
+
+		/// <summary>The cross-axis extent every measured line was measured at. A change invalidates them.</summary>
+		int _measuredCross = -1;
 
 		protected override void OnElementChanged(ElementChangedEventArgs<CollectionView> e)
 		{
@@ -153,6 +265,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				if (Control == null)
 				{
 					_itemsBox = new Gtk.Box(Gtk.Orientation.Vertical, 0);
+
+					_leadSpacer = new Gtk.Fixed();
+					_trailSpacer = new Gtk.Fixed();
+					_leadSpacer.Show();
+					_trailSpacer.Show();
 
 					_viewport = new Gtk.Viewport
 					{
@@ -265,6 +382,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				if (Element != null)
 					Element.ScrollToRequested -= OnScrollToRequested;
 
+				if (_watchedAdjustment != null)
+				{
+					_watchedAdjustment.ValueChanged -= OnAdjustmentValueChanged;
+					_watchedAdjustment = null;
+				}
+
 				UnsubscribeSource();
 				UnsubscribeItemsLayout();
 				ClearItems();
@@ -273,6 +396,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				DestroyDecoration(ref _footer);
 				ClearLineBoxes();
 
+				// The spacers are only packed while there is something outside the window, so they
+				// can still be floating here.
+				Detach(_leadSpacer);
+				Detach(_trailSpacer);
+				_leadSpacer?.Destroy();
+				_trailSpacer?.Destroy();
+
+				_leadSpacer = null;
+				_trailSpacer = null;
 				_itemsBox = null;
 				_viewport = null;
 			}
@@ -318,7 +450,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		/// Everything downstream is expressed in *lines*: a line runs across the cross axis and
 		/// lines stack along the scrolling axis. A <see cref="LinearItemsLayout"/> is simply the
 		/// case where every line holds one item and owns the whole cross axis, which is why grid
-		/// and linear share one layout, one re-pack and one <c>ScrollTo</c>.
+		/// and linear share one layout, one re-pack, one virtualization window and one
+		/// <c>ScrollTo</c>.
 		/// </remarks>
 		void ApplyItemsLayout()
 		{
@@ -331,7 +464,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var span = Math.Max(1, grid?.Span ?? 1);
 
 			if (orientation != _orientation || isGrid != _isGrid || span != _span)
+			{
+				// The cut of slots into lines changes, so every measured extent and the window
+				// derived from them are meaningless.
+				_linesDirty = true;
 				_repackNeeded = true;
+				_estimate = 0;
+				_measuredCross = -1;
+			}
 
 			_orientation = orientation;
 			_isGrid = isGrid;
@@ -460,8 +600,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_disposed || _itemsBox == null)
 				return;
 
-			// A change inside a group shifts every following header/footer/item in the flat host
-			// list, so the incremental path does not apply. Correctness over cleverness here.
+			// A change inside a group shifts every following header/footer/item in the flat slot
+			// list, so the incremental path does not apply. Correctness over cleverness here - and
+			// with virtualization a "full reload" now throws away only the materialized window
+			// rather than every renderer in the source.
 			ReloadItems();
 		}
 
@@ -481,8 +623,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			}
 
 			// Incremental where the notification carries enough information, full reload
-			// otherwise. A full reload is always correct but throws away every realized
-			// renderer, so it is the fallback rather than the default.
+			// otherwise. A full reload is always correct but throws away the realized window along
+			// with the scroll position, so it is the fallback rather than the default.
 			if (e.Action == NotifyCollectionChangedAction.Add &&
 				e.NewItems != null && e.NewStartingIndex >= 0)
 			{
@@ -525,7 +667,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (Element?.ItemsSource is IEnumerable source)
 			{
 				if (Element.IsGrouped)
-					BuildGroupedHosts(source);
+					BuildGroupedSlots(source);
 				else
 				{
 					var index = 0;
@@ -544,16 +686,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		}
 
 		/// <summary>
-		/// Flattens <c>ItemsSource</c>-of-groups into the single ordered host list everything else
-		/// in this renderer works against: header, items, footer, per group.
+		/// Flattens <c>ItemsSource</c>-of-groups into the single ordered slot list everything else
+		/// in this renderer works against: header, items, footer, per group. Nothing is materialized
+		/// here - a slot is a record, not a widget.
 		/// </summary>
-		void BuildGroupedHosts(IEnumerable source)
+		void BuildGroupedSlots(IEnumerable source)
 		{
 			var groupIndex = 0;
 
 			foreach (var group in source)
 			{
-				AppendGroupHost(HostKind.GroupHeader, Element.GroupHeaderTemplate, group, groupIndex);
+				AppendGroupSlot(HostKind.GroupHeader, Element.GroupHeaderTemplate, group, groupIndex);
 
 				// A string is IEnumerable but is never a group of items; treating it as one would
 				// silently explode a group into characters.
@@ -562,58 +705,47 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					var indexInGroup = 0;
 
 					foreach (var item in inner)
-						AppendItemHost(item, group, groupIndex, indexInGroup++);
+					{
+						_items.Add(item);
+
+						_slots.Add(new Slot
+						{
+							Kind = HostKind.Item,
+							Item = item,
+							Group = group,
+							GroupIndex = groupIndex,
+							IndexInGroup = indexInGroup++
+						});
+					}
 				}
 
-				AppendGroupHost(HostKind.GroupFooter, Element.GroupFooterTemplate, group, groupIndex);
+				AppendGroupSlot(HostKind.GroupFooter, Element.GroupFooterTemplate, group, groupIndex);
 
 				groupIndex++;
 			}
+
+			_linesDirty = true;
+			_repackNeeded = true;
 		}
 
-		void AppendGroupHost(HostKind kind, DataTemplate template, object group, int groupIndex)
+		void AppendGroupSlot(HostKind kind, DataTemplate template, object group, int groupIndex)
 		{
 			if (template is DataTemplateSelector selector)
 				template = selector.SelectTemplate(group, Element);
 
 			// No template means no header/footer at all: fabricating one would invent content the
-			// application never asked for.
+			// application never asked for. This is the one template that has to be resolved before
+			// materialization, because it decides whether the slot exists.
 			if (template == null)
 				return;
 
-			if (!(template.CreateContent() is View view))
-				return;
-
-			// Parent first, then BindingContext - see CreateItemView.
-			view.Parent = Element;
-			view.BindingContext = group;
-
-			var entry = CreateHost(view, kind);
-
-			entry.Group = group;
-			entry.GroupIndex = groupIndex;
-
-			_hosts.Add(entry);
-			_repackNeeded = true;
-		}
-
-		void AppendItemHost(object item, object group, int groupIndex, int indexInGroup)
-		{
-			var view = CreateItemView(item);
-
-			if (view == null)
-				return;
-
-			var entry = CreateHost(view, HostKind.Item);
-
-			entry.Item = item;
-			entry.Group = group;
-			entry.GroupIndex = groupIndex;
-			entry.IndexInGroup = indexInGroup;
-
-			_items.Add(item);
-			_hosts.Add(entry);
-			_repackNeeded = true;
+			_slots.Add(new Slot
+			{
+				Kind = kind,
+				Group = group,
+				GroupIndex = groupIndex,
+				Template = template
+			});
 		}
 
 		void InsertItem(int index, object item)
@@ -624,74 +756,79 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (index < 0 || index > _items.Count)
 				index = _items.Count;
 
-			var view = CreateItemView(item);
-
-			if (view == null)
-				return;
-
-			var entry = CreateHost(view, HostKind.Item);
-
-			entry.Item = item;
-			entry.IndexInGroup = index;
-
 			_items.Insert(index, item);
-			_hosts.Insert(index, entry);
-			_repackNeeded = true;
-		}
 
-		/// <summary>
-		/// Creates the renderer and the host <see cref="Gtk.EventBox"/> for a materialized view. The
-		/// host is deliberately left <b>unparented</b>: <see cref="RepackHosts"/> owns placement, so
-		/// linear, grid and grouped structures share one path instead of three.
-		/// </summary>
-		ItemHost CreateHost(View view, HostKind kind)
-		{
-			var renderer = Platform.CreateRenderer(view);
-			Platform.SetRenderer(view, renderer);
-
-			var host = new HostBox { VisibleWindow = false };
-			host.Add(renderer.Container);
-
-			var entry = new ItemHost
+			_slots.Insert(index, new Slot
 			{
-				Kind = kind,
-				View = view,
-				Renderer = renderer,
-				Host = host
-			};
+				Kind = HostKind.Item,
+				Item = item,
+				IndexInGroup = index
+			});
 
-			// Only items are selectable; a group header must not react to a click.
-			if (kind == HostKind.Item)
-				host.ButtonPressEvent += OnItemButtonPress;
-
-			host.ShowAll();
-
-			return entry;
+			_linesDirty = true;
+			_repackNeeded = true;
 		}
 
 		void RemoveItemAt(int index)
 		{
-			if (index < 0 || index >= _hosts.Count)
+			if (index < 0 || index >= _slots.Count)
 				return;
 
-			var entry = _hosts[index];
+			var slot = _slots[index];
 
-			_hosts.RemoveAt(index);
+			_slots.RemoveAt(index);
 			_items.RemoveAt(index);
 
-			DestroyHost(entry);
+			if (slot.Host != null)
+			{
+				_live.Remove(slot.Host);
+				Release(slot.Host);
+			}
+
+			_linesDirty = true;
 			_repackNeeded = true;
 		}
 
 		void ClearItems()
 		{
-			foreach (var entry in _hosts.ToList())
-				DestroyHost(entry);
+			foreach (var host in _live.ToList())
+			{
+				host.Slot = null;
+				DestroyHost(host);
+			}
 
-			_hosts.Clear();
+			_live.Clear();
+
+			foreach (var slot in _slots)
+				slot.Host = null;
+
+			// The pool is keyed by DataTemplate, and a reload is exactly the moment the templates
+			// themselves may have changed. Keeping pooled views across it would recycle a view
+			// built from a template the application has replaced.
+			ClearPool();
+
+			_slots.Clear();
 			_items.Clear();
+			_lines.Clear();
 			ClearLineBoxes();
+
+			_windowFirst = 0;
+			_windowLast = -1;
+			_estimate = 0;
+			_measuredCross = -1;
+			_linesDirty = true;
 			_repackNeeded = true;
+		}
+
+		void ClearPool()
+		{
+			foreach (var stack in _pool.Values)
+			{
+				foreach (var host in stack)
+					DestroyHost(host);
+			}
+
+			_pool.Clear();
 		}
 
 		void ClearLineBoxes()
@@ -705,55 +842,151 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			_lineBoxes.Clear();
 		}
 
-		void DestroyHost(ItemHost entry)
-		{
-			if (entry == null)
-				return;
-
-			if (entry.Kind == HostKind.Item)
-				entry.Host.ButtonPressEvent -= OnItemButtonPress;
-
-			Detach(entry.Host);
-
-			entry.Renderer?.Dispose();
-
-			if (entry.View != null)
-			{
-				Platform.SetRenderer(entry.View, null);
-				entry.View.Parent = null;
-			}
-
-			entry.Host.Destroy();
-		}
-
 		static void Detach(Gtk.Widget widget)
 		{
 			if (widget?.Parent is Gtk.Container container)
 				container.Remove(widget);
 		}
 
-		View CreateItemView(object item)
+		// ---- materialization / recycling -------------------------------------------------------
+
+		DataTemplate ResolveItemTemplate(object item)
 		{
 			var template = Element?.ItemTemplate;
 
 			if (template is DataTemplateSelector selector)
 				template = selector.SelectTemplate(item, Element);
 
-			View view = null;
+			return template;
+		}
 
-			if (template != null)
-				view = template.CreateContent() as View;
+		/// <summary>
+		/// Gives a slot a host: a recycled one when the pool holds one for the same template and
+		/// kind, otherwise a freshly built view + renderer + host.
+		/// </summary>
+		/// <remarks>
+		/// The recycle path deliberately does <b>not</b> touch <c>view.Parent</c>: it is already the
+		/// CollectionView and re-assigning it would re-run the inherited-context propagation that
+		/// the "Parent before BindingContext" rule exists to sequence. All that changes is the
+		/// binding context; the measure and layout that make the re-bound row the right size happen
+		/// in <see cref="LayoutLine"/> later in the same idle pass.
+		/// </remarks>
+		void Acquire(Slot slot)
+		{
+			var template = slot.Kind == HostKind.Item ? ResolveItemTemplate(slot.Item) : slot.Template;
+			var context = slot.Kind == HostKind.Item ? slot.Item : slot.Group;
+			var key = new PoolKey(template, slot.Kind);
 
-			// No template: Forms' documented fallback is the item's own text.
-			if (view == null)
-				view = new Label { Text = item?.ToString() ?? string.Empty, Margin = new Thickness(6) };
+			ItemHost host = null;
 
-			// Parent first, then BindingContext: parenting wires the element chain and would
-			// otherwise overwrite the binding context by inheriting the CollectionView's.
-			view.Parent = Element;
-			view.BindingContext = item;
+			if (_pool.TryGetValue(key, out var stack) && stack.Count > 0)
+			{
+				host = stack.Pop();
 
-			return view;
+				if (host.IsFallbackLabel)
+				{
+					// No template means no binding either, so the text has to be re-assigned.
+					// Without this a recycled fallback row shows its previous occupant.
+					if (host.View is Label label)
+						label.Text = context?.ToString() ?? string.Empty;
+				}
+
+				host.View.BindingContext = context;
+			}
+			else
+			{
+				var fallback = false;
+				var view = template?.CreateContent() as View;
+
+				if (view == null)
+				{
+					// No template: Forms' documented fallback is the item's own text.
+					view = new Label { Text = context?.ToString() ?? string.Empty, Margin = new Thickness(6) };
+					fallback = true;
+				}
+
+				// Parent first, then BindingContext: parenting wires the element chain and would
+				// otherwise overwrite the binding context by inheriting the CollectionView's.
+				view.Parent = Element;
+				view.BindingContext = context;
+
+				var renderer = Platform.CreateRenderer(view);
+				Platform.SetRenderer(view, renderer);
+
+				var box = new HostBox { VisibleWindow = false };
+				box.Add(renderer.Container);
+				box.ShowAll();
+
+				host = new ItemHost
+				{
+					Key = key,
+					View = view,
+					Renderer = renderer,
+					Host = box,
+					IsFallbackLabel = fallback
+				};
+
+				// Only items are selectable; a group header must not react to a click. The pool key
+				// carries the kind, so a pooled host always already has the right handler.
+				if (slot.Kind == HostKind.Item)
+					box.ButtonPressEvent += OnItemButtonPress;
+			}
+
+			host.Slot = slot;
+			slot.Host = host;
+
+			ApplySelectionVisual(slot);
+		}
+
+		/// <summary>Returns a host to the pool (or destroys it when the pool is full).</summary>
+		void Release(ItemHost host)
+		{
+			if (host == null)
+				return;
+
+			if (host.Slot != null)
+			{
+				host.Slot.Host = null;
+				host.Slot = null;
+			}
+
+			Detach(host.Host);
+
+			// A recycled host must never arrive pre-highlighted.
+			host.Host.VisibleWindow = false;
+			host.Host.ClearStyle();
+
+			if (!_pool.TryGetValue(host.Key, out var stack))
+			{
+				stack = new Stack<ItemHost>();
+				_pool[host.Key] = stack;
+			}
+
+			if (stack.Count < MaxPooledPerTemplate)
+				stack.Push(host);
+			else
+				DestroyHost(host);
+		}
+
+		void DestroyHost(ItemHost host)
+		{
+			if (host == null)
+				return;
+
+			if (host.Key.Kind == HostKind.Item)
+				host.Host.ButtonPressEvent -= OnItemButtonPress;
+
+			Detach(host.Host);
+
+			host.Renderer?.Dispose();
+
+			if (host.View != null)
+			{
+				Platform.SetRenderer(host.View, null);
+				host.View.Parent = null;
+			}
+
+			host.Host.Destroy();
 		}
 
 		// ---- header / footer / empty view ------------------------------------------------------
@@ -795,9 +1028,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		/// <c>null</c> when there is nothing to show.
 		/// </summary>
 		/// <remarks>
+		/// Decorations are never virtualized and never recycled: there is at most one of each, they
+		/// bracket the whole list, and their extents are what every scroll offset is measured from.
 		/// Like item hosts, the host is left <b>unparented</b>: <see cref="RepackHosts"/> decides
-		/// where it goes, so a decoration appearing or disappearing cannot get out of step with the
-		/// item structure around it.
+		/// where it goes.
 		/// </remarks>
 		Decoration BuildDecoration(object content, DataTemplate template, bool center)
 		{
@@ -847,7 +1081,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				if (template.CreateContent() is View templated)
 				{
-					// Parent first, then BindingContext - see CreateItemView.
+					// Parent first, then BindingContext - see Acquire.
 					templated.Parent = Element;
 					templated.BindingContext = content;
 
@@ -904,73 +1138,221 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			decoration = null;
 		}
 
-		// ---- lines ---------------------------------------------------------------------------
+		// ---- lines and the virtualization window ------------------------------------------------
 
 		/// <summary>
-		/// Cuts the flat host list into lines. This is the <b>only</b> place layout mode matters:
-		/// linear gives one spanning line per host, grid packs up to <c>Span</c> item hosts per
+		/// Cuts the flat slot list into lines. This is the <b>only</b> place layout mode matters:
+		/// linear gives one spanning line per slot, grid packs up to <c>Span</c> item slots per
 		/// line, and a group header/footer always takes a spanning line of its own.
 		/// </summary>
-		List<Line> BuildLines()
+		void RebuildLines()
 		{
-			var lines = new List<Line>();
+			_lines.Clear();
+
 			var span = _isGrid ? Math.Max(1, _span) : 1;
 			Line current = null;
 
-			foreach (var entry in _hosts)
+			for (var i = 0; i < _slots.Count; i++)
 			{
-				if (!_isGrid || entry.Kind != HostKind.Item)
+				var slot = _slots[i];
+				slot.Index = i;
+
+				if (!_isGrid || slot.Kind != HostKind.Item)
 				{
 					current = null;
-
-					var spanning = new Line { Spanning = true };
-					spanning.Hosts.Add(entry);
-					lines.Add(spanning);
+					_lines.Add(new Line { Start = i, Count = 1, Spanning = true });
 
 					continue;
 				}
 
-				if (current == null || current.Hosts.Count >= span)
+				if (current == null || current.Count >= span)
 				{
-					current = new Line();
-					lines.Add(current);
+					current = new Line { Start = i, Count = 0 };
+					_lines.Add(current);
 				}
 
-				current.Hosts.Add(entry);
+				current.Count++;
 			}
-
-			return lines;
 		}
 
 		/// <summary>
-		/// Rebuilds the native child structure from the current host list.
+		/// The gap <see cref="Gtk.Box"/> actually puts between two lines.
 		/// </summary>
 		/// <remarks>
-		/// Spanning lines are packed straight into <c>_itemsBox</c>, so a linear CollectionView has
-		/// exactly the tree it had before grid support existed - hosts as direct children. Grid
-		/// lines get an intermediate <see cref="Gtk.Box"/> running across the cross axis.
-		/// Re-parenting a host is safe here because the managed wrapper holds its own reference:
-		/// <c>gtk_container_remove</c>'s unref cannot drop it to zero.
+		/// <c>Gtk.Box.Spacing</c> is an <c>int</c>, so this is the rounded <c>ItemSpacing</c> and not
+		/// the raw one. Every scroll offset and both spacers have to be summed with the value GTK
+		/// uses or they drift by up to half a pixel <b>per off-screen line</b> - which is invisible
+		/// on ten rows and is thousands of pixels of misplacement on ten thousand.
+		/// </remarks>
+		double LineGap => Math.Round(Math.Max(0, _lineSpacing));
+
+		/// <summary>A line's extent: measured if it has ever been laid out, estimated otherwise.</summary>
+		double LineExtent(int index)
+		{
+			var line = _lines[index];
+
+			if (line.Measured)
+				return line.Extent;
+
+			return _estimate > 0 ? _estimate : 1;
+		}
+
+		void InvalidateMeasuredExtents()
+		{
+			foreach (var line in _lines)
+				line.Measured = false;
+
+			_estimate = 0;
+		}
+
+		/// <summary>
+		/// The range of lines to materialize: everything the viewport can show, plus
+		/// <see cref="BufferLines"/> lines of margin at each end.
+		/// </summary>
+		void ComputeWindow(out int first, out int last)
+		{
+			first = 0;
+			last = -1;
+
+			if (_lines.Count == 0 || Control == null)
+				return;
+
+			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
+			var adjustment = horizontal ? Control.Hadjustment : Control.Vadjustment;
+			var value = adjustment?.Value ?? 0;
+			var page = ViewportExtent(horizontal, adjustment);
+
+			if (page < 1)
+				page = 1;
+
+			var lead = Extent(_header?.Host, horizontal);
+
+			if (lead > 0)
+				lead += LineGap;
+
+			var position = lead;
+			var visibleFirst = -1;
+			var visibleLast = -1;
+
+			for (var i = 0; i < _lines.Count; i++)
+			{
+				var extent = LineExtent(i);
+				var start = position;
+				var end = position + extent;
+
+				if (end > value && start < value + page)
+				{
+					if (visibleFirst < 0)
+						visibleFirst = i;
+
+					visibleLast = i;
+				}
+
+				if (start >= value + page)
+					break;
+
+				position = end + LineGap;
+			}
+
+			if (visibleFirst < 0)
+			{
+				// Scrolled past the end (which happens transiently while the content shrinks):
+				// keep the tail materialized rather than nothing.
+				visibleFirst = _lines.Count - 1;
+				visibleLast = _lines.Count - 1;
+			}
+
+			// Before anything has been measured a line is assumed to be 1px tall, so "what the
+			// viewport can show" is every line there is - which on a 10,000-item source would
+			// materialize the whole thing on the very first pass, i.e. exactly what virtualization
+			// exists to avoid. Until the estimate exists the window is a single probe line plus the
+			// buffer; measuring it sets the estimate and LayoutItems queues the pass that opens the
+			// window to its real size.
+			if (_estimate <= 0)
+				visibleLast = visibleFirst;
+
+			first = Math.Max(0, visibleFirst - BufferLines);
+			last = Math.Min(_lines.Count - 1, visibleLast + BufferLines);
+		}
+
+		/// <summary>Materializes the slots that entered the window and releases those that left it.</summary>
+		bool ReconcileWindow()
+		{
+			var changed = false;
+
+			var slotFirst = int.MaxValue;
+			var slotLast = -1;
+
+			if (_windowLast >= _windowFirst && _windowFirst >= 0 && _windowLast < _lines.Count)
+			{
+				slotFirst = _lines[_windowFirst].Start;
+				slotLast = _lines[_windowLast].Start + _lines[_windowLast].Count - 1;
+			}
+
+			for (var i = _live.Count - 1; i >= 0; i--)
+			{
+				var host = _live[i];
+				var index = host.Slot?.Index ?? -1;
+
+				if (index < slotFirst || index > slotLast)
+				{
+					_live.RemoveAt(i);
+					Release(host);
+					changed = true;
+				}
+			}
+
+			for (var i = slotFirst; i <= slotLast; i++)
+			{
+				var slot = _slots[i];
+
+				if (slot.Host != null)
+					continue;
+
+				Acquire(slot);
+				_live.Add(slot.Host);
+				changed = true;
+			}
+
+			return changed;
+		}
+
+		/// <summary>
+		/// Rebuilds the native child structure from the materialized window.
+		/// </summary>
+		/// <remarks>
+		/// Spanning lines are packed straight into <c>_itemsBox</c>, so a linear CollectionView whose
+		/// window covers the whole source has exactly the tree it had before virtualization existed -
+		/// hosts as direct children, no spacers. Grid lines get an intermediate
+		/// <see cref="Gtk.Box"/> running across the cross axis. Re-parenting a host is safe here
+		/// because the managed wrapper holds its own reference: <c>gtk_container_remove</c>'s unref
+		/// cannot drop it to zero.
+		///
+		/// <para>The two spacers stand in for the lines outside the window. They are packed only when
+		/// there <i>are</i> such lines, which is what keeps the small-list tree byte-for-byte what it
+		/// was, and their sizes are set later in the same pass by <see cref="UpdateSpacers"/> once
+		/// the window has actually been measured.</para>
 		/// </remarks>
 		void RepackHosts()
 		{
 			if (_itemsBox == null)
 				return;
 
-			foreach (var entry in _hosts)
+			foreach (var host in _live)
 			{
-				Detach(entry.Host);
+				Detach(host.Host);
 
 				// Drop the previous pass' size request before re-packing. It was computed for the
-				// *previous* line structure, and a Gtk.Box asks GTK for the sum of its children's
-				// requests: re-packing hosts that still request half the viewport three-to-a-line
-				// makes this control demand 3 x (w/2) as its *minimum* width. GTK grows the
-				// toplevel to satisfy a minimum, the next layout pass then derives the item width
-				// from the grown viewport, and the control never shrinks back - measured as a
-				// 540px grid ratcheting to 803px after a Span 3 -> 2 -> 3 round trip, wider than
-				// the screen and painting nothing where it used to be. LayoutLine re-applies the
-				// correct request further down this same idle callback, before anything is drawn.
-				entry.Host.SetSizeRequest(-1, -1);
+				// *previous* line structure - or, with recycling, for the previous occupant of this
+				// very host - and a Gtk.Box asks GTK for the sum of its children's requests:
+				// re-packing hosts that still request half the viewport three-to-a-line makes this
+				// control demand 3 x (w/2) as its *minimum* width. GTK grows the toplevel to satisfy
+				// a minimum, the next layout pass then derives the item width from the grown
+				// viewport, and the control never shrinks back - measured as a 540px grid ratcheting
+				// to 803px after a Span 3 -> 2 -> 3 round trip, wider than the screen and painting
+				// nothing where it used to be. LayoutLine re-applies the correct request further
+				// down this same idle callback, before anything is drawn.
+				host.Host.SetSizeRequest(-1, -1);
 			}
 
 			_header?.Host.SetSizeRequest(-1, -1);
@@ -980,6 +1362,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			Detach(_header?.Host);
 			Detach(_empty?.Host);
 			Detach(_footer?.Host);
+			Detach(_leadSpacer);
+			Detach(_trailSpacer);
 			ClearLineBoxes();
 
 			// The header leads and the footer trails along the scrolling axis, so they are simply
@@ -988,24 +1372,38 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_header?.Host != null)
 				_itemsBox.PackStart(_header.Host, false, false, 0);
 
+			if (_windowFirst > 0 && _leadSpacer != null)
+				_itemsBox.PackStart(_leadSpacer, false, false, 0);
+
 			var lineOrientation = _orientation == ItemsLayoutOrientation.Horizontal
 				? Gtk.Orientation.Vertical
 				: Gtk.Orientation.Horizontal;
 
 			var within = (int)Math.Round(Math.Max(0, _withinLineSpacing));
 
-			foreach (var line in BuildLines())
+			for (var i = _windowFirst; i <= _windowLast && i < _lines.Count; i++)
 			{
+				var line = _lines[i];
+
 				if (line.Spanning)
 				{
-					_itemsBox.PackStart(line.Hosts[0].Host, false, false, 0);
+					var host = _slots[line.Start].Host;
+
+					if (host != null)
+						_itemsBox.PackStart(host.Host, false, false, 0);
+
 					continue;
 				}
 
 				var box = new Gtk.Box(lineOrientation, within);
 
-				foreach (var entry in line.Hosts)
-					box.PackStart(entry.Host, false, false, 0);
+				for (var s = line.Start; s < line.Start + line.Count; s++)
+				{
+					var host = _slots[s].Host;
+
+					if (host != null)
+						box.PackStart(host.Host, false, false, 0);
+				}
 
 				_itemsBox.PackStart(box, false, false, 0);
 				_lineBoxes.Add(box);
@@ -1013,11 +1411,82 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				box.Show();
 			}
 
+			if (_windowLast < _lines.Count - 1 && _trailSpacer != null)
+				_itemsBox.PackStart(_trailSpacer, false, false, 0);
+
 			if (_empty?.Host != null)
 				_itemsBox.PackStart(_empty.Host, true, true, 0);
 
 			if (_footer?.Host != null)
 				_itemsBox.PackStart(_footer.Host, false, false, 0);
+		}
+
+		/// <summary>
+		/// Sizes the two spacers so the scroll extent, and therefore every scroll position, is the
+		/// same as it would be with every line materialized.
+		/// </summary>
+		/// <remarks>
+		/// A <see cref="Gtk.Box"/> puts <c>Spacing</c> between every pair of visible children, so
+		/// replacing <c>n</c> off-screen lines with one spacer removes <c>n - 1</c> gaps: the spacer
+		/// has to be their summed extent <b>plus</b> those gaps. Getting this wrong is invisible at
+		/// the top of a list and drifts by <c>Spacing</c> per off-screen line further down.
+		///
+		/// <para><b>Known ceiling, inherited from GTK and not from this code.</b>
+		/// <c>gtk_viewport_size_allocate</c> sizes its <c>bin_window</c> to the whole content extent,
+		/// and an X11 window dimension is 16 bits - so a list whose total extent exceeds 65535px is
+		/// truncated by the X server, and everything past that point scrolls into blank space. At a
+		/// 32px row that is about 2,000 rows. The materialized set stays bounded regardless (that is
+		/// what this class does), but the *scrollable* range does not, and fixing it means giving up
+		/// <see cref="Gtk.Viewport"/> for a custom <c>Gtk.Scrollable</c> container that maps a
+		/// virtual offset onto a viewport-sized allocation. That is a separate piece of work; it is
+		/// recorded here rather than discovered again. <c>scratchpad/cv7-virtual.sh</c> deliberately
+		/// carries both a 10,000-row list (over the ceiling) and a 1,500-row list (under it) so a
+		/// failure names its own cause.</para>
+		/// </remarks>
+		void UpdateSpacers()
+		{
+			if (_itemsBox == null)
+				return;
+
+			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
+
+			if (_leadSpacer != null && _windowFirst > 0)
+			{
+				double lead = 0;
+
+				for (var i = 0; i < _windowFirst; i++)
+					lead += LineExtent(i);
+
+				lead += (_windowFirst - 1) * LineGap;
+
+				SetSpacer(_leadSpacer, lead, horizontal);
+			}
+
+			if (_trailSpacer != null && _windowLast < _lines.Count - 1)
+			{
+				double trail = 0;
+				var count = 0;
+
+				for (var i = Math.Max(0, _windowLast + 1); i < _lines.Count; i++)
+				{
+					trail += LineExtent(i);
+					count++;
+				}
+
+				trail += (count - 1) * LineGap;
+
+				SetSpacer(_trailSpacer, trail, horizontal);
+			}
+		}
+
+		static void SetSpacer(Gtk.Widget spacer, double extent, bool horizontal)
+		{
+			var size = (int)Math.Max(0, Math.Round(extent));
+
+			if (horizontal)
+				spacer.SetSizeRequest(size, -1);
+			else
+				spacer.SetSizeRequest(-1, size);
 		}
 
 		// ---- layout --------------------------------------------------------------------------
@@ -1040,18 +1509,62 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			});
 		}
 
+		/// <summary>
+		/// The scrolled window's adjustment is what drives virtualization, so it has to be observed -
+		/// and it is not guaranteed to be the same object for the whole life of the renderer
+		/// (a <see cref="Gtk.ScrolledWindow"/> may replace it, and swapping orientation swaps which
+		/// of the two matters), so the subscription is re-checked rather than made once.
+		/// </summary>
+		void EnsureAdjustmentSubscription()
+		{
+			if (Control == null)
+				return;
+
+			var adjustment = _orientation == ItemsLayoutOrientation.Horizontal
+				? Control.Hadjustment
+				: Control.Vadjustment;
+
+			var current = _watchedAdjustment == null ? IntPtr.Zero : _watchedAdjustment.Handle;
+			var wanted = adjustment == null ? IntPtr.Zero : adjustment.Handle;
+
+			if (current == wanted)
+				return;
+
+			if (_watchedAdjustment != null)
+				_watchedAdjustment.ValueChanged -= OnAdjustmentValueChanged;
+
+			_watchedAdjustment = adjustment;
+
+			if (_watchedAdjustment != null)
+				_watchedAdjustment.ValueChanged += OnAdjustmentValueChanged;
+		}
+
+		void OnAdjustmentValueChanged(object sender, EventArgs e)
+		{
+			if (_disposed || _itemsBox == null)
+				return;
+
+			ComputeWindow(out var first, out var last);
+
+			// Only a *change of window* is worth a layout pass. Without this guard every pixel of
+			// scrolling would re-measure the visible rows, and setting the spacers would feed
+			// straight back in through the adjustment's own clamping.
+			if (first != _windowFirst || last != _windowLast)
+				QueueItemsLayout();
+		}
+
 		void LayoutItems()
 		{
 			if (_disposed || Control == null || Element == null)
 				return;
 
-			// The re-pack has to happen even when the viewport has no size yet, otherwise hosts
-			// created before the first allocation would never be parented at all.
-			if (_repackNeeded)
+			if (_linesDirty)
 			{
-				_repackNeeded = false;
-				RepackHosts();
+				_linesDirty = false;
+				RebuildLines();
 			}
+
+			EnsureAdjustmentSubscription();
 
 			var width = _viewport != null && _viewport.AllocatedWidth > 1
 				? _viewport.AllocatedWidth
@@ -1061,15 +1574,55 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				? _viewport.AllocatedHeight
 				: Control.AllocatedHeight;
 
+			var cross = _orientation == ItemsLayoutOrientation.Horizontal ? height : width;
+
+			if (cross > 1 && cross != _measuredCross)
+			{
+				// Every measured extent was measured against the old cross axis, so none of them
+				// describe the list any more - including the frozen estimate.
+				InvalidateMeasuredExtents();
+				_measuredCross = cross;
+			}
+
+			ComputeWindow(out var first, out var last);
+
+			if (first != _windowFirst || last != _windowLast)
+			{
+				_windowFirst = first;
+				_windowLast = last;
+				_repackNeeded = true;
+			}
+
+			if (ReconcileWindow())
+				_repackNeeded = true;
+
+			// The re-pack has to happen even when the viewport has no size yet, otherwise hosts
+			// created before the first allocation would never be parented at all.
+			if (_repackNeeded)
+			{
+				_repackNeeded = false;
+				RepackHosts();
+			}
+
 			if (width <= 1 || height <= 1)
 				return;
 
+			var hadEstimate = _estimate > 0;
+
 			LayoutDecoration(_header, width, height);
 
-			foreach (var line in BuildLines())
-				LayoutLine(line, width, height);
+			for (var i = _windowFirst; i <= _windowLast && i < _lines.Count; i++)
+				LayoutLine(i, width, height);
 
 			LayoutDecoration(_footer, width, height);
+
+			UpdateSpacers();
+
+			// The probe pass above (see ComputeWindow) deliberately materialized one line to find
+			// out how big a line is. Now that the estimate exists the window is wrong by
+			// construction, so re-run rather than waiting for an allocation to happen to come back.
+			if (!hadEstimate && _estimate > 0)
+				QueueItemsLayout();
 
 			// The EmptyView is the one decoration that fills what is left rather than taking its
 			// natural size: an empty list should show it across the whole viewport, not as a
@@ -1112,17 +1665,23 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		}
 
 		/// <summary>
-		/// Measures and lays out one line.
+		/// Measures and lays out one materialized line, and records its extent.
 		/// </summary>
 		/// <remarks>
 		/// The cross-axis extent is fixed first (the viewport for a spanning line, an equal share of
 		/// it for a grid line) and the main-axis extent is then the largest measurement in the line,
 		/// applied to every host in it - which is what makes a grid a grid rather than a ragged set
 		/// of columns. Measuring is why this must never run inside a size-allocate.
+		///
+		/// <para>This is also the only place a <i>re-bound</i> row gets its geometry: recycling
+		/// changes the binding context and nothing else, so without the explicit measure/layout here
+		/// a recycled row would keep the previous occupant's size.</para>
 		/// </remarks>
-		void LayoutLine(Line line, int width, int height)
+		void LayoutLine(int index, int width, int height)
 		{
-			if (line.Hosts.Count == 0)
+			var line = _lines[index];
+
+			if (line.Count == 0)
 				return;
 
 			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
@@ -1136,14 +1695,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			var main = 1;
 
-			foreach (var entry in line.Hosts)
+			for (var s = line.Start; s < line.Start + line.Count; s++)
 			{
-				if (entry.View == null)
+				var view = _slots[s].Host?.View;
+
+				if (view == null)
 					continue;
 
 				var request = horizontal
-					? entry.View.Measure(double.PositiveInfinity, itemCross, MeasureFlags.IncludeMargins)
-					: entry.View.Measure(itemCross, double.PositiveInfinity, MeasureFlags.IncludeMargins);
+					? view.Measure(double.PositiveInfinity, itemCross, MeasureFlags.IncludeMargins)
+					: view.Measure(itemCross, double.PositiveInfinity, MeasureFlags.IncludeMargins);
 
 				var measured = (int)Math.Ceiling(Math.Max(1,
 					horizontal ? request.Request.Width : request.Request.Height));
@@ -1152,22 +1713,34 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					main = measured;
 			}
 
-			foreach (var entry in line.Hosts)
+			for (var s = line.Start; s < line.Start + line.Count; s++)
 			{
-				if (entry.View == null)
+				var host = _slots[s].Host;
+
+				if (host?.View == null)
 					continue;
 
 				if (horizontal)
 				{
-					entry.View.Layout(new Rectangle(0, 0, main, itemCross));
-					entry.Host.SetSizeRequest(main, itemCross);
+					host.View.Layout(new Rectangle(0, 0, main, itemCross));
+					host.Host.SetSizeRequest(main, itemCross);
 				}
 				else
 				{
-					entry.View.Layout(new Rectangle(0, 0, itemCross, main));
-					entry.Host.SetSizeRequest(itemCross, main);
+					host.View.Layout(new Rectangle(0, 0, itemCross, main));
+					host.Host.SetSizeRequest(itemCross, main);
 				}
 			}
+
+			line.Extent = main;
+			line.Measured = true;
+
+			// The estimate for every line that has never been on screen. Frozen at the first item
+			// line ever measured (ItemSizingStrategy.MeasureFirstItem semantics): a continuously
+			// re-averaged estimate changes the content size on every pass, which changes the
+			// allocation, which re-runs this pass.
+			if (_estimate <= 0 && _slots[line.Start].Kind == HostKind.Item)
+				_estimate = main;
 		}
 
 		// ---- selection -----------------------------------------------------------------------
@@ -1177,15 +1750,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_disposed || Element == null)
 				return;
 
-			var entry = _hosts.FirstOrDefault(h => h.Kind == HostKind.Item && ReferenceEquals(h.Host, o));
+			var host = _live.FirstOrDefault(h => ReferenceEquals(h.Host, o));
+			var slot = host?.Slot;
 
-			if (entry == null)
+			if (slot == null || slot.Kind != HostKind.Item)
 				return;
 
 			switch (Element.SelectionMode)
 			{
 				case SelectionMode.Single:
-					Element.SetValueFromRenderer(SelectableItemsView.SelectedItemProperty, entry.Item);
+					Element.SetValueFromRenderer(SelectableItemsView.SelectedItemProperty, slot.Item);
 					break;
 
 				case SelectionMode.Multiple:
@@ -1193,18 +1767,34 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 						? new List<object>()
 						: new List<object>(Element.SelectedItems);
 
-					if (selection.Contains(entry.Item))
-						selection.Remove(entry.Item);
+					if (selection.Contains(slot.Item))
+						selection.Remove(slot.Item);
 					else
-						selection.Add(entry.Item);
+						selection.Add(slot.Item);
 
 					Element.UpdateSelectedItems(selection);
 					break;
 			}
 		}
 
+		bool IsSelected(Slot slot)
+		{
+			if (Element == null || slot.Kind != HostKind.Item)
+				return false;
+
+			var mode = Element.SelectionMode;
+
+			if (mode == SelectionMode.Single)
+				return Equals(Element.SelectedItem, slot.Item);
+
+			if (mode == SelectionMode.Multiple)
+				return Element.SelectedItems != null && Element.SelectedItems.Contains(slot.Item);
+
+			return false;
+		}
+
 		/// <summary>
-		/// Paints the selected state.
+		/// Paints the selected state of one materialized slot.
 		/// </summary>
 		/// <remarks>
 		/// Two mechanisms, deliberately: the host <see cref="Gtk.EventBox"/> gets a real window and a
@@ -1213,39 +1803,42 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		/// into the <c>Selected</c> visual state so a template that defines one can render the
 		/// selection itself. Without the second, an application whose rows have a background has no
 		/// way to show selection at all.
+		///
+		/// <para>With recycling this also has to run at materialization time, not only when the
+		/// selection changes: a host arriving from the pool carries the previous occupant's state.</para>
 		/// </remarks>
+		void ApplySelectionVisual(Slot slot)
+		{
+			var host = slot?.Host;
+
+			if (host == null)
+				return;
+
+			var selected = IsSelected(slot);
+
+			// A no-window EventBox paints nothing of its own, so the background only exists
+			// once the host owns a GdkWindow.
+			host.Host.VisibleWindow = selected;
+
+			if (selected)
+				host.Host.SetBackgroundColor(DefaultSelectionColor, Gtk.StateType.Normal);
+			else
+				host.Host.ClearStyle();
+
+			if (host.View != null)
+				VisualStateManager.GoToState(host.View,
+					selected ? VisualStateManager.CommonStates.Selected : VisualStateManager.CommonStates.Normal);
+		}
+
 		void UpdateSelectionVisuals()
 		{
 			if (_disposed || Element == null)
 				return;
 
-			var mode = Element.SelectionMode;
-
-			foreach (var entry in _hosts)
+			foreach (var host in _live)
 			{
-				bool selected;
-
-				if (entry.Kind != HostKind.Item)
-					selected = false;
-				else if (mode == SelectionMode.Single)
-					selected = Equals(Element.SelectedItem, entry.Item);
-				else if (mode == SelectionMode.Multiple)
-					selected = Element.SelectedItems != null && Element.SelectedItems.Contains(entry.Item);
-				else
-					selected = false;
-
-				// A no-window EventBox paints nothing of its own, so the background only exists
-				// once the host owns a GdkWindow.
-				entry.Host.VisibleWindow = selected;
-
-				if (selected)
-					entry.Host.SetBackgroundColor(DefaultSelectionColor, Gtk.StateType.Normal);
-				else
-					entry.Host.ClearStyle();
-
-				if (entry.View != null)
-					VisualStateManager.GoToState(entry.View,
-						selected ? VisualStateManager.CommonStates.Selected : VisualStateManager.CommonStates.Normal);
+				if (host.Slot != null)
+					ApplySelectionVisual(host.Slot);
 			}
 		}
 
@@ -1256,19 +1849,25 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_disposed)
 				return;
 
-			var index = IndexOfRequest(e);
-
-			if (index < 0)
-				return;
-
 			var position = e.ScrollToPosition;
 
 			// Deferred so the layout pass queued by the same batch of changes runs first: the
-			// target offset is summed from the per-host sizes LayoutItems computes, and inline
-			// it would read rows that have not been measured yet (offset ~0 every time).
+			// target offset is summed from the per-line extents LayoutItems computes, and inline
+			// it would read lines that have not been built yet.
 			GLib.Idle.Add(() =>
 			{
-				if (!_disposed)
+				if (_disposed)
+					return false;
+
+				if (_linesDirty)
+				{
+					_linesDirty = false;
+					RebuildLines();
+				}
+
+				var index = IndexOfRequest(e);
+
+				if (index >= 0)
 					ScrollToIndex(index, position);
 
 				return false;
@@ -1276,26 +1875,27 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		}
 
 		/// <summary>
-		/// Resolves a <see cref="ScrollToRequestEventArgs"/> to a host index.
+		/// Resolves a <see cref="ScrollToRequestEventArgs"/> to a slot index.
 		/// </summary>
 		/// <remarks>
 		/// When grouped, <c>Index</c> is the index *within* the group and <c>GroupIndex</c> selects
 		/// the group, so a flat lookup would scroll to the wrong item; ungrouped, <c>GroupIndex</c>
-		/// is -1 and the flat item order is used.
+		/// is -1 and the flat item order is used. This runs against slots, not widgets, so it works
+		/// for an item that has never been materialized.
 		/// </remarks>
 		int IndexOfRequest(ScrollToRequestEventArgs e)
 		{
 			if (e.Mode == ScrollToMode.Position)
 			{
 				if (e.GroupIndex >= 0)
-					return _hosts.FindIndex(h => h.Kind == HostKind.Item &&
-						h.GroupIndex == e.GroupIndex && h.IndexInGroup == e.Index);
+					return _slots.FindIndex(s => s.Kind == HostKind.Item &&
+						s.GroupIndex == e.GroupIndex && s.IndexInGroup == e.Index);
 
 				var seen = 0;
 
-				for (var i = 0; i < _hosts.Count; i++)
+				for (var i = 0; i < _slots.Count; i++)
 				{
-					if (_hosts[i].Kind != HostKind.Item)
+					if (_slots[i].Kind != HostKind.Item)
 						continue;
 
 					if (seen++ == e.Index)
@@ -1306,15 +1906,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			}
 
 			if (e.Group != null)
-				return _hosts.FindIndex(h => h.Kind == HostKind.Item &&
-					Equals(h.Group, e.Group) && Equals(h.Item, e.Item));
+				return _slots.FindIndex(s => s.Kind == HostKind.Item &&
+					Equals(s.Group, e.Group) && Equals(s.Item, e.Item));
 
-			return _hosts.FindIndex(h => h.Kind == HostKind.Item && Equals(h.Item, e.Item));
+			return _slots.FindIndex(s => s.Kind == HostKind.Item && Equals(s.Item, e.Item));
 		}
 
-		void ScrollToIndex(int index, ScrollToPosition position)
+		void ScrollToIndex(int slotIndex, ScrollToPosition position)
 		{
-			if (Control == null || index < 0 || index >= _hosts.Count)
+			if (Control == null || slotIndex < 0 || slotIndex >= _slots.Count || _lines.Count == 0)
 				return;
 
 			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
@@ -1323,27 +1923,25 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (adjustment == null)
 				return;
 
-			var target = _hosts[index];
-			var lines = BuildLines();
-
 			// The header is packed before the first line, so every item sits that much further
 			// down the scrolling axis. Summing lines from zero would scroll the header's height
 			// short on every single ScrollTo - silently, and only when a header exists.
 			var lead = Extent(_header?.Host, horizontal);
 
 			if (lead > 0)
-				lead += _lineSpacing;
+				lead += LineGap;
 
 			double offset = 0;
 			double content = lead;
 			double itemExtent = 0;
 			var found = false;
 
-			for (var i = 0; i < lines.Count; i++)
+			for (var i = 0; i < _lines.Count; i++)
 			{
-				var extent = LineExtent(lines[i], horizontal);
+				var extent = LineExtent(i);
+				var line = _lines[i];
 
-				if (!found && lines[i].Hosts.Contains(target))
+				if (!found && slotIndex >= line.Start && slotIndex < line.Start + line.Count)
 				{
 					offset = content;
 					itemExtent = extent;
@@ -1352,8 +1950,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				content += extent;
 
-				if (i < lines.Count - 1)
-					content += _lineSpacing;
+				if (i < _lines.Count - 1)
+					content += LineGap;
 			}
 
 			if (!found)
@@ -1364,7 +1962,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var trail = Extent(_footer?.Host, horizontal);
 
 			if (trail > 0)
-				content += _lineSpacing + trail;
+				content += LineGap + trail;
 
 			var viewportExtent = ViewportExtent(horizontal, adjustment);
 
@@ -1399,11 +1997,24 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			// added or removed it still describes the *previous* content - measured 446 (14
 			// rows) for a box that already held 12. Clamping against a stale-large Upper scrolls
 			// into blank space; against a stale-small one it silently truncates a legitimate
-			// scroll. The per-host extents this method already sums are self-consistent, so they
+			// scroll. The per-line extents this method already sums are self-consistent, so they
 			// are the honest bound. GTK re-clamps the value itself on the next allocation.
 			var max = Math.Max(0, content - viewportExtent);
+			var target = Math.Max(adjustment.Lower, Math.Min(value, adjustment.Lower + max));
 
-			adjustment.Value = Math.Max(adjustment.Lower, Math.Min(value, adjustment.Lower + max));
+			// Widening Upper is *not* the same mistake. Gtk.Adjustment's own setter clamps Value
+			// into [Lower, Upper - PageSize], and with virtualization Upper is routinely far too
+			// small for the target: the spacers that will carry the off-screen extent have not been
+			// allocated yet. Without this, ScrollTo(9999) on a 10,000-item source silently lands
+			// wherever the last allocation happened to end. The value is only ever widened, and the
+			// next allocation replaces it with GTK's own.
+			if (adjustment.Upper < adjustment.Lower + content)
+				adjustment.Upper = adjustment.Lower + content;
+
+			adjustment.Value = target;
+
+			// The window is derived from the adjustment, so the new one has to be materialized.
+			QueueItemsLayout();
 		}
 
 		double ViewportExtent(bool horizontal, Gtk.Adjustment adjustment)
@@ -1418,44 +2029,20 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (adjustment != null && adjustment.PageSize > 0)
 				return adjustment.PageSize;
 
-			return horizontal ? Control.AllocatedWidth : Control.AllocatedHeight;
-		}
-
-		/// <summary>The size of a line along the scrolling axis: the largest of its hosts.</summary>
-		static double LineExtent(Line line, bool horizontal)
-		{
-			double extent = 0;
-
-			foreach (var entry in line.Hosts)
-			{
-				var candidate = Extent(entry, horizontal);
-
-				if (candidate > extent)
-					extent = candidate;
-			}
-
-			return extent;
+			return Control == null ? 0 : (horizontal ? Control.AllocatedWidth : Control.AllocatedHeight);
 		}
 
 		/// <summary>
-		/// The size of a host along the scrolling axis.
+		/// The size of a decoration host along the scrolling axis.
 		/// </summary>
 		/// <remarks>
 		/// The size *request* is preferred over <c>Allocation</c>, which is the opposite of what
 		/// looks natural. `LayoutItems` sets the request from the Forms measure in this renderer's
-		/// own idle callback, so it is correct the moment a row is added or removed;
-		/// <c>Allocation</c> is GTK's and only catches up on the next allocation cycle - which,
-		/// headlessly, does not happen just because the main loop was drained (see §10.2). Summing
-		/// stale allocations made `ScrollTo` land a row off, non-deterministically. Allocation is
-		/// still the fallback for a host that has no request yet (viewport not allocated when the
-		/// layout pass ran).
+		/// own idle callback, so it is correct the moment the content changes; <c>Allocation</c> is
+		/// GTK's and only catches up on the next allocation cycle - which, headlessly, does not
+		/// happen just because the main loop was drained (see plan section 10.2). Summing stale
+		/// allocations made `ScrollTo` land a row off, non-deterministically.
 		/// </remarks>
-		static double Extent(ItemHost entry, bool horizontal) => Extent(entry?.Host, horizontal);
-
-		/// <summary>
-		/// The size of any host widget along the scrolling axis - item hosts and the header/footer
-		/// alike, so a header can never be measured by a different rule than the rows below it.
-		/// </summary>
 		static double Extent(Gtk.Widget host, bool horizontal)
 		{
 			if (host == null)
