@@ -197,11 +197,23 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				"If you added or removed one deliberately, update this number.");
 		}
 
-		// HandlerAttribute keeps its two types in non-public members across Forms versions;
-		// reflect rather than depend on which.
-		static Type HandledType(HandlerAttribute attribute) => Member(attribute, "HandledType");
+		// HandlerAttribute.TargetType / .HandlerType are internal to Xamarin.Forms.Core, so this
+		// assembly cannot see them without an InternalsVisibleTo in Core; reflect rather than
+		// modify Core for a test's benefit.
+		//
+		// THE TWO PROPERTY NAMES ARE INVERTED relative to their meaning, inherited from upstream:
+		// HandlerAttribute's constructor is (Type handler, Type target) but every usage reads
+		// [assembly: ExportRenderer(typeof(Label), typeof(LabelRenderer))]. Registrar settles it -
+		// Registrar.cs:277 calls Register(attribute.HandlerType, attribute.TargetType) against
+		// Register(Type tview, Type trender), so:
+		//
+		//     HandlerType -> the Forms type being handled  (Label)
+		//     TargetType  -> the renderer handling it      (LabelRenderer)
+		//
+		// Reading them the other way round produced 54 confidently-named, uniformly failing tests.
+		static Type HandledType(HandlerAttribute attribute) => Member(attribute, "HandlerType");
 
-		static Type HandlerType(HandlerAttribute attribute) => Member(attribute, "HandlerType");
+		static Type HandlerType(HandlerAttribute attribute) => Member(attribute, "TargetType");
 
 		static Type Member(HandlerAttribute attribute, string name)
 		{

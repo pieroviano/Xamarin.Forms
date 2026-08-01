@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.GTK.Controls;
@@ -195,6 +197,12 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// Both halves of this caught the same real defect. <c>gtk_text_buffer_set_text</c> deletes
+		/// and then inserts, and both steps raise <c>Changed</c>; the renderer's write-back handler
+		/// saw the momentarily-empty buffer and pushed "" into <c>Element.Text</c> mid-assignment,
+		/// so a programmatic set left the control empty and any binding observed a spurious "".
+		/// </summary>
 		[Test]
 		public void EditorMapsText()
 		{
@@ -205,10 +213,39 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				var native = host.Control<ScrolledTextView>();
 				Assert.That(native.TextView.Buffer.Text, Is.EqualTo("line one"));
 
+				var observed = new List<string>();
+				editor.PropertyChanged += (s, e) =>
+				{
+					if (e.PropertyName == Editor.TextProperty.PropertyName)
+						observed.Add(editor.Text);
+				};
+
 				editor.Text = "line two";
 				host.Pump();
 
-				Assert.That(native.TextView.Buffer.Text, Is.EqualTo("line two"));
+				Assert.Multiple(() =>
+				{
+					Assert.That(native.TextView.Buffer.Text, Is.EqualTo("line two"));
+					Assert.That(editor.Text, Is.EqualTo("line two"));
+					Assert.That(observed, Does.Not.Contain(string.Empty),
+						"a binding on Editor.Text saw a spurious empty value: " +
+						$"[{string.Join(", ", observed.Select(v => $"\"{v}\""))}]");
+				});
+			}
+		}
+
+		[Test]
+		public void EditorTextChangesFlowBackFromTheNativeControl()
+		{
+			var editor = new Editor { Text = "start" };
+
+			using (var host = GtkTestHost.HostView(editor))
+			{
+				// The guard added for the test above must not deafen the renderer to real edits.
+				host.Control<ScrolledTextView>().TextView.Buffer.Text = "typed by the user";
+				host.Pump();
+
+				Assert.That(editor.Text, Is.EqualTo("typed by the user"));
 			}
 		}
 
@@ -275,7 +312,10 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostView(button))
 			{
-				host.Control<Controls.ImageButton>().Activate();
+				// Emit the signal ButtonRenderer actually subscribes to (Control.Clicked).
+				// Gtk.Widget.Activate() is not enough: it is a no-op for a widget that is not
+				// the activatable focus target, and measured as such here - the handler never ran.
+				GLib.Signal.Emit(host.Control<Controls.ImageButton>(), "clicked");
 				host.Pump();
 
 				Assert.That(clicked, Is.True, "the native click must reach Button.Clicked");
