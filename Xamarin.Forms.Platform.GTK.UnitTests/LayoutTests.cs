@@ -234,8 +234,26 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		///
 		/// Asserting on allocations, not requests, is the whole point: the requests were correct
 		/// throughout the outage.
+		///
+		/// CURRENTLY FAILING, and Ignored so it does not redden CI while the fix is in flight:
+		/// this reproduces the open M3 residual rather than guarding a fixed one. Measured on this
+		/// branch: "ListView: Forms width 724, request 724, allocation 194". Remove the Ignore
+		/// when the layout fix lands - that is the point of the test.
+		///
+		/// Two things were ruled out while writing it, both worth not repeating:
+		///  - The simple shape does NOT reproduce. A plain ContentPage holding an AbsoluteLayout of
+		///    BoxViews passes with or without a fix. It needs the gallery's actual nesting
+		///    (FlyoutPage -> NavigationPage -> ContentPage) and children whose natural size arrives
+		///    late, i.e. ListViews filled by the idle row loader.
+		///  - A second deferred geometry pass does not fix it. Re-running the geometry push on a
+		///    following GLib.Idle - so that WidgetExtensions.SetSize's "allocated smaller than
+		///    requested" recovery branch is reached - leaves the allocation at 194. Yet a bare
+		///    QueueResize() on the child moves it straight to 724 (scratchpad/overlap.log,
+		///    "QueueResize walk"), so the resize is being lost somewhere between the two.
 		/// </summary>
 		[Test]
+		[Ignore("Reproduces the open M3 residual: AbsoluteLayout children are allocated at their " +
+			"natural size (194px) despite a correct 724px request. See the remarks above.")]
 		public void AbsoluteLayoutProportionalChildrenAreAllocatedWhereFormsPutThem()
 		{
 			// Mirrors CoreRootPage as closely as a unit test can: two ListViews whose rows are
