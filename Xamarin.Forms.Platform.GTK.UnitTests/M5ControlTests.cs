@@ -260,9 +260,31 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		}
 
 		// ---- IndicatorView ---------------------------------------------------------------
+		//
+		// MEASURED, and it invalidates the obvious test: the IndicatorView's ALLOCATION is not the
+		// renderer's to decide. Xamarin.Forms.Core/IndicatorView.cs:112 overrides OnMeasure and,
+		// whenever IndicatorTemplate is null, returns
+		//
+		//     new SizeRequest(new Size(Count * (IndicatorSize + 4 + 4 + 1), IndicatorSize), ...)
+		//
+		// - ignoring both MaximumVisible and the platform renderer's GetDesiredSize entirely. Probed
+		// on this tree: Count=3/size=10 allocated 57px (3 x 19) against a renderer request of 42,
+		// and Count=20 allocated 380px (20 x 19) whether MaximumVisible was 4 (request 58) or unset
+		// (request 314). That is upstream Core behaviour every backend shares, not a GTK defect.
+		//
+		// So an allocation-width assertion here passes for the wrong reason - it tracks Count
+		// through Core's OnMeasure and would keep passing with the renderer's capping deleted. What
+		// the GTK renderer actually decides is the control's SIZE REQUEST and, from the same
+		// numbers, how many dots OnDrawn paints; those are what is asserted, plus the allocation
+		// being real and large enough to hold the dots.
+
+		const double DotSpacing = 6;   // IndicatorViewControl.DotSpacing
+
+		static int ExpectedDotWidth(int count, double size) =>
+			count <= 0 ? 0 : (int)Math.Ceiling(count * size + (count - 1) * DotSpacing);
 
 		[Fact]
-		public void IndicatorViewWidthTracksTheDotCount()
+		public void IndicatorViewSizeRequestTracksTheDotCount()
 		{
 			var indicator = new IndicatorView
 			{
@@ -275,34 +297,37 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
 			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(indicator);
+				var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
+				var control = GtkTestHost.Find<IndicatorViewControl>(renderer).SingleOrDefault();
 
-				Assert.True(GtkTestHost.Find<IndicatorViewControl>(widget).Count == 1,
-					"the renderer did not create an IndicatorViewControl");
+				Assert.True(control != null, "the renderer did not create an IndicatorViewControl");
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"IndicatorView was never allocated: {GtkTestHost.Describe(widget)}");
+				Assert.False(GtkTestHost.IsUnallocated(control),
+					$"IndicatorView was never allocated: {GtkTestHost.Describe(control)}");
 
-				var threeDots = widget.Allocation.Width;
+				control.GetSizeRequest(out var width, out var height);
 
-				// 3 dots of 10px with 6px spacing = 42px. Assert the real number, not just
-				// "greater than zero": a control that asks for nothing is exactly the failure mode.
-				Assert.True(threeDots >= 42,
-					$"3 x 10px dots need at least 42px, got {threeDots}");
+				Assert.True(width == ExpectedDotWidth(3, 10),
+					$"3 x 10px dots + 6px spacing should request {ExpectedDotWidth(3, 10)}px, got {width}");
+				Assert.True(height == 10, $"the dot row should be 10px tall, got {height}");
+
+				Assert.True(control.Allocation.Width >= width,
+					$"the control was allocated {control.Allocation.Width}px but needs {width}px " +
+					"for its dots");
 
 				indicator.Count = 7;
 				host.Pump();
 
-				var sevenDots = ((Gtk.Widget)Platform.GetRenderer(indicator)).Allocation.Width;
+				control.GetSizeRequest(out var wider, out _);
 
-				Assert.True(sevenDots > threeDots,
-					$"Count 3 -> 7 did not widen the control ({threeDots}px -> {sevenDots}px); " +
+				Assert.True(wider == ExpectedDotWidth(7, 10),
+					$"Count 3 -> 7 should re-request {ExpectedDotWidth(7, 10)}px, got {wider}; " +
 					"OnElementPropertyChanged is not re-measuring");
 			}
 		}
 
 		[Fact]
-		public void IndicatorViewMaximumVisibleCapsTheWidth()
+		public void IndicatorViewMaximumVisibleCapsTheDotCount()
 		{
 			var indicator = new IndicatorView
 			{
@@ -315,17 +340,20 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
 			{
-				var width = ((Gtk.Widget)Platform.GetRenderer(indicator)).Allocation.Width;
+				var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
+				var control = GtkTestHost.Find<IndicatorViewControl>(renderer).Single();
 
-				// 4 dots => 4*10 + 3*6 = 58. 20 dots would be 314.
-				Assert.True(width < 100,
-					$"MaximumVisible = 4 still allocated {width}px, i.e. it drew all 20 dots");
-				Assert.True(width >= 58, $"4 x 10px dots need at least 58px, got {width}");
+				control.GetSizeRequest(out var width, out _);
+
+				Assert.True(width == ExpectedDotWidth(4, 10),
+					$"MaximumVisible = 4 should draw 4 dots ({ExpectedDotWidth(4, 10)}px); the " +
+					$"control asked for {width}px, and all 20 dots would be " +
+					$"{ExpectedDotWidth(20, 10)}px");
 			}
 		}
 
 		[Fact]
-		public void IndicatorViewHideSingleCollapsesASingleDot()
+		public void IndicatorViewHideSingleSuppressesTheOnlyDot()
 		{
 			var indicator = new IndicatorView
 			{
@@ -338,16 +366,35 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
 			{
-				var single = ((Gtk.Widget)Platform.GetRenderer(indicator)).Allocation.Width;
+				var control = GtkTestHost
+					.Find<IndicatorViewControl>((Gtk.Widget)Platform.GetRenderer(indicator))
+					.Single();
+
+				control.GetSizeRequest(out var hidden, out _);
+
+				// The renderer asks for 0px when it draws no dots; MEASURED, GTK reports that back
+				// as 1px, so the bar is "no room for a dot" rather than a literal zero. One dot
+				// would be 10px, so this still fails outright if HideSingle is ignored.
+				Assert.True(hidden <= 1,
+					$"HideSingle should draw no dots at all for Count = 1, but the control asked " +
+					$"for {hidden}px (one dot would be {ExpectedDotWidth(1, 10)}px)");
+
+				indicator.HideSingle = false;
+				host.Pump();
+
+				control.GetSizeRequest(out var shown, out _);
+
+				Assert.True(shown == ExpectedDotWidth(1, 10),
+					$"HideSingle = false should bring the single dot back " +
+					$"({ExpectedDotWidth(1, 10)}px), got {shown}px");
 
 				indicator.Count = 4;
 				host.Pump();
 
-				var four = ((Gtk.Widget)Platform.GetRenderer(indicator)).Allocation.Width;
+				control.GetSizeRequest(out var four, out _);
 
-				Assert.True(four > single,
-					$"HideSingle: one dot allocated {single}px and four allocated {four}px - " +
-					"the single dot was not suppressed");
+				Assert.True(four == ExpectedDotWidth(4, 10),
+					$"Count = 4 should request {ExpectedDotWidth(4, 10)}px, got {four}px");
 			}
 		}
 
