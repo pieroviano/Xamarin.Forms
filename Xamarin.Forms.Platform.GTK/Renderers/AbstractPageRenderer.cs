@@ -204,6 +204,31 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				_layoutUpdateQueued = false;
 				UpdateChildrenLayout();
+				//DISABLED QueueLayoutVerify();
+				return false;
+			});
+		}
+
+		bool _layoutVerifyQueued;
+
+		/// <summary>
+		/// The page-renderer copy of <c>VisualElementRenderer.QueueLayoutVerify</c> - this class
+		/// deliberately does not derive from it, so, as with the BatchCommitted wiring above, it
+		/// needs its own. See that method for why a second pass is required: a resize lost during
+		/// an allocation is never re-queued, because Forms raises BatchCommitted only when bounds
+		/// change and a settled page therefore never calls back in.
+		/// </summary>
+		void QueueLayoutVerify()
+		{
+			if (_layoutVerifyQueued)
+				return;
+
+			_layoutVerifyQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutVerifyQueued = false;
+				UpdateChildrenLayout();
 				return false;
 			});
 		}

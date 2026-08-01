@@ -219,6 +219,68 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// The M3 residual, reduced to a unit test: the ControlGallery's CoreRootPage
+		/// (Xamarin.Forms.Controls/CoreGallery.cs:645) is an AbsoluteLayout with three
+		/// proportional children that tile the page, and on screen the buttons painted on top of
+		/// the ListView rows.
+		///
+		/// MEASURED cause (scratchpad/overlap.log): every size REQUEST was right - 724x244 for a
+		/// child whose Forms bounds were 724x244 - while the ALLOCATION was the natural 257x80.
+		/// A resize lost during an allocation is never re-queued, because gtk_widget_set_size_request
+		/// will not queue one for an unchanged value and Forms raises BatchCommitted only when
+		/// bounds CHANGE, so a settled page never calls the geometry push again. Hence the verify
+		/// pass in VisualElementRenderer/AbstractPageRenderer.
+		///
+		/// Asserting on allocations, not requests, is the whole point: the requests were correct
+		/// throughout the outage.
+		/// </summary>
+		[Test]
+		public void AbsoluteLayoutProportionalChildrenAreAllocatedWhereFormsPutThem()
+		{
+			var top = new BoxView { Color = Color.Red };
+			var middle = new StackLayout { Children = { new Button { Text = "b" } } };
+			var bottom = new BoxView { Color = Color.Blue };
+
+			var abs = new AbsoluteLayout();
+			abs.Children.Add(top, new Rectangle(0, 0.0, 1, 0.35), AbsoluteLayoutFlags.All);
+			abs.Children.Add(middle, new Rectangle(0, 0.5, 1, 0.30), AbsoluteLayoutFlags.All);
+			abs.Children.Add(bottom, new Rectangle(0, 1.0, 1, 0.35), AbsoluteLayoutFlags.All);
+
+			using (var host = GtkTestHost.HostPage(new ContentPage { Content = abs }, 800, 600))
+			{
+				host.Pump(12);
+
+				var children = new View[] { top, middle, bottom };
+
+				foreach (var child in children)
+				{
+					var widget = (Gtk.Widget)Platform.GetRenderer(child);
+
+					Assert.That(widget.Allocation.Width, Is.EqualTo((int)child.Width).Within(2),
+						$"{child.GetType().Name}: Forms width {child.Width:0}, " +
+						$"request {widget.WidthRequest}, allocation {widget.Allocation.Width}");
+
+					Assert.That(widget.Allocation.Height, Is.EqualTo((int)child.Height).Within(2),
+						$"{child.GetType().Name}: Forms height {child.Height:0}, " +
+						$"request {widget.HeightRequest}, allocation {widget.Allocation.Height}");
+				}
+
+				// And the symptom itself: the three must not paint over one another.
+				var rects = children
+					.Select(c => ((Gtk.Widget)Platform.GetRenderer(c)).Allocation)
+					.OrderBy(r => r.Y)
+					.ToList();
+
+				for (int i = 0; i + 1 < rects.Count; i++)
+				{
+					Assert.That(rects[i].Y + rects[i].Height, Is.LessThanOrEqualTo(rects[i + 1].Y + 2),
+						$"child {i} [{rects[i].Y}..{rects[i].Y + rects[i].Height}] overlaps " +
+						$"child {i + 1} [{rects[i + 1].Y}..]");
+				}
+			}
+		}
+
 		[Test]
 		public void ResizingTheWindowRelaysTheContent()
 		{

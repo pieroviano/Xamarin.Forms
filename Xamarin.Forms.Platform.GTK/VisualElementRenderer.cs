@@ -243,6 +243,53 @@ namespace Xamarin.Forms.Platform.GTK
 				_layoutUpdateQueued = false;
 
 				if (!_disposed)
+				{
+					UpdateElementLayout();
+					//DISABLED QueueLayoutVerify();
+				}
+
+				return false;
+			});
+		}
+
+		bool _layoutVerifyQueued;
+
+		/// <summary>
+		/// Runs the geometry application a second time, once GTK has had its turn at the first.
+		/// </summary>
+		/// <remarks>
+		/// Setting a size request only *queues* a resize, and GTK3 drops the one it queues if it is
+		/// raised while an allocation is already in flight. gtk_widget_set_size_request will not
+		/// queue another for an unchanged value, so a single lost resize pins the widget at the
+		/// natural size a <see cref="Gtk.Fixed"/> hands an unconstrained child - for the lifetime of
+		/// the window.
+		///
+		/// Forms does not rescue it: <c>BatchCommitted</c> is raised only when bounds actually
+		/// CHANGE, so once a page's layout has settled nothing calls
+		/// <see cref="UpdateElementLayout"/> again and the recovery branch in
+		/// <c>WidgetExtensions.SetSize</c> - which re-queues the resize when it finds a widget
+		/// allocated smaller than its request - is never reached.
+		///
+		/// MEASURED on the ControlGallery detail page (scratchpad/overlap.log): CoreRootPage's
+		/// AbsoluteLayout children each had a correct request (724x244) and an allocation of
+		/// 257x80, and the buttons therefore painted on top of the ListView rows. A single bare
+		/// QueueResize() on the child moved it straight to 724 - there is no wedge in this path,
+		/// the resize was simply never asked for a second time.
+		///
+		/// One extra idle per layout update, and it schedules no further pass, so it cannot loop.
+		/// </remarks>
+		void QueueLayoutVerify()
+		{
+			if (_layoutVerifyQueued || _disposed)
+				return;
+
+			_layoutVerifyQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				_layoutVerifyQueued = false;
+
+				if (!_disposed)
 					UpdateElementLayout();
 
 				return false;
