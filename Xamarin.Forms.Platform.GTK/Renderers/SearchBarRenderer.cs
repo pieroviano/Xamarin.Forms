@@ -70,8 +70,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override void Dispose(bool disposing)
 		{
-			base.Dispose(disposing);
-
+			// BEFORE base.Dispose, not after. ViewRenderer.Dispose runs Control.Destroy() and then
+			// Control = null unconditionally, so with the old ordering the guard below was always
+			// false and none of these detaches ever ran. Destroying a focused SearchBar synthesises
+			// a focus-out, which then re-entered SearchFocusOutEvent mid-teardown and raised
+			// Unfocused into application code. Every sibling renderer detaches first.
 			if (disposing)
 			{
 				if (Control != null)
@@ -82,6 +85,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					Control.Entry.FocusOutEvent -= SearchFocusOutEvent;
 				}
 			}
+
+			base.Dispose(disposing);
 		}
 
 		void UpdateText()

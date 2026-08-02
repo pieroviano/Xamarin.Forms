@@ -77,6 +77,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override void Dispose(bool disposing)
 		{
+			// The Forms-side handler, which nothing else removes: OnElementChanged only detaches it
+			// from e.OldElement. Left attached, the ScrollView element keeps the disposed renderer
+			// alive and a later ScrollToAsync re-enters OnScrollToRequested, which dereferences the
+			// Control that base.Dispose has already nulled.
+			if (Element != null)
+			{
+				Element.ScrollToRequested -= OnScrollToRequested;
+			}
+
 			if (Control != null)
 			{
 				Control.ScrollEvent -= OnScrollEvent;

@@ -16,6 +16,7 @@ namespace Xamarin.Forms.Platform.GTK
 		private TNativeElement _control;
 		private TElement _element;
 		private GtkFormsContainer _container;
+		bool _inputTransparent;
 		private bool _invalidateArrangeNeeded;
 
 		private readonly NotifyCollectionChangedEventHandler _collectionChangedHandler;
@@ -38,18 +39,9 @@ namespace Xamarin.Forms.Platform.GTK
 				if (_container != null)
 				{
 					_container.ButtonPressEvent -= OnContainerButtonPressEvent;
-					_container.Realized -= OnContainerRealized;
 				}
 
 				_container = value;
-
-				if (_container != null)
-				{
-					// InputTransparent is applied to the GdkWindow, which does not exist until the
-					// widget is realized. Without this the value would be dropped whenever it was
-					// set before the first show, which is the common case.
-					_container.Realized += OnContainerRealized;
-				}
 
 				UpdatingGestureRecognizers();
 
@@ -253,6 +245,16 @@ namespace Xamarin.Forms.Platform.GTK
 
 			_container.ButtonPressEvent -= OnContainerButtonPressEvent;
 
+			// An InputTransparent element handles nothing: leave every handler detached. See
+			// UpdateInputTransparent for why this is done here rather than on the GdkWindow.
+			if (_inputTransparent)
+			{
+				if (_control != null)
+					_control.ButtonPressEvent -= OnControlButtonPressEvent;
+
+				return;
+			}
+
 			if (gestures.GetGesturesFor<TapGestureRecognizer>().Any() || gestures.GetGesturesFor<ClickGestureRecognizer>().Any())
 			{
 				_container.ButtonPressEvent += OnContainerButtonPressEvent;
@@ -366,31 +368,35 @@ namespace Xamarin.Forms.Platform.GTK
 			eventBox.Opacity = opacity;
 		}
 
-		private static void UpdateInputTransparent(VisualElement view, Gtk.Widget eventBox)
+		/// <summary>
+		/// Stops the element's renderer handling input when InputTransparent is set.
+		/// </summary>
+		/// <remarks>
+		/// Deliberately NOT implemented via <c>eventBox.Window.PassThrough</c>, which is the
+		/// obvious reading of "input transparent" and is actively harmful here.
+		/// <see cref="GtkFormsContainer"/> is a <c>Gtk.EventBox</c> with
+		/// <c>VisibleWindow = false</c>, so it owns no GdkWindow of its own and
+		/// <c>gtk_widget_get_window</c> hands back the PARENT's. MEASURED on this tree:
+		/// <c>widget.Window</c> and <c>widget.Parent.Window</c> are the same GdkWindow and
+		/// <c>widget.HasWindow</c> is false. Setting pass-through on it therefore applies to every
+		/// widget sharing that window - marking one element input-transparent would silently
+		/// disable input for the entire page.
+		///
+		/// What this backend can honestly provide is that the element itself stops responding to
+		/// input. Full "the click reaches whatever is underneath" is not achievable while the
+		/// container has no window of its own: there is no separate input region to punch through,
+		/// and an unhandled GTK event propagates to the PARENT, not to an overlapping sibling.
+		/// </remarks>
+		private void UpdateInputTransparent(VisualElement view, Gtk.Widget eventBox)
 		{
 			if (view == null || eventBox == null)
 				return;
 
-			// gdk_window_set_pass_through is the primitive that matches Forms' semantics: the
-			// widget stops receiving input AND the events reach whatever is underneath it.
-			// Sensitive = false would be the obvious alternative and is the wrong one - it blocks
-			// input without passing it through, and it greys the widget out, so an
-			// InputTransparent overlay would visibly change appearance.
-			//
-			// The GdkWindow only exists once the widget is realized. UpdateNativeControl can run
-			// before that (the tracker updates on element assignment, not on realize), so the
-			// value is re-applied from OnContainerRealized as well - otherwise setting
-			// InputTransparent before the first show would be silently dropped.
-			var window = eventBox.Window;
+			_inputTransparent = view.InputTransparent;
 
-			if (window != null)
-				window.PassThrough = view.InputTransparent;
-		}
-
-		private void OnContainerRealized(object sender, EventArgs e)
-		{
-			if (Element != null && Container != null)
-				UpdateInputTransparent(Element, Container);
+			// Re-run the gesture wiring so the container's ButtonPressEvent handler is attached or
+			// detached to match.
+			UpdatingGestureRecognizers();
 		}
 
 		private void OnContainerButtonPressEvent(object o, ButtonPressEventArgs args)

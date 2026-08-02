@@ -3,6 +3,31 @@
     <NightlyTag>nightly</NightlyTag>
     <RegexPre>pre\d</RegexPre>
  </PropertyGroup>
+
+ <!--
+   Everything version-related below that used to be keyed off $(CI) is keyed off this instead.
+
+   $(CI) is the WRONG signal for it. GitHub Actions - which is this fork's only CI, see
+   .github/workflows/linux-gtk.yml - always exports CI=true, and Environment.Build.props then
+   leaves it at true because its default only applies when CI is empty. But every branch guarded
+   by it here is Azure DevOps specific: BUILDVERSION, BUILD_REASON, BUILD_BUILDID,
+   SYSTEM_PULLREQUEST_* and the ##vso[...] logging commands all exist only on Azure. Off Azure
+   those variables are empty, so the PackageVersion override produced a dangling fourth component
+   and NuGet rejected it outright:
+
+     error MSB4018: System.ArgumentException:
+       PackageVersion string specified '5.0.0.+1048-sha.2ceec4836-azdo.' is invalid.
+
+   Because every shipping csproj sets GeneratePackageOnBuild, that killed the plain
+   `dotnet build Xamarin.Forms.Gtk.sln` step in the workflow - CI could not build itself.
+
+   TF_BUILD is Azure's own "I am a build agent" variable and is the correct gate. On GitHub
+   Actions this is false and the normal PackageVersion on line 38 applies.
+ -->
+ <PropertyGroup>
+    <IsAzurePipelines Condition="'$(IsAzurePipelines)' == ''">false</IsAzurePipelines>
+    <IsAzurePipelines Condition="'$(TF_BUILD)' == 'true'">true</IsAzurePipelines>
+ </PropertyGroup>
  <PropertyGroup>
     <GitBranch Condition="'$(SYSTEM_PULLREQUEST_TARGETBRANCH)' != ''">$(SYSTEM_PULLREQUEST_TARGETBRANCH)</GitBranch>
     <GitBranch Condition="'$(SYSTEM_PULLREQUEST_TARGETBRANCH)' == '' and '$(BUILD_SOURCEBRANCHNAME)' != ''">$(BUILD_SOURCEBRANCHNAME)</GitBranch>
@@ -16,18 +41,18 @@
     <PropertyGroup>
       <PreOut>$([System.Text.RegularExpressions.Regex]::Match($(GitTag), $(RegexPre)))</PreOut>
       <GitSemVerLabel Condition=" '$(GitTag)' != '' and '$(GitTag)' == '$(GitBranch)' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(GitTag)', $(RegexPre))) ">$(PreOut)</GitSemVerLabel>
-      <GitSemVerLabel  Condition="$(CI) and '$(BUILD_REASON)' == 'Schedule'">$(NightlyTag)</GitSemVerLabel>
+      <GitSemVerLabel  Condition="$(IsAzurePipelines) and '$(BUILD_REASON)' == 'Schedule'">$(NightlyTag)</GitSemVerLabel>
       <GitSemVerDashLabel Condition="'$(GitSemVerLabel)' != ''" >-$(GitSemVerLabel)</GitSemVerDashLabel>
     </PropertyGroup>
     <ItemGroup>
       <VersionMetadata Include="$(GitCommits)" Condition="'$(GitSemVerDashLabel)' == ''" />
 
-      <VersionMetadata Condition="$(CI) and '$(BUILD_REASON)' == 'PullRequest'"
+      <VersionMetadata Condition="$(IsAzurePipelines) and '$(BUILD_REASON)' == 'PullRequest'"
                        Include="pr.$(SYSTEM_PULLREQUEST_PULLREQUESTNUMBER)"/>
 
       <VersionMetadata Include="sha.$(GitCommit)"/>
 
-      <VersionMetadata Condition="$(CI)"
+      <VersionMetadata Condition="$(IsAzurePipelines)"
                        Include="azdo.$(BUILD_BUILDID)"/>
     </ItemGroup>
 
@@ -37,10 +62,10 @@
       <Version>$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)</Version>
       <PackageVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
 
-      <PackageVersion Condition="$(CI)">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
-      <PackageVersion Condition="$(CI) and '$(GitBaseVersion)' == '4.2.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION42)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
-      <PackageVersion Condition="$(CI) and '$(GitBaseVersion)' == '4.3.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION43)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
-      <PackageVersion Condition="$(CI) and '$(GitBaseVersion)' == '4.4.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION44)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
+      <PackageVersion Condition="$(IsAzurePipelines)">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
+      <PackageVersion Condition="$(IsAzurePipelines) and '$(GitBaseVersion)' == '4.2.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION42)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
+      <PackageVersion Condition="$(IsAzurePipelines) and '$(GitBaseVersion)' == '4.3.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION43)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
+      <PackageVersion Condition="$(IsAzurePipelines) and '$(GitBaseVersion)' == '4.4.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION44)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -60,7 +85,7 @@
       </AssemblyAttribute>
     </ItemGroup>
 
-    <Message Condition="$(CI) and '$(BUILD_REASON)' == 'Schedule'" Importance="high" Text="##vso[build.addbuildtag]$(NightlyTag)"/>
+    <Message Condition="$(IsAzurePipelines) and '$(BUILD_REASON)' == 'Schedule'" Importance="high" Text="##vso[build.addbuildtag]$(NightlyTag)"/>
     <ItemGroup>
        <XamarinFormsVersionFile Include="../.XamarinFormsVersionFile.txt"/>
        <XamarinFormsVersionLine Include="$(PackageVersion)"/>
@@ -68,8 +93,8 @@
     
     <!-- Occasionally this throws an error from parallel builds writing to this file. It's fine if only one of them wins. -->
     <WriteLinesToFile ContinueOnError="WarnAndContinue" File="@(XamarinFormsVersionFile)" Lines="@(XamarinFormsVersionLine)" Overwrite="true" />
-    <Message Condition="$(CI)" Importance="high" Text="##vso[build.updatebuildnumber]$(PackageVersion)"/>
-    <Message Condition="$(CI)" Importance="high" Text="##vso[task.setvariable variable=XamarinFormsPackageVersion;isOutput=true;]$(PackageVersion)"/>
+    <Message Condition="$(IsAzurePipelines)" Importance="high" Text="##vso[build.updatebuildnumber]$(PackageVersion)"/>
+    <Message Condition="$(IsAzurePipelines)" Importance="high" Text="##vso[task.setvariable variable=XamarinFormsPackageVersion;isOutput=true;]$(PackageVersion)"/>
   </Target>
 
   <Target Name="VersionInfoReport" DependsOnTargets="SetVersions" AfterTargets="GitInfoReport">

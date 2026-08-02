@@ -21,9 +21,15 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 				(byte)Math.Round(rgba.Blue * 255));
 		}
 
-		internal static Xamarin.Forms.Color ToXFColor(this Gdk.Color color, double opacity = 255)
+		internal static Xamarin.Forms.Color ToXFColor(this Gdk.Color color, double opacity = 1)
 		{
-			return new Color(color.Red, color.Green, color.Blue, opacity);
+			// Gdk.Color channels are ushort 0..65535; Xamarin.Forms.Color expects 0..1 and CLAMPS
+			// (Color.cs: _r = (float)w.Clamp(0, 1)). Passing the raw channels therefore saturated
+			// every non-zero component to 1.0, so every converted colour came out as pure
+			// red/green/blue/white. The default opacity had the same bug - 255 clamped to 1.
+			const double Max = 65535.0;
+
+			return new Color(color.Red / Max, color.Green / Max, color.Blue / Max, opacity);
 		}
 
 		internal static string ToRgbaColor(this Color color)

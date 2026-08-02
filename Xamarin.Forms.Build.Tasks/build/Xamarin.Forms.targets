@@ -1,8 +1,20 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
 	<PropertyGroup>
-		<_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == '' AND '$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)netstandard2.0\</_XFBuildTasksLocation>
-		<_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)net46\</_XFBuildTasksLocation>
+		<!--
+			netstandard2.0 unconditionally - there is no longer a net46 branch to fall back to.
+			Xamarin.Forms.Build.Tasks.csproj dropped that TFM (Microsoft.Build 17.x, needed to
+			clear the NU1903 advisory, does not support net46) and _PackBuildTaskAssemblies packs
+			only PackagePath="build\$(TargetFramework)\", so the package contains
+			build/netstandard2.0/ and nothing else.
+
+			The old fallback fired whenever MSBuildRuntimeType was not 'Core' - i.e. Visual Studio
+			and MSBuild.exe on .NET Framework - and pointed those consumers at a build/net46/
+			directory that is not in the nupkg, so the UsingTask assemblies below could not be
+			found. Full-framework MSBuild loads netstandard2.0 task assemblies perfectly well,
+			which is what made dropping net46 safe in the first place.
+		-->
+		<_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)netstandard2.0\</_XFBuildTasksLocation>
 	</PropertyGroup>
 	
 	<UsingTask TaskName="Xamarin.Forms.Build.Tasks.XamlGTask" AssemblyFile="$(_XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll" />

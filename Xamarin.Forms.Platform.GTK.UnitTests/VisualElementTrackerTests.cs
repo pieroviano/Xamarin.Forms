@@ -85,42 +85,47 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		}
 
 		[Fact]
-		public void InputTransparentMakesTheContainerWindowPassThrough()
+		public void InputTransparentDoesNotTouchTheSharedParentGdkWindow()
 		{
+			// REGRESSION GUARD, and the reason InputTransparent is not implemented via
+			// Gdk.Window.PassThrough even though that is the API whose name matches Forms' semantics.
+			// GtkFormsContainer is a Gtk.EventBox with VisibleWindow = false, so it owns no GdkWindow
+			// and gtk_widget_get_window returns the PARENT's - shared with every other element on the
+			// page. Setting pass-through there would disable input for all of them, so one
+			// InputTransparent overlay would silently make the whole page unclickable.
 			var box = new BoxView { Color = Color.Red, InputTransparent = true };
 
 			using (var host = GtkTestHost.HostView(box))
 			{
 				var widget = (Gtk.Widget)host.Renderer;
 
-				// The GdkWindow only exists once realized; HostView shows the toplevel, so by
-				// here it must. If this is null the test is not measuring anything, so assert it.
+				// Precondition. If this ever becomes true the container owns its own window and
+				// PassThrough becomes the correct implementation - revisit UpdateInputTransparent.
+				Assert.False(widget.HasWindow,
+					"precondition: GtkFormsContainer is expected to be a windowless EventBox");
+
 				Assert.NotNull(widget.Window);
-				Assert.True(widget.Window.PassThrough,
-					"an InputTransparent element must let events reach what is underneath it");
+				Assert.False(widget.Window.PassThrough,
+					"pass-through must never be set on the window shared with the rest of the page");
 			}
 		}
 
 		[Fact]
-		public void InputTransparentIsAppliedToTheContainerWindowOnChange()
+		public void InputTransparentIsAcceptedAndReverted()
 		{
+			// Toggling it must not throw and must not disturb the shared window in either direction.
 			var box = new BoxView { Color = Color.Red };
 
 			using (var host = GtkTestHost.HostView(box))
 			{
 				var widget = (Gtk.Widget)host.Renderer;
 
-				Assert.NotNull(widget.Window);
-				Assert.False(widget.Window.PassThrough);
-
 				box.InputTransparent = true;
 				host.Pump();
-
-				Assert.True(widget.Window.PassThrough);
+				Assert.False(widget.Window.PassThrough);
 
 				box.InputTransparent = false;
 				host.Pump();
-
 				Assert.False(widget.Window.PassThrough);
 			}
 		}

@@ -94,7 +94,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				{
 					Control.TextView.Buffer.Changed -= TextViewBufferChanged;
 					Control.TextView.Focused -= TextViewFocused;
-					Control.TextView.FocusOutEvent += TextViewFocusedOut;
+					// -=, not +=. This subscribed a SECOND handler while disposing, so a focused
+					// Editor being torn down raised Completed twice instead of not at all.
+					Control.TextView.FocusOutEvent -= TextViewFocusedOut;
 				}
 			}
 

@@ -43,8 +43,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void SetBackgroundColor(Gdk.Color color)
 		{
-			StyleExtensions.SetBackgroundColor(this, Xamarin.Forms.Color.Red.ToGtkColor());
-			Entry.SetBaseColor(Xamarin.Forms.Color.Blue.ToGtkColor());
+			// Uses its argument. It previously ignored `color` entirely and hardcoded a red frame
+			// and a blue entry - leftover debugging colours - so every Forms DatePicker and
+			// TimePicker rendered red/blue no matter what BackgroundColor the app set, including
+			// the default.
+			StyleExtensions.SetBackgroundColor(this, color);
+			Entry.SetBaseColor(color);
 		}
 
 		private void BuildCustomComboBox()

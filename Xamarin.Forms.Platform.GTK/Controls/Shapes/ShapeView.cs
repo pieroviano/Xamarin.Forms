@@ -23,6 +23,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public void UpdateStroke(Brush brush)
 		{
 			_stroke = brush;
+			// Every other setter here queues a redraw; without it a Stroke change kept the old
+			// outline until some unrelated invalidation happened to repaint the widget.
+			QueueDraw();
 		}
 
 		public void UpdateSize(int height, int width)

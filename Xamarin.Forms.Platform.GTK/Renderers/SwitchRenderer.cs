@@ -56,6 +56,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				{
 					Control.Toggled -= OnCheckButtonToggled;
 				}
+
+				// The ELEMENT handler as well, not just the native one. OnElementChanged detaches it
+				// only from e.OldElement, so without this the Forms Switch keeps the disposed
+				// renderer alive and a later toggle re-enters UpdateState against a torn-down Control.
+				if (Element != null)
+				{
+					Element.Toggled -= OnElementToggled;
+				}
 			}
 
 			base.Dispose(disposing);
