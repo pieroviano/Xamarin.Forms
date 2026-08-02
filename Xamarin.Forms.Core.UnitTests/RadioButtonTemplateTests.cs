@@ -25,8 +25,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				yield return new object[] { Frame.ScaleProperty, 0.8 };
 				yield return new object[] { Frame.ScaleXProperty, 0.9 };
 				yield return new object[] { Frame.ScaleYProperty, 0.95 };
-				yield return new object[] { Frame.TranslationXProperty, 123 };
-				yield return new object[] { Frame.TranslationYProperty, 321 };
+				// Doubles, not ints: TranslationX/Y are double properties, so GetValue boxes a
+				// double. NUnit's Assert.AreEqual coerced boxed int to boxed double; xUnit's
+				// Assert.Equal<object> does not, which made the NotEqual below pass trivially.
+				yield return new object[] { Frame.TranslationXProperty, 123.0 };
+				yield return new object[] { Frame.TranslationYProperty, 321.0 };
 			}
 		}
 
@@ -65,8 +68,9 @@ namespace Xamarin.Forms.Core.UnitTests
 				yield return new object[] { RadioButton.ScaleProperty, 0.8};
 				yield return new object[] { RadioButton.ScaleXProperty, 0.9 };
 				yield return new object[] { RadioButton.ScaleYProperty, 0.95 };
-				yield return new object[] { RadioButton.TranslationXProperty, 123 };
-				yield return new object[] { RadioButton.TranslationYProperty, 321 };
+				// Doubles, not ints - see the comment in FrameStyleCases.
+				yield return new object[] { RadioButton.TranslationXProperty, 123.0 };
+				yield return new object[] { RadioButton.TranslationYProperty, 321.0 };
 			}
 		}
 

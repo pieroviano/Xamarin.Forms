@@ -330,10 +330,32 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				var before = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
 
 				host.Window.Resize(900, 600);
-				Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
-				host.Pump(10);
 
-				var after = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
+				// MEASURED: Gtk.Window.Resize only REQUESTS a size from the window manager. Under
+				// Xvfb, where this suite was written, there is no window manager to disagree and
+				// the request lands within a pump or two. On the Win32 GDK backend in a
+				// non-interactive session it is never serviced at all - the toplevel still
+				// reports AllocatedWidth == 400 after five seconds of pumping - so the assertion
+				// below used to read 400 -> 400 and fail for a reason that has nothing to do with
+				// Forms layout.
+				//
+				// So drive the allocation directly, which is what PageHost already does for the
+				// INITIAL size and what Pump does on every round. What this test is actually
+				// guarding is that a size-allocate on the toplevel propagates through
+				// FormsWindow -> the page renderer -> StackLayout -> the BoxView; whether a given
+				// platform's window manager honours a resize request is not Forms' behaviour and
+				// not what the M3 regression was about.
+				host.Window.SizeAllocate(new Gdk.Rectangle(0, 0, 900, 600));
+				Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
+
+				var after = before;
+				GtkTestHost.PumpUntil(
+					() =>
+					{
+						after = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
+						return after > before;
+					},
+					host.Window);
 
 				Assert.True(after > before,
 					$"content did not follow the window: {before}px -> {after}px");

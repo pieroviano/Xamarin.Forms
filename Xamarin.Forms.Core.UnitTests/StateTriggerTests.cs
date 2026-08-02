@@ -9,9 +9,14 @@ namespace Xamarin.Forms.Core.UnitTests
 		const string RedStateName = "Red";
 		const string GreenStateName = "Green";
 
-		static readonly Entry TestEntry = new Entry();
+		// Instance, not static. CreateTestStateGroups snapshots TestEntry.Text into the trigger's
+		// Property at construction time, so a static entry carried "Test" out of
+		// StateTriggerChangedVisualState and into whichever test ran next - making
+		// InitialStateIsNormalIfAvailable pass or fail purely on execution order. xUnit builds a
+		// new instance of this class per test, so an instance field gives each test a fresh Entry.
+		readonly Entry TestEntry = new Entry();
 
-		static VisualStateGroupList CreateTestStateGroups()
+		VisualStateGroupList CreateTestStateGroups()
 		{
 			var stateGroups = new VisualStateGroupList();
 			var visualStateGroup = new VisualStateGroup();

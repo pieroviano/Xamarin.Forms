@@ -157,6 +157,37 @@ public static class GtkTestHost
 	}
 
 	/// <summary>
+	/// Pumps until <paramref name="condition"/> holds, or the deadline expires. Returns whether
+	/// it held.
+	///
+	/// MEASURED, and the reason a fixed <see cref="Pump"/> round count is not always enough:
+	/// anything that goes through the window manager - <c>Gtk.Window.Resize</c> above all - is a
+	/// REQUEST, not a state change. Under Xvfb there is no real window manager and the request
+	/// is serviced within a round or two, so a fixed count happened to be sufficient on Linux.
+	/// The Win32 GDK backend round-trips through the actual Windows window manager, where the
+	/// latency is neither zero nor bounded by a round count, and a fixed pump silently reads the
+	/// pre-resize geometry.
+	///
+	/// Callers should still assert on the result: this waits for the condition, it does not
+	/// excuse it never happening.
+	/// </summary>
+	public static bool PumpUntil(Func<bool> condition, Gtk.Window toplevel = null, int timeoutMs = 5000)
+	{
+		var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+		while (true)
+		{
+			if (condition())
+				return true;
+
+			if (DateTime.UtcNow >= deadline)
+				return false;
+
+			Pump(toplevel, 1);
+		}
+	}
+
+	/// <summary>
 	/// Waits for a task by pumping GTK, instead of blocking the thread.
 	///
 	/// MEASURED: an <c>async</c> test method deadlocks this suite outright. <see cref="FormsWindow"/>'s

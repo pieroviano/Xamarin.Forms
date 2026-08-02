@@ -200,7 +200,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		public void FontSizeConverterTests()
 		{
 			var converter = new FontSizeConverter();
-			Assert.Equal(12, converter.ConvertFromInvariantString("12"));
+			// 12d, not 12: the converter boxes a double, and Assert.Equal<object> - unlike
+			// NUnit's Assert.AreEqual - does not coerce a boxed int to it.
+			Assert.Equal(12d, converter.ConvertFromInvariantString("12"));
 			Assert.Equal(10.7, converter.ConvertFromInvariantString("10.7"));
 		}
 

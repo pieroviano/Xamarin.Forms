@@ -28,6 +28,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		[Fact]
 		public void ResourceDictionaryTriggersValueChangedOnAdd()
 		{
+			var fired = false;
 			var rd = new ResourceDictionary();
 			((IResourceDictionary)rd).ValuesChanged += (sender, e) =>
 			{
@@ -35,15 +36,16 @@ namespace Xamarin.Forms.Core.UnitTests
 				var kvp = e.Values.First();
 				Assert.Equal("foo", kvp.Key);
 				Assert.Equal("FOO", kvp.Value);
-				return;
+				fired = true;
 			};
 			rd.Add("foo", "FOO");
-			Assert.Fail();
+			Assert.True(fired, "ValuesChanged was not raised.");
 		}
 
 		[Fact]
 		public void ResourceDictionaryTriggersValueChangedOnChange()
 		{
+			var fired = false;
 			var rd = new ResourceDictionary();
 			rd.Add("foo", "FOO");
 			((IResourceDictionary)rd).ValuesChanged += (sender, e) =>
@@ -52,10 +54,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				var kvp = e.Values.First();
 				Assert.Equal("foo", kvp.Key);
 				Assert.Equal("BAR", kvp.Value);
-				return;
+				fired = true;
 			};
 			rd["foo"] = "BAR";
-			Assert.Fail();
+			Assert.True(fired, "ValuesChanged was not raised.");
 		}
 
 		[Fact]
@@ -137,17 +139,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			elt.Parent = parent;
 
+			var fired = false;
 			((IElement)elt).AddResourcesChangedListener((sender, e) =>
 			{
 				Assert.Equal(1, e.Values.Count());
 				var kvp = e.Values.First();
 				Assert.Equal("baz", kvp.Key);
 				Assert.Equal("BAZ", kvp.Value);
-				return;
+				fired = true;
 			});
 
 			parent.Resources["baz"] = "BAZ";
-			Assert.Fail();
+			Assert.True(fired, "ResourcesChanged was not raised.");
 		}
 
 		[Fact]
@@ -193,15 +196,16 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
+			var fired = false;
 			((IElement)elt).AddResourcesChangedListener((sender, e) =>
 			{
 				Assert.Equal(2, e.Values.Count());
 				Assert.Equal("FOO", e.Values.First(kvp => kvp.Key == "foo").Value);
 				Assert.Equal("BAZ", e.Values.First(kvp => kvp.Key == "baz").Value);
-				return;
+				fired = true;
 			});
 			elt.Parent = parent;
-			Assert.Fail();
+			Assert.True(fired, "ResourcesChanged was not raised.");
 		}
 
 		[Fact]
@@ -218,17 +222,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			elt.Parent = parent;
 
+			var fired = false;
 			((IElement)elt).AddResourcesChangedListener((sender, e) =>
 			{
 				Assert.Equal(3, e.Values.Count());
-				return;
+				fired = true;
 			});
 			elt.Resources = new ResourceDictionary {
 				{"foo", "FOO"},
 				{"baz", "BAZ"},
 				{"bar", "NEWBAR"}
 			};
-			Assert.Fail();
+			Assert.True(fired, "ResourcesChanged was not raised.");
 		}
 
 		[Fact]
@@ -264,14 +269,15 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
+			var fired = false;
 			((IElement)elt).AddResourcesChangedListener((sender, e) =>
 			{
 				Assert.Equal(2, e.Values.Count());
-				return;
+				fired = true;
 			});
 
 			elt.Parent = parent;
-			Assert.Fail();
+			Assert.True(fired, "ResourcesChanged was not raised.");
 		}
 
 		[Fact]

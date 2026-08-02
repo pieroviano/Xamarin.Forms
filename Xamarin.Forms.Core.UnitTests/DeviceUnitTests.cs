@@ -79,7 +79,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(invoked, "Action invoked early.");
 
 			async Task MethodThatThrows() => await task;
-			Assert.ThrowsAsync<ApplicationException>(MethodThatThrows);
+			// Awaited, unlike the NUnit original: NUnit's Assert.ThrowsAsync ran the delegate to
+			// completion synchronously, while xUnit's returns a Task. Left unawaited, the assert
+			// below runs before the 50ms-delayed invoke has called boom().
+			await Assert.ThrowsAsync<ApplicationException>(MethodThatThrows);
 			Assert.True(invoked, "Action not invoked.");
 		}
 
@@ -114,7 +117,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(invoked, "Action invoked early.");
 
 			async Task MethodThatThrows() => await task;
-			Assert.ThrowsAsync<ApplicationException>(MethodThatThrows);
+			// Awaited - see TestInvokeOnMainThreadWithAsyncFuncError.
+			await Assert.ThrowsAsync<ApplicationException>(MethodThatThrows);
 			Assert.True(invoked, "Action not invoked.");
 		}
 

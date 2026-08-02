@@ -48,7 +48,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		[Fact]
 		public void InvalidCtor()
 		{
-			Assert.Throws<ArgumentException>(() => new Binding(null));
+			// ArgumentNullException, as the NUnit original asserted: xUnit's Assert.Throws<T>
+			// matches the exception type exactly, where NUnit's accepted a derived type.
+			Assert.Throws<ArgumentNullException>(() => new Binding(null));
 
 			Assert.Throws<ArgumentException>(() => new Binding(String.Empty));
 
@@ -1904,7 +1906,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		[Fact]
 		public void CreateBindingNullToIndexer()
 		{
-			Assert.Throws<ArgumentException>(() => Binding.Create<ReferenceTypeIndexerViewModel>(vm => vm[null]));
+			// The NUnit original asserted Throws.Nothing here - a null index into a reference-type
+			// indexer is legal. The conversion inverted it into an expected-throw.
+			AssertEx.DoesNotThrow(() => Binding.Create<ReferenceTypeIndexerViewModel>(vm => vm[null]));
 		}
 
 		[Fact]

@@ -302,17 +302,18 @@ namespace Xamarin.Forms.Core.UnitTests
 		[Fact]
 		public void PropertyChanging()
 		{
+			var fired = false;
 			var mock = new MockBindable();
 			mock.PropertyChanging += (sender, args) =>
 			{
 				Assert.Equal(MockBindable.TextProperty.PropertyName, args.PropertyName);
 				Assert.Equal(MockBindable.TextProperty.DefaultValue, mock.GetValue(MockBindable.TextProperty));
-				return;
+				fired = true;
 			};
 
 			mock.SetValue(MockBindable.TextProperty, "foo");
 
-			Assert.Fail("The PropertyChanging event was not fired.");
+			Assert.True(fired, "The PropertyChanging event was not fired.");
 		}
 
 		[Fact]
@@ -346,17 +347,18 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 			const string value = "foo";
 
+			var fired = false;
 			var mock = new MockBindable();
 			mock.PropertyChanged += (sender, args) =>
 			{
 				Assert.Equal(MockBindable.TextProperty.PropertyName, args.PropertyName);
 				Assert.Equal(value, mock.GetValue(MockBindable.TextProperty));
-				return;
+				fired = true;
 			};
 
 			mock.SetValue(MockBindable.TextProperty, value);
 
-			Assert.Fail("The PropertyChanged event was not fired.");
+			Assert.True(fired, "The PropertyChanged event was not fired.");
 		}
 
 		[Fact]
