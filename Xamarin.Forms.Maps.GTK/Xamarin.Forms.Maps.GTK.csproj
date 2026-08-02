@@ -24,7 +24,7 @@
           it has already happened twice. $(InputBoxLibraryVersion) and $(VersionBuildSuffix) are
           unrelated and undefined here, so the version evaluated to the bare string ".".
         -->
-        <PackageReference Include="GtkSharp" Version="3.24.24.95" />
+        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(VersionBuildSuffix)" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />

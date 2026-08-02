@@ -215,6 +215,110 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// The M3 residual, reduced to a unit test: the ControlGallery's CoreRootPage
+		/// (Xamarin.Forms.Controls/CoreGallery.cs:645) is an AbsoluteLayout with three
+		/// proportional children that tile the page, and on screen the buttons painted on top of
+		/// the ListView rows.
+		///
+		/// MEASURED cause (scratchpad/overlap.log): every size REQUEST was right - 724x244 for a
+		/// child whose Forms bounds were 724x244 - while the ALLOCATION was the natural 257x80.
+		/// A resize lost during an allocation is never re-queued, because gtk_widget_set_size_request
+		/// will not queue one for an unchanged value and Forms raises BatchCommitted only when
+		/// bounds CHANGE, so a settled page never calls the geometry push again. Hence the verify
+		/// pass in VisualElementRenderer/AbstractPageRenderer.
+		///
+		/// Asserting on allocations, not requests, is the whole point: the requests were correct
+		/// throughout the outage.
+		///
+		/// CURRENTLY FAILING, and Skipped so it does not redden CI while the fix is in flight:
+		/// this reproduces the open M3 residual rather than guarding a fixed one. Measured on this
+		/// branch: "ListView: Forms width 724, request 724, allocation 194". Remove the Skip
+		/// when the layout fix lands - that is the point of the test.
+		///
+		/// Two things were ruled out while writing it, both worth not repeating:
+		///  - The simple shape does NOT reproduce. A plain ContentPage holding an AbsoluteLayout of
+		///    BoxViews passes with or without a fix. It needs the gallery's actual nesting
+		///    (FlyoutPage -> NavigationPage -> ContentPage) and children whose natural size arrives
+		///    late, i.e. ListViews filled by the idle row loader.
+		///  - A second deferred geometry pass does not fix it. Re-running the geometry push on a
+		///    following GLib.Idle - so that WidgetExtensions.SetSize's "allocated smaller than
+		///    requested" recovery branch is reached - leaves the allocation at 194. Yet a bare
+		///    QueueResize() on the child moves it straight to 724 (scratchpad/overlap.log,
+		///    "QueueResize walk"), so the resize is being lost somewhere between the two.
+		/// </summary>
+		[Fact(Skip = "Reproduces the open M3 residual: AbsoluteLayout children are allocated at their " +
+		             "natural size (194px) despite a correct 724px request. See the remarks above.")]
+		public void AbsoluteLayoutProportionalChildrenAreAllocatedWhereFormsPutThem()
+		{
+			// Mirrors CoreRootPage as closely as a unit test can: two ListViews whose rows are
+			// appended by an idle loader (so their natural size is small and arrives late) with a
+			// button stack between them, and the whole thing inside NavigationPage -> FlyoutPage,
+			// which is the nesting the gallery actually runs.
+			ListView MakeList() => new ListView
+			{
+				ItemsSource = Enumerable.Range(1, 12).Select(i => $"row {i}").ToList(),
+				ItemTemplate = new DataTemplate(() =>
+				{
+					var cell = new TextCell();
+					cell.SetBinding(TextCell.TextProperty, ".");
+					return cell;
+				})
+			};
+
+			var top = MakeList();
+			var middle = new StackLayout
+			{
+				Children = { new Button { Text = "Go to Test Cases" }, new SearchBar(), new Button { Text = "Click to Force GC" } }
+			};
+			var bottom = MakeList();
+
+			var abs = new AbsoluteLayout();
+			abs.Children.Add(top, new Rectangle(0, 0.0, 1, 0.35), AbsoluteLayoutFlags.All);
+			abs.Children.Add(middle, new Rectangle(0, 0.5, 1, 0.30), AbsoluteLayoutFlags.All);
+			abs.Children.Add(bottom, new Rectangle(0, 1.0, 1, 0.35), AbsoluteLayoutFlags.All);
+
+			var detail = new NavigationPage(new ContentPage { Title = "Gallery", Content = abs });
+			var flyout = new FlyoutPage
+			{
+				Flyout = new ContentPage { Title = "Flyout", Content = new Label { Text = "flyout" } },
+				Detail = detail
+			};
+
+			using (var host = GtkTestHost.HostPage(flyout, 1024, 768))
+			{
+				host.Pump(20);
+
+				var children = new View[] { top, middle, bottom };
+
+				foreach (var child in children)
+				{
+					var widget = (Gtk.Widget)Platform.GetRenderer(child);
+
+					Assert.True(Math.Abs(widget.Allocation.Width - (int)child.Width) <= 2,
+						$"{child.GetType().Name}: Forms width {child.Width:0}, " +
+						$"request {widget.WidthRequest}, allocation {widget.Allocation.Width}");
+
+					Assert.True(Math.Abs(widget.Allocation.Height - (int)child.Height) <= 2,
+						$"{child.GetType().Name}: Forms height {child.Height:0}, " +
+						$"request {widget.HeightRequest}, allocation {widget.Allocation.Height}");
+				}
+
+				// And the symptom itself: the three must not paint over one another.
+				var rects = children
+					.Select(c => ((Gtk.Widget)Platform.GetRenderer(c)).Allocation)
+					.OrderBy(r => r.Y)
+					.ToList();
+
+				for (int i = 0; i + 1 < rects.Count; i++)
+				{
+					Assert.True(rects[i].Y + rects[i].Height <= rects[i + 1].Y + 2,
+						$"child {i} [{rects[i].Y}..{rects[i].Y + rects[i].Height}] overlaps " +
+						$"child {i + 1} [{rects[i + 1].Y}..]");
+				}
+			}
+		}
+
 		[Fact]
 		public void ResizingTheWindowRelaysTheContent()
 		{

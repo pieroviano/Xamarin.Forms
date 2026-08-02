@@ -18,6 +18,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" Condition="'$(OS)' == 'Windows_NT'" />
+        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(VersionBuildSuffix)" />
     </ItemGroup>
     <!--
     Nothing is quarantined any more (plan M6 is complete for the renderer surface):
@@ -31,17 +32,6 @@
                   switch off. A machine with no usable GL driver gets GTK's own GL error
                   placeholder, not a crash.
   -->
-    <ItemGroup>
-        <!--
-          Pinned explicitly. The Net4x.NuGetUtility tooling rewrote this into
-          Version="$(InputBoxLibraryVersion).$(VersionBuildSuffix)" - an unrelated, undefined
-          property - which evaluates to the bare string "." and fails restore with
-          NuGet.targets(198,5): error : '.' is not a valid version string.
-          Do not let it be property-ised again: GtkSharp is the one dependency this backend
-          cannot build without.
-        -->
-        <PackageReference Include="GtkSharp" Version="3.24.24.95" />
-    </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
     </ItemGroup>

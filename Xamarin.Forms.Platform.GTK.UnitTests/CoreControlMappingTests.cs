@@ -254,7 +254,9 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			Assert.True(condition(), because);
 		}
 
-		static Gdk.Color PixelAt(Gtk.Window window, int x, int y)
+		// Deliberately not Gdk.Color: its channels are 16-bit, so the 0-255 thresholds the callers
+		// assert on would silently be wrong. These are the pixbuf's own bytes, unscaled.
+		static (byte R, byte G, byte B) PixelAt(Gtk.Window window, int x, int y)
 		{
 			var shot = new Gdk.Pixbuf(window.Window, 0, 0, window.AllocatedWidth, window.AllocatedHeight);
 
@@ -266,7 +268,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			var offset = (y * shot.Rowstride) + (x * shot.NChannels);
 
-			return new Gdk.Color(bytes[offset], bytes[offset + 1], bytes[offset + 2]);
+			return (bytes[offset], bytes[offset + 1], bytes[offset + 2]);
 		}
 
 		static string WriteTempPng(int width, int height, uint rgba)
