@@ -72,6 +72,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			public int GroupIndex = -1;
 			public int IndexInGroup = -1;
 			public int Index = -1;
+
+			/// <summary>Ordinal among item slots, or -1 for a group header/footer. See RebuildLines.</summary>
+			public int ItemIndex = -1;
+
 			public HostKind Kind;
 
 			/// <summary>Resolved up front for group headers/footers only: a null template means the
@@ -245,6 +249,31 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		int _windowFirst;
 		int _windowLast = -1;
 
+		/// <summary>Item slots in the source, grouped or not; the count RemainingItemsThreshold counts down from.</summary>
+		int _itemCount;
+
+		// ---- incremental loading -------------------------------------------------------------
+		double _lastHorizontalOffset;
+		double _lastVerticalOffset;
+
+		/// <summary>
+		/// True while the tail is already known to be within <c>RemainingItemsThreshold</c>. Without
+		/// it every pixel of scrolling at the bottom of the list re-raises
+		/// <c>RemainingItemsThresholdReached</c>, and an app that loads a page per event would load
+		/// one per scroll step instead of one per arrival at the tail.
+		/// </summary>
+		bool _thresholdLatched;
+
+		/// <summary>The item count the latch was set against; a change in it means new items arrived.</summary>
+		int _thresholdItemCount = -1;
+
+		/// <summary>Pending <see cref="ItemsUpdatingScrollMode"/> work, set when the source changes.</summary>
+		bool _scrollModePending;
+
+		/// <summary>The item that was at the top of the viewport when the source changed, and how far past it we were.</summary>
+		object _anchorItem;
+		double _anchorDelta;
+
 		/// <summary>Frozen after the first item line is measured; see the class remarks.</summary>
 		double _estimate;
 
@@ -331,6 +360,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				UnsubscribeItemsLayout();
 				SubscribeItemsLayout();
 				ApplyItemsLayout();
+				QueueItemsLayout();
+			}
+			else if (e.PropertyName == ItemsView.RemainingItemsThresholdProperty.PropertyName)
+			{
+				// Turning the threshold on while the list is already sitting at its tail has to be
+				// able to fire it; the check runs at the end of the layout pass.
 				QueueItemsLayout();
 			}
 			else if (e.PropertyName == ItemsView.EmptyViewProperty.PropertyName ||
@@ -600,6 +635,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_disposed || _itemsBox == null)
 				return;
 
+			CaptureScrollAnchor();
+
 			// A change inside a group shifts every following header/footer/item in the flat slot
 			// list, so the incremental path does not apply. Correctness over cleverness here - and
 			// with virtualization a "full reload" now throws away only the materialized window
@@ -611,6 +648,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			if (_disposed || _itemsBox == null)
 				return;
+
+			// Before the slots move: which item is at the top, and by how much. ItemsUpdatingScrollMode
+			// is applied once the change has been laid out (LayoutItems).
+			CaptureScrollAnchor();
 
 			if (Element?.IsGrouped == true)
 			{
@@ -1151,11 +1192,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			var span = _isGrid ? Math.Max(1, _span) : 1;
 			Line current = null;
+			var itemIndex = 0;
 
 			for (var i = 0; i < _slots.Count; i++)
 			{
 				var slot = _slots[i];
 				slot.Index = i;
+
+				// The ordinal among *items*, which is what ItemsViewScrolledEventArgs reports and
+				// what RemainingItemsThreshold counts down from. It differs from Index the moment
+				// the source is grouped, because headers and footers occupy slots and are not items.
+				slot.ItemIndex = slot.Kind == HostKind.Item ? itemIndex++ : -1;
 
 				if (!_isGrid || slot.Kind != HostKind.Item)
 				{
@@ -1173,6 +1220,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				current.Count++;
 			}
+
+			_itemCount = itemIndex;
 		}
 
 		/// <summary>
@@ -1209,10 +1258,21 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		/// The range of lines to materialize: everything the viewport can show, plus
 		/// <see cref="BufferLines"/> lines of margin at each end.
 		/// </summary>
-		void ComputeWindow(out int first, out int last)
+		void ComputeWindow(out int first, out int last) => ComputeWindow(out first, out last, out _, out _);
+
+		/// <summary>
+		/// As above, additionally reporting the range of lines that are genuinely <b>on screen</b> -
+		/// the window without its buffer. That is the range the <c>Scrolled</c> event and
+		/// <c>RemainingItemsThreshold</c> have to be computed from: reporting the materialized window
+		/// instead would claim 8 lines of items are visible at each end that are not, and would fire
+		/// the threshold that many lines early.
+		/// </summary>
+		void ComputeWindow(out int first, out int last, out int onScreenFirst, out int onScreenLast)
 		{
 			first = 0;
 			last = -1;
+			onScreenFirst = 0;
+			onScreenLast = -1;
 
 			if (_lines.Count == 0 || Control == null)
 				return;
@@ -1270,6 +1330,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			// window to its real size.
 			if (_estimate <= 0)
 				visibleLast = visibleFirst;
+
+			onScreenFirst = visibleFirst;
+			onScreenLast = visibleLast;
 
 			first = Math.Max(0, visibleFirst - BufferLines);
 			last = Math.Min(_lines.Count - 1, visibleLast + BufferLines);
@@ -1544,13 +1607,224 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_disposed || _itemsBox == null)
 				return;
 
-			ComputeWindow(out var first, out var last);
+			ComputeWindow(out var first, out var last, out var onScreenFirst, out var onScreenLast);
 
 			// Only a *change of window* is worth a layout pass. Without this guard every pixel of
 			// scrolling would re-measure the visible rows, and setting the spacers would feed
 			// straight back in through the adjustment's own clamping.
 			if (first != _windowFirst || last != _windowLast)
 				QueueItemsLayout();
+
+			// The Scrolled event, on the other hand, is raised for every value change: that is what
+			// "scrolled" means, and an app tracking the offset would otherwise see it jump a whole
+			// window at a time.
+			NotifyScrolled(onScreenFirst, onScreenLast);
+		}
+
+		// ---- incremental loading ---------------------------------------------------------------
+
+		void NotifyScrolled(int onScreenFirstLine, int onScreenLastLine)
+		{
+			if (Element == null || Control == null)
+				return;
+
+			var horizontalOffset = Control.Hadjustment?.Value ?? 0;
+			var verticalOffset = Control.Vadjustment?.Value ?? 0;
+
+			VisibleItems(onScreenFirstLine, onScreenLastLine, out var firstItem, out var lastItem);
+
+			Element.SendScrolled(new ItemsViewScrolledEventArgs
+			{
+				HorizontalOffset = horizontalOffset,
+				VerticalOffset = verticalOffset,
+				HorizontalDelta = horizontalOffset - _lastHorizontalOffset,
+				VerticalDelta = verticalOffset - _lastVerticalOffset,
+				FirstVisibleItemIndex = firstItem,
+				CenterItemIndex = firstItem < 0 ? -1 : firstItem + (lastItem - firstItem) / 2,
+				LastVisibleItemIndex = lastItem
+			});
+
+			_lastHorizontalOffset = horizontalOffset;
+			_lastVerticalOffset = verticalOffset;
+
+			CheckRemainingItemsThreshold(lastItem);
+		}
+
+		/// <summary>
+		/// The first and last <b>item</b> indices inside a range of lines, or -1/-1 when the range
+		/// holds no items at all (a grouped list scrolled to a lone group header does exactly that).
+		/// </summary>
+		void VisibleItems(int firstLine, int lastLine, out int firstItem, out int lastItem)
+		{
+			firstItem = -1;
+			lastItem = -1;
+
+			if (firstLine < 0 || lastLine < firstLine || lastLine >= _lines.Count)
+				return;
+
+			var slotFirst = _lines[firstLine].Start;
+			var slotLast = _lines[lastLine].Start + _lines[lastLine].Count - 1;
+
+			for (var i = slotFirst; i <= slotLast && i < _slots.Count; i++)
+			{
+				// Group headers and footers occupy slots and are not items.
+				if (_slots[i].ItemIndex < 0)
+					continue;
+
+				if (firstItem < 0)
+					firstItem = _slots[i].ItemIndex;
+
+				lastItem = _slots[i].ItemIndex;
+			}
+		}
+
+		/// <summary>
+		/// Raises <c>RemainingItemsThresholdReached</c> when the tail comes within
+		/// <c>RemainingItemsThreshold</c> items of the last visible one - once per arrival, not once
+		/// per scroll step, and again as soon as the source has grown.
+		/// </summary>
+		/// <remarks>
+		/// The latch is the whole design here. An app's handler for this event loads the next page,
+		/// which takes a round trip; without the latch every subsequent pixel of scrolling raises it
+		/// again and the app issues a request per scroll step. Un-latching on a change of item count
+		/// rather than on a timer is what makes the next page load when the user reaches the *new*
+		/// tail: it is the same condition the app itself just satisfied.
+		/// </remarks>
+		void CheckRemainingItemsThreshold(int lastVisibleItemIndex)
+		{
+			if (Element == null)
+				return;
+
+			if (_thresholdItemCount != _itemCount)
+			{
+				_thresholdItemCount = _itemCount;
+				_thresholdLatched = false;
+			}
+
+			// -1 is the documented "never" - not "a threshold of nothing left".
+			if (Element.RemainingItemsThreshold < 0 || lastVisibleItemIndex < 0 || _itemCount == 0)
+				return;
+
+			var remaining = _itemCount - 1 - lastVisibleItemIndex;
+
+			if (remaining > Element.RemainingItemsThreshold)
+			{
+				_thresholdLatched = false;
+				return;
+			}
+
+			if (_thresholdLatched)
+				return;
+
+			_thresholdLatched = true;
+			Element.SendRemainingItemsThresholdReached();
+		}
+
+		/// <summary>
+		/// Remembers which item is at the top of the viewport, and by how much it is scrolled past,
+		/// so that <see cref="ItemsUpdatingScrollMode.KeepItemsInView"/> can put it back there after
+		/// the source has changed underneath it.
+		/// </summary>
+		/// <remarks>
+		/// Anchored on the item <b>object</b>, not on its index: inserting above the viewport is the
+		/// case this exists for, and it is precisely the case where every index below the insertion
+		/// has moved.
+		/// </remarks>
+		void CaptureScrollAnchor()
+		{
+			_scrollModePending = true;
+			_anchorItem = null;
+			_anchorDelta = 0;
+
+			if (Element == null || Control == null || _lines.Count == 0)
+				return;
+
+			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
+			var adjustment = horizontal ? Control.Hadjustment : Control.Vadjustment;
+
+			if (adjustment == null)
+				return;
+
+			ComputeWindow(out _, out _, out var onScreenFirst, out var onScreenLast);
+			VisibleItems(onScreenFirst, onScreenLast, out var firstItem, out _);
+
+			if (firstItem < 0)
+				return;
+
+			var slot = _slots.FindIndex(s => s.ItemIndex == firstItem);
+
+			if (slot < 0 || !TryMeasureSlot(slot, horizontal, out var offset, out _, out _))
+				return;
+
+			_anchorItem = _slots[slot].Item;
+			_anchorDelta = adjustment.Value - offset;
+		}
+
+		/// <summary>
+		/// Applies <c>ItemsUpdatingScrollMode</c> after a source change has been laid out.
+		/// </summary>
+		void ApplyItemsUpdatingScrollMode()
+		{
+			if (!_scrollModePending)
+				return;
+
+			_scrollModePending = false;
+
+			var anchor = _anchorItem;
+			_anchorItem = null;
+
+			if (Element == null || Control == null || _lines.Count == 0)
+				return;
+
+			switch (Element.ItemsUpdatingScrollMode)
+			{
+				case ItemsUpdatingScrollMode.KeepScrollOffset:
+					// The offset stays where it is, which is what GTK does on its own; the items
+					// under it are allowed to move. Nothing to do, and doing nothing is the point.
+					break;
+
+				case ItemsUpdatingScrollMode.KeepLastItemInView:
+					var last = _slots.FindLastIndex(s => s.Kind == HostKind.Item);
+
+					if (last >= 0)
+						ScrollToIndex(last, ScrollToPosition.End);
+					break;
+
+				default: // KeepItemsInView
+					RestoreScrollAnchor(anchor);
+					break;
+			}
+		}
+
+		void RestoreScrollAnchor(object anchor)
+		{
+			if (anchor == null)
+				return;
+
+			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
+			var adjustment = horizontal ? Control.Hadjustment : Control.Vadjustment;
+
+			if (adjustment == null)
+				return;
+
+			var slot = _slots.FindIndex(s => s.Kind == HostKind.Item && Equals(s.Item, anchor));
+
+			if (slot < 0 || !TryMeasureSlot(slot, horizontal, out var offset, out _, out var content))
+				return;
+
+			var viewportExtent = ViewportExtent(horizontal, adjustment);
+			var max = Math.Max(0, content - viewportExtent);
+			var target = Math.Max(adjustment.Lower, Math.Min(offset + _anchorDelta, adjustment.Lower + max));
+
+			// Widened for the same reason ScrollToIndex widens it: the spacers that will carry the
+			// off-screen extent have not been allocated yet, so Upper is routinely far too small and
+			// Gtk.Adjustment's own setter would clamp the value into a stale range.
+			if (adjustment.Upper < adjustment.Lower + content)
+				adjustment.Upper = adjustment.Lower + content;
+
+			adjustment.Value = target;
+
+			QueueItemsLayout();
 		}
 
 		void LayoutItems()
@@ -1584,7 +1858,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				_measuredCross = cross;
 			}
 
-			ComputeWindow(out var first, out var last);
+			ComputeWindow(out var first, out var last, out var onScreenFirst, out var onScreenLast);
 
 			if (first != _windowFirst || last != _windowLast)
 			{
@@ -1632,6 +1906,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				_empty.View.Layout(new Rectangle(0, 0, width, height));
 				_empty.Host.SetSizeRequest(width, height);
 			}
+
+			// Now that the new content has real extents, put the viewport back where
+			// ItemsUpdatingScrollMode says it belongs.
+			ApplyItemsUpdatingScrollMode();
+
+			// A list short enough to be visible in full reaches RemainingItemsThreshold without
+			// anyone ever scrolling, so the check cannot live on the adjustment alone - and neither
+			// can the first page of an incrementally-loaded list, which is exactly that case.
+			VisibleItems(onScreenFirst, onScreenLast, out _, out var lastVisibleItem);
+			CheckRemainingItemsThreshold(lastVisibleItem);
 		}
 
 		/// <summary>
@@ -1912,16 +2196,22 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			return _slots.FindIndex(s => s.Kind == HostKind.Item && Equals(s.Item, e.Item));
 		}
 
-		void ScrollToIndex(int slotIndex, ScrollToPosition position)
+		/// <summary>
+		/// Where the line holding <paramref name="slotIndex"/> starts along the scrolling axis, how
+		/// long that line is, and the total content extent - all summed from the same per-line
+		/// extents, which is what makes the three mutually consistent.
+		/// </summary>
+		/// <remarks>
+		/// Shared by <see cref="ScrollToIndex"/> and the <c>ItemsUpdatingScrollMode</c> anchor, and
+		/// deliberately one implementation rather than two: the arithmetic here - the header lead,
+		/// the <c>(n - 1) x LineGap</c> term and the footer trail - is what §8.2.3 verified against a
+		/// 10,000-item source landing at the exact unvirtualized pixel. A second copy of it would be
+		/// a second chance to get that wrong.
+		/// </remarks>
+		bool TryMeasureSlot(int slotIndex, bool horizontal, out double offset, out double itemExtent, out double content)
 		{
-			if (Control == null || slotIndex < 0 || slotIndex >= _slots.Count || _lines.Count == 0)
-				return;
-
-			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
-			var adjustment = horizontal ? Control.Hadjustment : Control.Vadjustment;
-
-			if (adjustment == null)
-				return;
+			offset = 0;
+			itemExtent = 0;
 
 			// The header is packed before the first line, so every item sits that much further
 			// down the scrolling axis. Summing lines from zero would scroll the header's height
@@ -1931,9 +2221,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (lead > 0)
 				lead += LineGap;
 
-			double offset = 0;
-			double content = lead;
-			double itemExtent = 0;
+			content = lead;
+
 			var found = false;
 
 			for (var i = 0; i < _lines.Count; i++)
@@ -1955,7 +2244,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			}
 
 			if (!found)
-				return;
+				return false;
 
 			// The footer adds to the scrollable extent even though nothing scrolls *to* it; leaving
 			// it out would make the clamp below cut a ScrollTo(last, End) short by its height.
@@ -1963,6 +2252,23 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			if (trail > 0)
 				content += LineGap + trail;
+
+			return true;
+		}
+
+		void ScrollToIndex(int slotIndex, ScrollToPosition position)
+		{
+			if (Control == null || slotIndex < 0 || slotIndex >= _slots.Count || _lines.Count == 0)
+				return;
+
+			var horizontal = _orientation == ItemsLayoutOrientation.Horizontal;
+			var adjustment = horizontal ? Control.Hadjustment : Control.Vadjustment;
+
+			if (adjustment == null)
+				return;
+
+			if (!TryMeasureSlot(slotIndex, horizontal, out var offset, out var itemExtent, out var content))
+				return;
 
 			var viewportExtent = ViewportExtent(horizontal, adjustment);
 
