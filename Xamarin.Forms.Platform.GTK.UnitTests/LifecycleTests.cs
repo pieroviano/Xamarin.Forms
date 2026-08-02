@@ -64,6 +64,16 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			using (var host = GtkTestHost.HostPage(page))
 			{
 				Assert.True(Platform.GetRenderer(label) != null, "precondition");
+
+				// Actually run the teardown this test is named for. It previously asserted the
+				// precondition and stopped, so the behaviour described above - that disposing a
+				// page clears its children's renderers - was never checked and the test could not
+				// fail.
+				Platform.DisposeModelAndChildrenRenderers(page);
+				GtkTestHost.Pump(null, 3);
+
+				Assert.Null(Platform.GetRenderer(label));
+				Assert.Null(Platform.GetRenderer(page));
 			}
 
 			GtkTestHost.Pump(null, 3);

@@ -309,5 +309,44 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				Assert.Equal(0, native.Active);
 			}
 		}
+		[Fact]
+		public void EditorEnforcesMaxLength()
+		{
+			// MaxLength was wired up but enforced nothing: the insert-text handler assigned
+			// args.RetVal, which GtkTextBuffer ignores because that signal returns void, and
+			// compared the length of the INSERTED text rather than of the resulting buffer.
+			var editor = new Editor { MaxLength = 5 };
+
+			using (var host = GtkTestHost.HostView(editor))
+			{
+				var native = host.Control<ScrolledTextView>();
+
+				native.TextView.Buffer.Text = "0123456789";
+				host.Pump();
+
+				Assert.Equal(5, native.TextView.Buffer.CharCount);
+				Assert.Equal("01234", native.TextView.Buffer.Text);
+			}
+		}
+
+		[Fact]
+		public void EditorWithoutMaxLengthKeepsItsText()
+		{
+			// Guards the other half: the backing field defaults to 0, so a truncating
+			// implementation that ran before the renderer pushed MaxLength down would empty
+			// every Editor.
+			var editor = new Editor();
+
+			using (var host = GtkTestHost.HostView(editor))
+			{
+				var native = host.Control<ScrolledTextView>();
+
+				native.TextView.Buffer.Text = "the quick brown fox";
+				host.Pump();
+
+				Assert.Equal("the quick brown fox", native.TextView.Buffer.Text);
+			}
+		}
+
 	}
 }

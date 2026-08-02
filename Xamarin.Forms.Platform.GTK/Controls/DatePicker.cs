@@ -158,7 +158,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		}
 
 		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
-		new void Close()
+		// internal so DatePicker.ClosePicker can dismiss it - see the comment there.
+		internal new void Close()
 		{
 			Helpers.GrabHelper.RemoveGrab(this);
 			Destroy();
@@ -352,11 +353,17 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public void ClosePicker()
 		{
 			var windows = Gtk.Window.ListToplevels();
-			var window = windows.FirstOrDefault(w => w.GetType() == typeof(DatePickerWindow));
+			var window = windows.FirstOrDefault(w => w.GetType() == typeof(DatePickerWindow))
+				as DatePickerWindow;
 
+			// Close(), not Remove(). DatePicker is a Gtk.EventBox, so Remove(window) was
+			// gtk_container_remove against a TOPLEVEL that was never its child: GTK logged a
+			// critical and did nothing, so the popup stayed on screen and kept its grab while
+			// ClosePicker still reported success to Forms' Unfocus(). Close() drops the grab and
+			// destroys the window.
 			if (window != null)
 			{
-				Remove(window);
+				window.Close();
 			}
 		}
 

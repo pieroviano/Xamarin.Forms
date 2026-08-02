@@ -3,6 +3,13 @@ using Xamarin.Forms.Platform.GTK;
 using Xamarin.Forms.Platform.GTK.Cells;
 using Xamarin.Forms.Platform.GTK.Renderers;
 
+// So the renderer test suite can exercise Platform.DisposeModelAndChildrenRenderers - the
+// path navigation runs when a page leaves the stack, and the one plan risk R8 is about.
+// Without this the lifecycle tests could only assert preconditions.
+// Fully qualified: a `using System.Runtime.CompilerServices;` here makes the
+// [Dependency] attributes below ambiguous with that namespace's DependencyAttribute.
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Xamarin.Forms.Platform.GTK.UnitTests")]
+
 [assembly: ExportImageSourceHandler(typeof(FileImageSource), typeof(FileImageSourceHandler))]
 [assembly: ExportImageSourceHandler(typeof(StreamImageSource), typeof(StreamImagesourceHandler))]
 [assembly: ExportImageSourceHandler(typeof(UriImageSource), typeof(UriImageSourceHandler))]

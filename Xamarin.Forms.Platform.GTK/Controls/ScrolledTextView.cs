@@ -9,7 +9,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		private ScrolledWindow _scrolledWindow;
 		private Gtk.Label _placeholder;
 		private EventBox _placeholderContainer;
-		private int _maxLength;
+		// int.MaxValue, not 0. Forms' Editor.MaxLength defaults to int.MaxValue and the renderer
+		// only pushes it down when it maps the property; a 0 default would make the enforcement below
+		// truncate every Editor to empty before that happened.
+		private int _maxLength = int.MaxValue;
 
 		public ScrolledTextView()
 		{
@@ -21,7 +24,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				WrapMode = WrapMode.WordChar
 			};
 
-			TextView.Buffer.InsertText += InsertText;
+			// Connected here, in the constructor, so this handler runs BEFORE the one EditorRenderer
+			// attaches - GTK invokes handlers in connection order, and the renderer must not observe
+			// the over-long intermediate text and push it back into the Forms element.
+			TextView.Buffer.Changed += EnforceMaxLength;
 			TextView.FocusOutEvent += FocusedOut;
 
 			_scrolledWindow = new ScrolledWindow
@@ -102,9 +108,33 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			ShowPlaceholderIfNeeded();
 		}
 
-		private void InsertText(object o, InsertTextArgs args)
+		/// <summary>
+		/// Enforces MaxLength by trimming the buffer back after a change.
+		/// </summary>
+		/// <remarks>
+		/// This replaces an insert-text handler that did nothing:
+		/// <c>args.RetVal = args.NewTextLength &lt;= _maxLength</c>. Two independent reasons it
+		/// could not work - GtkTextBuffer::insert-text returns void, so a handler's RetVal is
+		/// ignored, and NewTextLength is the length of the text BEING INSERTED rather than of the
+		/// resulting buffer. An Editor with MaxLength set accepted unlimited input.
+		///
+		/// Cancelling the insertion would be the tidier fix, but that needs
+		/// g_signal_stop_emission_by_name and GtkSharp's GLib.Signal binds only Emit/AddDelegate/
+		/// RemoveDelegate/AddEmissionHook - there is no managed way to stop an emission. Trimming
+		/// afterwards reaches the same end state.
+		/// </remarks>
+		private void EnforceMaxLength(object sender, System.EventArgs args)
 		{
-			args.RetVal = args.NewTextLength <= _maxLength;
+			var buffer = TextView.Buffer;
+
+			if (_maxLength < 0 || buffer.CharCount <= _maxLength)
+				return;
+
+			// Delete re-enters this handler; the guard above then returns immediately.
+			var start = buffer.GetIterAtOffset(_maxLength);
+			var end = buffer.EndIter;
+
+			buffer.Delete(ref start, ref end);
 		}
 
 		private void FocusedOut(object o, FocusOutEventArgs args)

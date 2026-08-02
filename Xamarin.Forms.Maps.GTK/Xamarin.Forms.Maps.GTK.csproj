@@ -12,7 +12,15 @@
         <AssemblyName>Xamarin.Forms.Maps.GTK</AssemblyName>
         <RootNamespace>Xamarin.Forms.Maps.GTK</RootNamespace>
         <LangVersion>latest</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <!--
+          TRUE, so the SDK emits AssemblyVersion/FileVersion/InformationalVersion from the
+          values Version.targets computes. With it off, and a hand-written AssemblyInfo.cs
+          that carries only ExportRenderer/Dependency attributes, these two shipping
+          assemblies compiled with AssemblyVersion 0.0.0.0 while Core and Xaml carried the
+          intended 2.0.0.0 - so binding redirects and any strong-name identity check saw a
+          version the rest of the framework never uses.
+        -->
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
     <ItemGroup>

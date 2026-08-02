@@ -181,7 +181,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		}
 
 		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
-		private new void Close()
+		// internal so TimePicker.ClosePicker can dismiss it - see the comment there.
+		internal new void Close()
 		{
 			Helpers.GrabHelper.RemoveGrab(this);
 			Destroy();
@@ -309,11 +310,13 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public void ClosePicker()
 		{
 			var windows = Gtk.Window.ListToplevels();
-			var window = windows.FirstOrDefault(w => w.GetType() == typeof(TimePickerWindow));
+			var window = windows.FirstOrDefault(w => w.GetType() == typeof(TimePickerWindow))
+				as TimePickerWindow;
 
+			// Close(), not Remove() - see the identical note in DatePicker.ClosePicker.
 			if (window != null)
 			{
-				Remove(window);
+				window.Close();
 			}
 		}
 
