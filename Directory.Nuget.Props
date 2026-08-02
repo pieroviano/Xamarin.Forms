@@ -17,6 +17,7 @@
         <VersionBuildSuffix>*</VersionBuildSuffix>
         <GtkSharpVersion>3.24.24</GtkSharpVersion>
         <InputBoxLibraryVersion>2.0.0</InputBoxLibraryVersion>
+        <Net4xXUnit2Version>1.0.0</Net4xXUnit2Version>
         <NuGetUtilityVersion>1.0.9</NuGetUtilityVersion>
         <ObfuscarVersion>2.2.37</ObfuscarVersion>
         <XamarinFormsGtkVersion>5.0.0</XamarinFormsGtkVersion>

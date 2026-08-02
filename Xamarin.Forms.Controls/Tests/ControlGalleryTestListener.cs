@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.Tests
@@ -8,6 +7,10 @@ namespace Xamarin.Forms.Controls.Tests
 	// The xUnit counterpart of NUnit's ITestListener. Everything the engine reports arrives
 	// here as an IMessageSinkMessage; the interesting ones are relayed over MessagingCenter
 	// so PlatformTestsConsole can render them.
+	//
+	// ITestStarting and ITestClassStarting are relayed for their names as much as for the
+	// event: in v3 the result messages carry only unique IDs, so the console has to
+	// remember the name that arrived with the corresponding *Starting message.
 	public class ControlGalleryTestListener : IMessageSink
 	{
 		public bool OnMessage(IMessageSinkMessage message)
@@ -22,6 +25,9 @@ namespace Xamarin.Forms.Controls.Tests
 					break;
 				case ITestClassFinished classFinished:
 					MessagingCenter.Send(classFinished, "TestClassFinished");
+					break;
+				case ITestStarting testStarting:
+					MessagingCenter.Send(testStarting, "TestStarted");
 					break;
 				case ITestResultMessage result:
 					MessagingCenter.Send(result, "TestFinished");

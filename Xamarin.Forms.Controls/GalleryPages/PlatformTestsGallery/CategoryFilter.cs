@@ -1,6 +1,7 @@
+using System.Linq;
 using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
-using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 {
@@ -17,6 +18,8 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		public bool Match(ITestCase testCase)
 		{
+			// v3 exposes Traits as IReadOnlyDictionary<string, IReadOnlyCollection<string>>,
+			// so the lookup is Linq's Contains rather than List<string>.Contains.
 			return testCase.Traits.TryGetValue(CategoryTrait, out var categories)
 				&& categories.Contains(_category);
 		}

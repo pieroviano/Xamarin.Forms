@@ -3,8 +3,11 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using NUnit.Framework;
 using Xamarin.Forms.CustomAttributes;
+
+#if UITEST
+using NUnit.Framework;
+#endif
 
 namespace Xamarin.Forms.Controls.Issues
 {

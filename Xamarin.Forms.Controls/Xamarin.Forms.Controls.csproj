@@ -51,25 +51,32 @@
     <ItemGroup>
         <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
         <!--
-        xUnit v2, not v3: this project is netstandard2.0 and is consumed by the
-        MonoAndroid / Xamarin.iOS / uap10.0 gallery apps, and only v2 still ships a
-        netstandard1.1 leg. It is also the only version whose execution engine
-        (Xunit.Sdk.XunitTestFrameworkDiscoverer / XunitTestFrameworkExecutor) can be
-        driven in-process against an already-loaded Assembly, which is what
-        Tests/PlatformTestRunner.cs needs on device - there is no file path to hand
-        to a console runner inside an APK or an .app bundle.
+        NOT the "xunit.v3" metapackage: it ships only net472 and net8.0 assets, so it does
+        not restore against this project's netstandard2.0 target (NU1202). These three are
+        the v3 packages that do carry a netstandard2.0 leg, which is what lets the engine
+        load inside the MonoAndroid / Xamarin.iOS / uap10.0 gallery apps:
 
-        xunit.core + xunit.assert rather than the "xunit" metapackage: the metapackage
-        additionally drags in xunit.analyzers, whose warnings become errors here
-        (TreatWarningsAsErrors is on for every project) and which has nothing to
-        analyse in a gallery app that merely hosts the engine.
+          xunit.v3.extensibility.core   [Fact]/[Theory] plus XunitTestFramework, the
+                                        discoverer and the executor. v3 drops v2's
+                                        IAssemblyInfo reflection abstraction and takes a
+                                        loaded Assembly directly - exactly what an
+                                        on-device run needs, since there is no file path
+                                        to hand a console runner inside an APK or .app.
+          xunit.v3.assert               Assert.
+          xunit.v3.runner.common        Xunit.Runner.Common.TestFrameworkOptions, the only
+                                        public ITestFrameworkDiscoveryOptions/
+                                        ExecutionOptions implementation. v3 added ToJson()
+                                        to ITestFrameworkOptions, so hand-rolling one is no
+                                        longer just a typed dictionary.
 
-        Do NOT turn this version into a $(...) property. It is a third-party package
-        version, not one of this repo's, and the floating property form silently
-        resolved to "." and broke restore.
+        xunit.runner.visualstudio is deliberately absent: it is a VSTest adapter, and
+        nothing discovers tests in a gallery app through VSTest. Its version was also
+        $(Net4xXUnit2Version).$(VersionBuildSuffix), which resolves to a non-existent
+        "1.0.0.*" - do not reintroduce a property-ised version for a third-party package.
       -->
-        <PackageReference Include="xunit.core" Version="2.4.2" />
-        <PackageReference Include="xunit.assert" Version="2.4.2" />
+        <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />
+        <PackageReference Include="xunit.v3.assert" Version="3.2.2" />
+        <PackageReference Include="xunit.v3.runner.common" Version="3.2.2" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="Xam.Plugin.DeviceInfo" Version="3.0.2" />
     </ItemGroup>

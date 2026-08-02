@@ -1,6 +1,6 @@
 using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
-using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 {
@@ -13,7 +13,7 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		public bool Match(ITestCase testCase)
 		{
-			return testCase.DisplayName.Contains(_substring);
+			return testCase.TestCaseDisplayName.Contains(_substring);
 		}
 	}
 }

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Xaml;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
@@ -26,8 +25,13 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 		readonly Color _failColor = Color.Red;
 		readonly Color _skippedColor = Color.Goldenrod;
 
-		int _finishedAssemblyCount = 0;
 		int _testsRunCount = 0;
+		string _runnerError;
+
+		// v3 result messages identify themselves by unique ID only - the display name arrives
+		// once, on the corresponding *Starting message - so the names are remembered here.
+		readonly Dictionary<string, string> _testDisplayNames = new Dictionary<string, string>();
+		readonly Dictionary<string, string> _testClassNames = new Dictionary<string, string>();
 
 		readonly PlatformTestRunner _runner = new PlatformTestRunner();
 		DisplaySettings _displaySettings;
@@ -39,6 +43,7 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 			MessagingCenter.Subscribe<ITestClassStarting>(this, "TestClassStarted", TestClassStarted);
 			MessagingCenter.Subscribe<ITestClassFinished>(this, "TestClassFinished", TestClassFinished);
+			MessagingCenter.Subscribe<ITestStarting>(this, "TestStarted", TestStarted);
 			MessagingCenter.Subscribe<ITestResultMessage>(this, "TestFinished", TestFinished);
 
 			MessagingCenter.Subscribe<Exception>(this, "TestRunnerError", OutputTestRunnerError);
@@ -83,8 +88,12 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		async Task Run()
 		{
-			_finishedAssemblyCount = 0;
 			_testsRunCount = 0;
+			_runFailed = false;
+			_runSkipped = false;
+			_runnerError = null;
+			_testDisplayNames.Clear();
+			_testClassNames.Clear();
 
 			// Only want to run a subset of tests? Create a filter and pass it into _runner.Run()
 			// e.g. var filter = new TestNameContainsFilter("Bugzilla");
@@ -94,7 +103,12 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			// that ObjectDisposedExceptionTests used to categorise by is now a theory argument,
 			// so it is part of the display name and TestNameContainsFilter reaches it.
 
+			// v3's discovery and execution are both awaitable, so the run is over when this
+			// returns. v2 had to count ITestAssemblyFinished messages to work that out, which
+			// silently never completed if an assembly failed to load.
 			await Task.Run(() => _runner.Run()).ConfigureAwait(false);
+
+			DisplayOverallResult();
 		}
 
 		void DisplayOverallResult()
@@ -103,7 +117,7 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			{
 				if (_runFailed)
 				{
-					DisplayFailResult();
+					DisplayFailResult(_runnerError);
 				}
 				else if (_runSkipped)
 				{
@@ -134,19 +148,20 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		void AssemblyFinished(ITestAssemblyFinished assembly)
 		{
-			// TestsRun is the total: passed + failed + skipped.
-			_testsRunCount += assembly.TestsRun;
+			// TestsTotal is the total: passed + failed + skipped + not run. (v2 called this
+			// TestsRun, and had no notion of a test that was never run.)
+			_testsRunCount += assembly.TestsTotal;
+		}
 
-			_finishedAssemblyCount += 1;
-			if (_finishedAssemblyCount == 2)
-			{
-				DisplayOverallResult();
-			}
+		void TestStarted(ITestStarting test)
+		{
+			_testDisplayNames[test.TestUniqueID] = test.TestDisplayName;
 		}
 
 		void TestClassStarted(ITestClassStarting testClass)
 		{
-			var name = testClass.TestClass.Class.Name;
+			var name = testClass.TestClassName;
+			_testClassNames[testClass.TestClassUniqueID] = name;
 
 			var label = new Label
 			{
@@ -165,7 +180,10 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		void TestFinished(ITestResultMessage result)
 		{
-			var name = result.Test.DisplayName;
+			if (!_testDisplayNames.TryGetValue(result.TestUniqueID, out var name))
+			{
+				name = result.TestUniqueID;
+			}
 
 			var outcome = "Fail";
 
@@ -239,8 +257,12 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		void TestClassFinished(ITestClassFinished result)
 		{
-			var name = result.TestClass.Class.Name;
-			var passed = result.TestsRun - result.TestsFailed - result.TestsSkipped;
+			if (!_testClassNames.TryGetValue(result.TestClassUniqueID, out var name))
+			{
+				name = result.TestClassUniqueID;
+			}
+
+			var passed = result.TestsTotal - result.TestsFailed - result.TestsSkipped - result.TestsNotRun;
 
 			var label = new Label { Text = $"{name} Finished.", LineBreakMode = LineBreakMode.HeadTruncation };
 			var counts = new Label { Text = $"Passed: {passed}; Failed: {result.TestsFailed}; Skipped: {result.TestsSkipped}" };
@@ -273,10 +295,10 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 		void OutputTestRunnerError(Exception ex)
 		{
-			Device.BeginInvokeOnMainThread(() =>
-			{
-				DisplayFailResult(ex.Message);
-			});
+			// Recorded rather than displayed immediately: Run() reports the overall result
+			// once it returns, and would otherwise overwrite this with a bare "FAILED".
+			_runFailed = true;
+			_runnerError = ex.Message;
 		}
 
 		static void ExtractErrorMessage(List<View> views, string message)

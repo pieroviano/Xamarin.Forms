@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
-using Xunit.Abstractions;
+using System.Threading.Tasks;
+using Xunit.Runner.Common;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace Xamarin.Forms.Controls.Tests
 {
@@ -11,7 +12,7 @@ namespace Xamarin.Forms.Controls.Tests
 	{
 		readonly IMessageSink _testListener = new ControlGalleryTestListener();
 
-		public void Run(ITestCaseFilter testFilter = null)
+		public async Task Run(ITestCaseFilter testFilter = null)
 		{
 			// "controls" is the cross-platform test assembly
 #if NETSTANDARD2_0
@@ -26,13 +27,13 @@ namespace Xamarin.Forms.Controls.Tests
 			Assembly platform = platformTestSettings.Assembly;
 
 			// The TestRunSettings gives us a way to pass other parameters to the runner;
-			// the keys are the xUnit option names in TestOptionNames.
+			// the keys are the xUnit option names in Xunit.Sdk.TestOptionsNames.
 			var testRunSettings = platformTestSettings.TestRunSettings;
 
 			try
 			{
-				RunAssembly(controls, testFilter, testRunSettings);
-				RunAssembly(platform, testFilter, testRunSettings);
+				await RunAssembly(controls, testFilter, testRunSettings);
+				await RunAssembly(platform, testFilter, testRunSettings);
 			}
 			catch (Exception ex)
 			{
@@ -40,20 +41,18 @@ namespace Xamarin.Forms.Controls.Tests
 			}
 		}
 
-		void RunAssembly(Assembly assembly, ITestCaseFilter testFilter, Dictionary<string, object> testRunSettings)
+		async Task RunAssembly(Assembly assembly, ITestCaseFilter testFilter, Dictionary<string, object> testRunSettings)
 		{
-			var diagnosticMessageSink = new NullMessageSink();
-
-			var discoveryOptions = new TestFrameworkOptions();
-			var executionOptions = new TestFrameworkOptions();
+			var discoveryOptions = TestFrameworkOptions.Empty();
+			var executionOptions = TestFrameworkOptions.Empty();
 
 			// NUnit ran these assemblies one test at a time. xUnit parallelizes test
 			// collections by default, and neither the renderers under test nor the single
 			// native UI thread they marshal onto survive that, so the pre-migration
 			// behaviour is restored here. Seeded before the platform's own settings are
 			// applied so a platform can still override either key.
-			executionOptions.SetValue(TestOptionNames.DisableParallelization, true);
-			executionOptions.SetValue(TestOptionNames.MaxParallelThreads, 1);
+			executionOptions.SetValue(TestOptionsNames.Execution.DisableParallelization, true);
+			executionOptions.SetValue(TestOptionsNames.Execution.MaxParallelThreads, 1);
 
 			foreach (var setting in testRunSettings)
 			{
@@ -61,108 +60,25 @@ namespace Xamarin.Forms.Controls.Tests
 				executionOptions.SetValue(setting.Key, setting.Value);
 			}
 
-			var testCases = Discover(assembly, testFilter, discoveryOptions, diagnosticMessageSink);
+			// v3 resolves the framework against the already-loaded Assembly, so there is no
+			// IAssemblyInfo to wrap and no source-information provider to stub out. Both
+			// Find and RunTestCases complete when their phase is done, which is what
+			// replaces v2's message-sink-plus-ManualResetEvent handshake.
+			var framework = new XunitTestFramework();
 
-			// XunitTestFrameworkExecutor resolves the assembly by name; it is already loaded,
-			// which is the whole reason this uses the Sdk types instead of a console runner.
-			using (var executor = new XunitTestFrameworkExecutor(assembly.GetName(), new NullSourceInformationProvider(), diagnosticMessageSink))
-			using (var sink = new AssemblyRunSink(_testListener))
+			var testCases = new List<ITestCase>();
+
+			await framework.GetDiscoverer(assembly).Find(testCase =>
 			{
-				// RunTests is asynchronous, so wait for the assembly to report itself finished
-				// before starting the next one - the console counts two assembly completions.
-				executor.RunTests(testCases, sink, executionOptions);
-				sink.Finished.WaitOne();
-			}
-		}
-
-		static List<ITestCase> Discover(Assembly assembly, ITestCaseFilter testFilter,
-			ITestFrameworkDiscoveryOptions discoveryOptions, IMessageSink diagnosticMessageSink)
-		{
-			var assemblyInfo = Reflector.Wrap(assembly);
-
-			using (var discoverer = new XunitTestFrameworkDiscoverer(assemblyInfo, new NullSourceInformationProvider(), diagnosticMessageSink))
-			using (var sink = new DiscoverySink(testFilter))
-			{
-				discoverer.Find(false, sink, discoveryOptions);
-				sink.Finished.WaitOne();
-
-				return sink.TestCases;
-			}
-		}
-
-		class DiscoverySink : IMessageSink, IDisposable
-		{
-			readonly ITestCaseFilter _testFilter;
-
-			public DiscoverySink(ITestCaseFilter testFilter) => _testFilter = testFilter;
-
-			public List<ITestCase> TestCases { get; } = new List<ITestCase>();
-
-			public ManualResetEvent Finished { get; } = new ManualResetEvent(false);
-
-			public bool OnMessage(IMessageSinkMessage message)
-			{
-				if (message is ITestCaseDiscoveryMessage discovered)
+				if (testFilter == null || testFilter.Match(testCase))
 				{
-					if (_testFilter == null || _testFilter.Match(discovered.TestCase))
-					{
-						TestCases.Add(discovered.TestCase);
-					}
+					testCases.Add(testCase);
 				}
 
-				if (message is IDiscoveryCompleteMessage)
-				{
-					Finished.Set();
-				}
+				return new ValueTask<bool>(true);
+			}, discoveryOptions);
 
-				return true;
-			}
-
-			public void Dispose() => Finished.Dispose();
-		}
-
-		// Forwards everything to the listener and additionally unblocks RunAssembly once the
-		// assembly is done.
-		class AssemblyRunSink : IMessageSink, IDisposable
-		{
-			readonly IMessageSink _inner;
-
-			public AssemblyRunSink(IMessageSink inner) => _inner = inner;
-
-			public ManualResetEvent Finished { get; } = new ManualResetEvent(false);
-
-			public bool OnMessage(IMessageSinkMessage message)
-			{
-				var result = _inner.OnMessage(message);
-
-				if (message is ITestAssemblyFinished)
-				{
-					Finished.Set();
-				}
-
-				return result;
-			}
-
-			public void Dispose() => Finished.Dispose();
-		}
-
-		// xUnit only uses source information to point an IDE at a file and line; on device
-		// there is nothing to point at.
-		class NullSourceInformationProvider : ISourceInformationProvider
-		{
-			public ISourceInformation GetSourceInformation(ITestCase testCase) => new NullSourceInformation();
-
-			public void Dispose()
-			{
-			}
-
-			class NullSourceInformation : ISourceInformation
-			{
-				public string FileName { get; set; }
-				public int? LineNumber { get; set; }
-				public void Deserialize(IXunitSerializationInfo info) { }
-				public void Serialize(IXunitSerializationInfo info) { }
-			}
+			await framework.GetExecutor(assembly).RunTestCases(testCases, _testListener, executionOptions);
 		}
 	}
 }

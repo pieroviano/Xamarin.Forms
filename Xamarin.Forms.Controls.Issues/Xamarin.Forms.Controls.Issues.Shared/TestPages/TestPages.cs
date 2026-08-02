@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using NUnit.Framework.Interfaces;
 using Xamarin.Forms.Controls.Issues;
 using Xamarin.Forms.CustomAttributes;
 using IOPath = System.IO.Path;
