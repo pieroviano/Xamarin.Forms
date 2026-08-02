@@ -1,25 +1,24 @@
-﻿using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
+using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
+using Xunit.Abstractions;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 {
 	[Preserve(AllMembers = true)]
-	public class CategoryFilter : TestFilter
+	public class CategoryFilter : ITestCaseFilter
 	{
+		// NUnit's [Category] has no direct equivalent in xUnit; the convention is
+		// [Trait("Category", "...")], which surfaces on the test case as a trait.
+		public const string CategoryTrait = "Category";
+
 		string _category;
 
 		public CategoryFilter(string category) => _category = category;
 
-		public override TNode AddToXml(TNode parentNode, bool recursive)
+		public bool Match(ITestCase testCase)
 		{
-			TNode result = parentNode.AddElement("category", _category);
-			return result;
-		}
-
-		public override bool Match(ITest test)
-		{
-			return test.Properties[PropertyNames.Category].Contains(_category);
+			return testCase.Traits.TryGetValue(CategoryTrait, out var categories)
+				&& categories.Contains(_category);
 		}
 	}
 }

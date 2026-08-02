@@ -49,16 +49,33 @@
         <ProjectReference Include="..\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" Condition="$(FromSource) == 'false'" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-      <PackageReference Include="NUnit" Version="3.13.1" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="Xam.Plugin.DeviceInfo" Version="3.0.2" />
+        <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+        <!--
+        xUnit v2, not v3: this project is netstandard2.0 and is consumed by the
+        MonoAndroid / Xamarin.iOS / uap10.0 gallery apps, and only v2 still ships a
+        netstandard1.1 leg. It is also the only version whose execution engine
+        (Xunit.Sdk.XunitTestFrameworkDiscoverer / XunitTestFrameworkExecutor) can be
+        driven in-process against an already-loaded Assembly, which is what
+        Tests/PlatformTestRunner.cs needs on device - there is no file path to hand
+        to a console runner inside an APK or an .app bundle.
+
+        xunit.core + xunit.assert rather than the "xunit" metapackage: the metapackage
+        additionally drags in xunit.analyzers, whose warnings become errors here
+        (TreatWarningsAsErrors is on for every project) and which has nothing to
+        analyse in a gallery app that merely hosts the engine.
+
+        Do NOT turn this version into a $(...) property. It is a third-party package
+        version, not one of this repo's, and the floating property form silently
+        resolved to "." and broke restore.
+      -->
+        <PackageReference Include="xunit.core" Version="2.4.2" />
+        <PackageReference Include="xunit.assert" Version="2.4.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Xam.Plugin.DeviceInfo" Version="3.0.2" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\DatesPage.xaml" />
-      <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\MainTabbedPage.xaml" />
-    </ItemGroup>
-    <ItemGroup>
+        <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\DatesPage.xaml" />
+        <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\MainTabbedPage.xaml" />
         <EmbeddedResource Include="BuildNumber.txt" />
         <EmbeddedResource Include="GalleryPages\crimson.jpg" />
         <EmbeddedResource Include="coffee.png" />

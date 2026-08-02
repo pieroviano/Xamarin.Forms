@@ -4,11 +4,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
 using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Xaml;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 {
@@ -17,13 +17,14 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 	public partial class PlatformTestsConsole : ContentPage
 	{
 		const string FailedText = "FAILED";
-		const string InconclusiveText = "Inconclusive";
+		// xUnit has no "inconclusive" outcome; a test either passes, fails, or is skipped.
+		const string SkippedText = "Skipped";
 		const string SuccessText = "SUCCESS";
 		bool _runFailed;
-		bool _runInconclusive;
+		bool _runSkipped;
 		readonly Color _successColor = Color.Green;
 		readonly Color _failColor = Color.Red;
-		readonly Color _inconclusiveColor = Color.Goldenrod;
+		readonly Color _skippedColor = Color.Goldenrod;
 
 		int _finishedAssemblyCount = 0;
 		int _testsRunCount = 0;
@@ -34,10 +35,11 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 		public PlatformTestsConsole()
 		{
 			InitializeComponent();
-			MessagingCenter.Subscribe<ITestResult>(this, "AssemblyFinished", AssemblyFinished);
+			MessagingCenter.Subscribe<ITestAssemblyFinished>(this, "AssemblyFinished", AssemblyFinished);
 
-			MessagingCenter.Subscribe<ITest>(this, "TestStarted", TestStarted);
-			MessagingCenter.Subscribe<ITestResult>(this, "TestFinished", TestFinished);
+			MessagingCenter.Subscribe<ITestClassStarting>(this, "TestClassStarted", TestClassStarted);
+			MessagingCenter.Subscribe<ITestClassFinished>(this, "TestClassFinished", TestClassFinished);
+			MessagingCenter.Subscribe<ITestResultMessage>(this, "TestFinished", TestFinished);
 
 			MessagingCenter.Subscribe<Exception>(this, "TestRunnerError", OutputTestRunnerError);
 
@@ -86,7 +88,11 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 			// Only want to run a subset of tests? Create a filter and pass it into _runner.Run()
 			// e.g. var filter = new TestNameContainsFilter("Bugzilla");
-			// or var filter = new CategoryFilter("Picker");
+			// or var filter = new CategoryFilter("Picker") for tests marked with
+			// [Trait(CategoryFilter.CategoryTrait, "Picker")].
+			// NUnit's per-TestCaseData SetCategory has no xUnit equivalent - the control name
+			// that ObjectDisposedExceptionTests used to categorise by is now a theory argument,
+			// so it is part of the display name and TestNameContainsFilter reaches it.
 
 			await Task.Run(() => _runner.Run()).ConfigureAwait(false);
 		}
@@ -99,10 +105,10 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 				{
 					DisplayFailResult();
 				}
-				else if (_runInconclusive)
+				else if (_runSkipped)
 				{
-					Status.Text = InconclusiveText;
-					Status.TextColor = _inconclusiveColor;
+					Status.Text = SkippedText;
+					Status.TextColor = _skippedColor;
 				}
 				else
 				{
@@ -126,9 +132,10 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			_displaySettings.ShowPassed = false;
 		}
 
-		void AssemblyFinished(ITestResult assembly)
+		void AssemblyFinished(ITestAssemblyFinished assembly)
 		{
-			_testsRunCount += (assembly.PassCount + assembly.FailCount + assembly.InconclusiveCount);
+			// TestsRun is the total: passed + failed + skipped.
+			_testsRunCount += assembly.TestsRun;
 
 			_finishedAssemblyCount += 1;
 			if (_finishedAssemblyCount == 2)
@@ -137,21 +144,9 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			}
 		}
 
-		void TestStarted(ITest test)
+		void TestClassStarted(ITestClassStarting testClass)
 		{
-			switch (test)
-			{
-				case TestFixture fixture:
-					OutputFixtureStarted(fixture);
-					break;
-				default:
-					break;
-			}
-		}
-
-		void OutputFixtureStarted(TestFixture testFixture)
-		{
-			var name = testFixture.Name;
+			var name = testClass.TestClass.Class.Name;
 
 			var label = new Label
 			{
@@ -168,47 +163,32 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			});
 		}
 
-		void TestFinished(ITestResult result)
+		void TestFinished(ITestResultMessage result)
 		{
-			switch (result)
-			{
-				case TestCaseResult testCaseResult:
-					OutputTestCaseResult(testCaseResult);
-					break;
-				case TestSuiteResult testSuiteResult:
-					OutputSuiteResult(testSuiteResult);
-					break;
-				default:
-					break;
-			}
-		}
-
-		void OutputTestCaseResult(TestCaseResult result)
-		{
-			var name = result.Test.Name;
+			var name = result.Test.DisplayName;
 
 			var outcome = "Fail";
 
-			if (result.PassCount > 0)
+			if (result is ITestPassed)
 			{
 				outcome = "Pass";
 			}
-			else if (result.InconclusiveCount > 0)
+			else if (result is ITestSkipped)
 			{
-				outcome = "Inconclusive";
+				outcome = SkippedText;
 			}
 
 			var label = new Label { Text = $"{name}: {outcome}.", LineBreakMode = LineBreakMode.HeadTruncation };
 
-			if (result.FailCount > 0)
+			if (result is ITestFailed)
 			{
 				label.TextColor = _failColor;
 				_runFailed = true;
 			}
-			else if (result.InconclusiveCount > 0)
+			else if (result is ITestSkipped)
 			{
-				label.TextColor = _inconclusiveColor;
-				_runInconclusive = true;
+				label.TextColor = _skippedColor;
+				_runSkipped = true;
 			}
 			else
 			{
@@ -221,37 +201,30 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 
 			var toAdd = new List<View> { label };
 
-			foreach (var assertionResult in result.AssertionResults)
+			if (result is ITestFailed failed)
 			{
-				if (assertionResult.Status != AssertionStatus.Passed)
-				{
-					ExtractErrorMessage(toAdd, assertionResult.Message);
-					toAdd.Add(new Editor { Text = assertionResult.StackTrace, IsReadOnly = true });
-				}
+				// A failure can carry several exceptions (an inner exception chain, or the
+				// test failure plus a Dispose failure); ExceptionUtility flattens them the
+				// same way the console runners do.
+				ExtractErrorMessage(toAdd, ExceptionUtility.CombineMessages(failed));
+				toAdd.Add(new Editor { Text = ExceptionUtility.CombineStackTraces(failed), IsReadOnly = true });
 			}
 
 			if (!string.IsNullOrEmpty(result.Output))
 			{
-				var output = result.Output;
 				toAdd.Add(new Label { Text = result.Output, Margin = margin });
 			}
 
-			if (result.Test.RunState == RunState.NotRunnable)
+			if (result is ITestSkipped skipped)
 			{
-				var reasonBag = result.Test.Properties[PropertyNames.SkipReason];
-
-				var reasonText = "";
-				foreach (var reason in reasonBag)
-				{
-					reasonText += reason;
-				}
+				var reasonText = skipped.Reason;
 
 				if (string.IsNullOrEmpty(reasonText))
 				{
 					reasonText = @"¯\_(ツ)_/¯";
 				}
 
-				toAdd.Add(new Label { Text = $"Test was not runnable. Reason: {reasonText}", FontAttributes = FontAttributes.Bold, Margin = margin });
+				toAdd.Add(new Label { Text = $"Test was skipped. Reason: {reasonText}", FontAttributes = FontAttributes.Bold, Margin = margin });
 			}
 
 			Device.BeginInvokeOnMainThread(() =>
@@ -264,25 +237,23 @@ namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 			});
 		}
 
-		void OutputSuiteResult(TestSuiteResult result)
+		void TestClassFinished(ITestClassFinished result)
 		{
-			if (!(result.Test is TestFixture))
-			{
-				return;
-			}
+			var name = result.TestClass.Class.Name;
+			var passed = result.TestsRun - result.TestsFailed - result.TestsSkipped;
 
-			var label = new Label { Text = $"{result.Name} Finished.", LineBreakMode = LineBreakMode.HeadTruncation };
-			var counts = new Label { Text = $"Passed: {result.PassCount}; Failed: {result.FailCount}; Inconclusive: {result.InconclusiveCount}" };
+			var label = new Label { Text = $"{name} Finished.", LineBreakMode = LineBreakMode.HeadTruncation };
+			var counts = new Label { Text = $"Passed: {passed}; Failed: {result.TestsFailed}; Skipped: {result.TestsSkipped}" };
 
-			if (result.FailCount > 0)
+			if (result.TestsFailed > 0)
 			{
 				label.TextColor = _failColor;
 				_runFailed = true;
 			}
-			else if (result.InconclusiveCount > 0)
+			else if (result.TestsSkipped > 0)
 			{
-				label.TextColor = _inconclusiveColor;
-				_runInconclusive = true;
+				label.TextColor = _skippedColor;
+				_runSkipped = true;
 			}
 			else
 			{

@@ -1,36 +1,40 @@
-﻿using System.Diagnostics;
-using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
+using System;
+using System.Diagnostics;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.Tests
 {
-	public class ControlGalleryTestListener : ITestListener
+	// The xUnit counterpart of NUnit's ITestListener. Everything the engine reports arrives
+	// here as an IMessageSinkMessage; the interesting ones are relayed over MessagingCenter
+	// so PlatformTestsConsole can render them.
+	public class ControlGalleryTestListener : IMessageSink
 	{
-		public void SendMessage(TestMessage message)
+		public bool OnMessage(IMessageSinkMessage message)
 		{
-		}
-
-		public void TestFinished(ITestResult result)
-		{
-			var test = result.Test;
-			if (test is TestAssembly testAssembly)
+			switch (message)
 			{
-				MessagingCenter.Send(result, "AssemblyFinished");
+				case ITestAssemblyFinished assemblyFinished:
+					MessagingCenter.Send(assemblyFinished, "AssemblyFinished");
+					break;
+				case ITestClassStarting classStarting:
+					MessagingCenter.Send(classStarting, "TestClassStarted");
+					break;
+				case ITestClassFinished classFinished:
+					MessagingCenter.Send(classFinished, "TestClassFinished");
+					break;
+				case ITestResultMessage result:
+					MessagingCenter.Send(result, "TestFinished");
+					break;
+				case ITestOutput output:
+					Debug.WriteLine(output.Output);
+					break;
+				case IErrorMessage error:
+					MessagingCenter.Send(new Exception(ExceptionUtility.CombineMessages(error)), "TestRunnerError");
+					break;
 			}
-			else
-			{
-				MessagingCenter.Send(result, "TestFinished");
-			}
-		}
 
-		public void TestOutput(TestOutput output)
-		{
-			Debug.WriteLine(output);
-		}
-
-		public void TestStarted(ITest test)
-		{
-			MessagingCenter.Send(test, "TestStarted");
+			return true;
 		}
 	}
 }

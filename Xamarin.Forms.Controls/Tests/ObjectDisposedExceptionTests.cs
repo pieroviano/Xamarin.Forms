@@ -1,45 +1,56 @@
-﻿using System;
-using System.Collections;
-using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Xamarin.Forms.Controls.Tests
 {
-	[TestFixture]
 	public class ObjectDisposedExceptionTests : CrossPlatformTestFixture
 	{
-		static IEnumerable VisualElementTestCases
+		// NUnit's TestCaseSource fed the Func<VisualElement> straight into the test. xUnit
+		// builds the display name from the arguments, and a delegate has no useful name, so
+		// the case is identified by the control name and the factory is looked up here. This
+		// also keeps the arguments serializable, which is what lets xUnit pre-enumerate the
+		// theory into one test case per control.
+		static readonly Dictionary<string, Func<VisualElement>> VisualElementFactories =
+			new Dictionary<string, Func<VisualElement>>
+			{
+				{ nameof(BoxView), () => new BoxView() },
+				{ nameof(Button), () => new Button() },
+				{ nameof(CheckBox), () => new CheckBox() },
+				{ nameof(DatePicker), () => new DatePicker() },
+				{ nameof(Editor), () => new Editor() },
+				{ nameof(Entry), () => new Entry() },
+				{ nameof(Frame), () => new Frame() },
+				{ nameof(Image), () => new Image() },
+				{ nameof(ImageButton), () => new ImageButton() },
+				{ nameof(Label), () => new Label() },
+				{ nameof(Picker), () => new Picker() },
+				{ nameof(ProgressBar), () => new ProgressBar() },
+				{ nameof(SearchBar), () => new SearchBar() },
+				{ nameof(Slider), () => new Slider() },
+				{ nameof(Stepper), () => new Stepper() },
+				{ nameof(Switch), () => new Switch() },
+				{ nameof(TimePicker), () => new TimePicker() },
+			};
+
+		public static IEnumerable<object[]> VisualElementTestCases
 		{
 			get
 			{
-				yield return CreateTestCase(new Func<VisualElement>(() => new BoxView()), nameof(BoxView));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Button()), nameof(Button));
-				yield return CreateTestCase(new Func<VisualElement>(() => new CheckBox()), nameof(CheckBox));
-				yield return CreateTestCase(new Func<VisualElement>(() => new DatePicker()), nameof(DatePicker));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Editor()), nameof(Editor));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Entry()), nameof(Entry));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Frame()), nameof(Frame));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Image()), nameof(Image));
-				yield return CreateTestCase(new Func<VisualElement>(() => new ImageButton()), nameof(ImageButton));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Label()), nameof(Label));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Picker()), nameof(Picker));
-				yield return CreateTestCase(new Func<VisualElement>(() => new ProgressBar()), nameof(ProgressBar));
-				yield return CreateTestCase(new Func<VisualElement>(() => new SearchBar()), nameof(SearchBar));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Slider()), nameof(Slider));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Stepper()), nameof(Stepper));
-				yield return CreateTestCase(new Func<VisualElement>(() => new Switch()), nameof(Switch));
-				yield return CreateTestCase(new Func<VisualElement>(() => new TimePicker()), nameof(TimePicker));
+				foreach (var control in VisualElementFactories.Keys)
+				{
+					yield return new object[] { control };
+				}
 			}
 		}
 
-		static TestCaseData CreateTestCase(Func<VisualElement> createVisualElement, string category)
+		[Theory]
+		[MemberData(nameof(VisualElementTestCases))]
+		[Trait("Description", "[Bug] ObjectDisposedException (BoxView inside CollectionView)")]
+		public void GitHub9431(string control)
 		{
-			return new TestCaseData(createVisualElement).SetCategory(category).SetName($"GitHub9431_{category}");
-		}
+			var createVisualElement = VisualElementFactories[control];
 
-		[Test, TestCaseSource(nameof(VisualElementTestCases))]
-		[Description("[Bug] ObjectDisposedException (BoxView inside CollectionView)")]
-		public void GitHub9431(Func<VisualElement> createVisualElement)
-		{
 			var color1 = Color.Linen;
 			var color2 = Color.HotPink;
 			var model = new _9431Model() { BGColor = color1 };
