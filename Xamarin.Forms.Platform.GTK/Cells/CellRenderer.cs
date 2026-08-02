@@ -24,6 +24,20 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 			if (cellBase != null)
 			{
+				// Detach the handler wired for the PREVIOUS widget bound to this Forms Cell.
+				// The cellBase.Cell check below cannot do it: every call site passes
+				// reusableView: null (ListViewRenderer.UpdateItems, Controls/TableView), so `cell`
+				// is always a brand-new widget whose Cell is null and the -= is a guaranteed
+				// no-op. Meanwhile the Forms Cell survives the rebuild, so it accumulated one
+				// PropertyChanged subscription per refresh, each holding a discarded widget alive
+				// and each re-running HandlePropertyChanged on every later property change.
+				var previous = GetRealCell(item) as CellBase;
+
+				if (previous != null && !ReferenceEquals(previous, cellBase))
+				{
+					item.PropertyChanged -= previous.HandlePropertyChanged;
+				}
+
 				if (cellBase.Cell != null)
 				{
 					cellBase.Cell.PropertyChanged -= cellBase.HandlePropertyChanged;

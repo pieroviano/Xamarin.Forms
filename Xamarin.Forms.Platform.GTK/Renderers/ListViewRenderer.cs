@@ -237,8 +237,19 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			GLib.Idle.Add(delegate
 			{
+				// The renderer can be disposed between queueing this idle callback and it
+				// running; without the guard it resurrects renderers onto a torn-down list.
+				if (_disposed || _listView == null)
+					return false;
+
 				var header = Controller.HeaderElement;
 				var headerView = (View)header;
+
+				// Unconditionally, not only on the null path. Replacing a non-null header with
+				// another non-null one used to overwrite _headerRenderer without disposing the
+				// previous renderer or detaching its MeasureInvalidated handler, so every
+				// change leaked a renderer and left a live subscription behind.
+				ClearHeader();
 
 				if (headerView != null)
 				{
@@ -255,10 +266,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					_listView.Header = _headerRenderer.Container;
 					headerView.MeasureInvalidated += OnHeaderMeasureInvalidated;
 				}
-				else
-				{
-					ClearHeader();
-				}
+				// No else: ClearHeader() already ran above.
 
 				return false;
 			});
@@ -298,8 +306,19 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			GLib.Idle.Add(delegate
 			{
+				// The renderer can be disposed between queueing this idle callback and it
+				// running; without the guard it resurrects renderers onto a torn-down list.
+				if (_disposed || _listView == null)
+					return false;
+
 				var footer = Controller.FooterElement;
 				var footerView = (View)footer;
+
+				// Unconditionally, not only on the null path. Replacing a non-null footer with
+				// another non-null one used to overwrite _footerRenderer without disposing the
+				// previous renderer or detaching its MeasureInvalidated handler, so every
+				// change leaked a renderer and left a live subscription behind.
+				ClearFooter();
 
 				if (footerView != null)
 				{
@@ -315,10 +334,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					_listView.Footer = _footerRenderer.Container;
 					footerView.MeasureInvalidated += OnFooterMeasureInvalidated;
 				}
-				else
-				{
-					ClearFooter();
-				}
+				// No else: ClearFooter() already ran above.
 
 				return false;
 			});
