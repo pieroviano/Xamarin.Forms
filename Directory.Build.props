@@ -1,6 +1,18 @@
 <Project>
 
   <!--
+    Repo-anchored package output. The projects used $(SolutionDir)Packages/, which is
+    only defined when MSBuild is driven through a .sln - so the per-project build that
+    CLAUDE.md documents (dotnet build Xamarin.Forms.Platform.GTK/...csproj) packed into
+    <ProjectDir>/Packages/ instead, leaving stray untracked nupkgs scattered through the
+    tree. MSBuildThisFileDirectory is this file's directory, i.e. the repo root, under
+    every invocation.
+  -->
+  <PropertyGroup>
+    <XFPackageOutputPath Condition="'$(XFPackageOutputPath)' == ''">$(MSBuildThisFileDirectory)Packages/</XFPackageOutputPath>
+  </PropertyGroup>
+
+  <!--
     Windows and Unix builds of the same working tree need separate obj\ and bin\.
 
     A tree on a Windows drive (D:\CommonLibrary\Xamarin.Forms, reached from WSL as

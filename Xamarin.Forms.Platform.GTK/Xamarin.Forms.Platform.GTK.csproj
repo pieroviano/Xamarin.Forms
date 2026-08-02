@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
     <PropertyGroup>
-        <PackageOutputPath>$(SolutionDir)Packages/</PackageOutputPath>
+        <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
         <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
@@ -54,8 +54,16 @@
     so it must be copied next to the assembly - not embedded.
   -->
     <ItemGroup>
+        <!--
+            PackageCopyToOutput matters as much as CopyToOutputDirectory here. The latter only
+            covers in-tree ProjectReference builds; for a consumer who gets this via
+            PackageReference the SDK packs Content into contentFiles with copyToOutput defaulting
+            to false, so the file never reached their output directory and the relative-path load
+            above threw at runtime for exactly the consumers the package exists for.
+        -->
         <Content Include="Resources\hamburger.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
         </Content>
     </ItemGroup>
     <PropertyGroup>

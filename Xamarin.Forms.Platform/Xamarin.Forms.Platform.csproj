@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
     <PropertyGroup>
-        <PackageOutputPath>$(SolutionDir)Packages/</PackageOutputPath>
+        <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <PackageId>Net4x.Xamarin.Forms.Platform.Base</PackageId>
         <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
