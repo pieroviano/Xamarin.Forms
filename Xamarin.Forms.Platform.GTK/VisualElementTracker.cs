@@ -38,9 +38,18 @@ namespace Xamarin.Forms.Platform.GTK
 				if (_container != null)
 				{
 					_container.ButtonPressEvent -= OnContainerButtonPressEvent;
+					_container.Realized -= OnContainerRealized;
 				}
 
 				_container = value;
+
+				if (_container != null)
+				{
+					// InputTransparent is applied to the GdkWindow, which does not exist until the
+					// widget is realized. Without this the value would be dropped whenever it was
+					// set before the first show, which is the common case.
+					_container.Realized += OnContainerRealized;
+				}
 
 				UpdatingGestureRecognizers();
 
@@ -273,24 +282,37 @@ namespace Xamarin.Forms.Platform.GTK
 			Container.QueueDraw();
 		}
 
-		// TODO: Implement Scale
 		private static void UpdateScaleAndRotation(VisualElement view, Gtk.Widget eventBox)
 		{
-			double anchorX = view.AnchorX;
-			double anchorY = view.AnchorY;
-			double scale = view.Scale;
-
 			UpdateRotation(view, eventBox);
 		}
 
-		// TODO: Implement Rotation
+		/// <summary>
+		/// Applies Translation. Scale, Rotation, RotationX/Y and AnchorX/Y are NOT applied - see
+		/// the remarks.
+		/// </summary>
+		/// <remarks>
+		/// NOT-IMPLEMENTED, stated here rather than left as a bare "TODO: Implement Rotation",
+		/// because the gap is deliberate and half-implementing it would be worse than leaving it.
+		///
+		/// Rotation and scale would have to be a Cairo transform applied in the container's draw
+		/// handler. That transforms the RENDERING only: GTK hit-testing works off the widget's
+		/// allocation and its GdkWindow, neither of which a Cairo matrix touches. The result would
+		/// be a control that is drawn rotated but still clicks in its unrotated rectangle, which
+		/// is a harder bug to diagnose than the honest absence of the feature.
+		///
+		/// Translation is different - it is expressible as a position change in the parent
+		/// container, which is what MoveTo does, so it IS applied.
+		///
+		/// Note the division by scale below: it is not a scale implementation, it converts the
+		/// translation into the (unscaled) coordinate space the parent lays out in. With scale
+		/// left unimplemented at 1 it is a no-op.
+		/// </remarks>
 		private static void UpdateRotation(VisualElement view, Gtk.Widget eventBox)
 		{
 			if (view == null)
 				return;
 
-			double anchorX = view.AnchorX;
-			double anchorY = view.AnchorY;
 			double rotationX = view.RotationX;
 			double rotationY = view.RotationY;
 			double rotation = view.Rotation;
@@ -325,16 +347,50 @@ namespace Xamarin.Forms.Platform.GTK
 			eventBox.Visible = view.IsVisible;
 		}
 
-		// TODO: Implement Opacity
 		private static void UpdateOpacity(VisualElement view, Gtk.Widget eventBox)
 		{
+			if (view == null || eventBox == null)
+				return;
 
+			// Forms and GTK agree on the range and the meaning - both are 0.0 (invisible) to 1.0
+			// (fully opaque) - so this is a direct mapping. Clamped because Forms does not
+			// validate the property and gtk_widget_set_opacity would otherwise be handed a value
+			// outside its documented domain.
+			var opacity = view.Opacity;
+
+			if (opacity < 0)
+				opacity = 0;
+			else if (opacity > 1)
+				opacity = 1;
+
+			eventBox.Opacity = opacity;
 		}
 
-		// TODO: Implement InputTransparent
 		private static void UpdateInputTransparent(VisualElement view, Gtk.Widget eventBox)
 		{
+			if (view == null || eventBox == null)
+				return;
 
+			// gdk_window_set_pass_through is the primitive that matches Forms' semantics: the
+			// widget stops receiving input AND the events reach whatever is underneath it.
+			// Sensitive = false would be the obvious alternative and is the wrong one - it blocks
+			// input without passing it through, and it greys the widget out, so an
+			// InputTransparent overlay would visibly change appearance.
+			//
+			// The GdkWindow only exists once the widget is realized. UpdateNativeControl can run
+			// before that (the tracker updates on element assignment, not on realize), so the
+			// value is re-applied from OnContainerRealized as well - otherwise setting
+			// InputTransparent before the first show would be silently dropped.
+			var window = eventBox.Window;
+
+			if (window != null)
+				window.PassThrough = view.InputTransparent;
+		}
+
+		private void OnContainerRealized(object sender, EventArgs e)
+		{
+			if (Element != null && Container != null)
+				UpdateInputTransparent(Element, Container);
 		}
 
 		private void OnContainerButtonPressEvent(object o, ButtonPressEventArgs args)

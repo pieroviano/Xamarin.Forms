@@ -170,7 +170,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.Equal(Color.Red, page.Content.BackgroundColor);
 		}
 
-		[Fact(Skip = nameof(ImplicitStyleAppliedToMissingType))]
+		[Fact(Skip = "Design-time style scoping is unimplemented: an implicit style is NOT applied to "
+			+ "the fallback type substituted for a missing type. Verified 2026-08-02 - the target keeps "
+			+ "Color.Default (A=-1) where the style should give it Red.")]
 		public void ImplicitStyleAppliedToMissingType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);
@@ -231,7 +233,9 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			Assert.NotEqual(Color.Red, myButton.BackgroundColor);
 		}
 
-		[Fact(Skip = nameof(StyleTargetingMissingTypeNotAppliedToFallbackType))]
+		[Fact(Skip = "Design-time style scoping is unimplemented: a Style whose TargetType is a MISSING "
+			+ "type is wrongly applied to the fallback type that replaces it. Verified 2026-08-02 - the "
+			+ "target comes out Red when it should be untouched. Converse of ImplicitStyleAppliedToMissingType.")]
 		public void StyleTargetingMissingTypeNotAppliedToFallbackType()
 		{
 			XamlLoader.FallbackTypeResolver = (p, type) => type ?? typeof(Button);

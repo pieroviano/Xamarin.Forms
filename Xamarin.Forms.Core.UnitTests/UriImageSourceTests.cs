@@ -44,19 +44,23 @@ namespace Xamarin.Forms.Core.UnitTests
 			return typeof(UriImageSourceTests).Assembly.GetManifestResourceStream(uri.LocalPath.Substring(1));
 		}
 
-		[Fact(Skip = "LoadImageFromStream")]
+		[Fact]
 		public void LoadImageFromStream()
 		{
 			var loader = new UriImageSource
 			{
 				Uri = new Uri("http://foo.com/Images/crimson.jpg"),
 			};
-			Stream s0 = loader.GetStreamAsync().Result;
-
-			Assert.Equal(79109, s0.Length);
+			// Disposed, unlike the original: the cache file stays locked otherwise and this
+			// fixture's teardown fails trying to delete it with "The process cannot access the
+			// file ... because it is being used by another process".
+			using (Stream s0 = loader.GetStreamAsync().Result)
+			{
+				Assert.Equal(79109, s0.Length);
+			}
 		}
 
-		[Fact(Skip = "SecondCallLoadFromCache")]
+		[Fact]
 		public void SecondCallLoadFromCache()
 		{
 			var loader = new UriImageSource
@@ -78,7 +82,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Fact(Skip = "DoNotKeepFailedRetrieveInCache")]
+		[Fact]
 		public void DoNotKeepFailedRetrieveInCache()
 		{
 			var loader = new UriImageSource
@@ -96,7 +100,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Equal(2, networkcalls);
 		}
 
-		[Fact(Skip = "ConcurrentCallsOnSameUriAreQueued")]
+		[Fact]
 		public void ConcurrentCallsOnSameUriAreQueued()
 		{
 			var loader = new UriImageSource
@@ -108,12 +112,21 @@ namespace Xamarin.Forms.Core.UnitTests
 			var t0 = loader.GetStreamAsync();
 			var t1 = loader.GetStreamAsync();
 
-			//var s0 = t0.Result;
-			using (var s1 = t1.Result)
+			// BOTH tasks are observed. The original left t0 running (`//var s0 = t0.Result;`),
+			// which meant it could still be in flight when this test returned and then increment
+			// the shared, static networkcalls counter during whichever test ran next - making
+			// DoNotKeepFailedRetrieveInCache fail with "Expected: 1, Actual: 2" purely on
+			// execution order.
+			var s0 = t0.Result;
+			var s1 = t1.Result;
+
+			using (s1)
 			{
 				Assert.Equal(1, networkcalls);
 				Assert.Equal(79109, s1.Length);
 			}
+
+			s0?.Dispose();
 		}
 
 		[Fact]

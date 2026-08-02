@@ -575,7 +575,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Equal(100f, view4.Height);
 		}
 
-		[Fact(Skip = "")]
+		[Fact]
 		public void TestAlignContentStretchRowWithMargin()
 		{
 			var layout = new FlexLayout

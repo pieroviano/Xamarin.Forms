@@ -174,6 +174,31 @@ namespace Xamarin.Forms.Core.UnitTests
 			((AsyncTicker)Ticker.Default).SetEnabled(false);
 		}
 
+		/// <summary>
+		/// Disables the ticker once <paramref name="animationHasStarted"/> reports the animation
+		/// is actually running, rather than after a fixed delay.
+		/// </summary>
+		/// <remarks>
+		/// MEASURED: the fixed 32ms in <see cref="DisableTicker"/> is a race. It is fine in an
+		/// isolated run - DisablingTickerFinishesAllAnimationsInChain passed 12/12 on its own -
+		/// but under the load of the full 4848-test suite the delay can elapse before the first
+		/// FadeTo has begun ticking, so the ticker is disabled while there is nothing to finish
+		/// and view1 never reaches its target. That reproduced at roughly 1 run in 8.
+		///
+		/// Waiting on the animation's own progress removes the wall-clock dependency without
+		/// weakening the assertion: the ticker is still disabled mid-animation, which is exactly
+		/// what these tests exist to exercise.
+		/// </remarks>
+		static async Task DisableTickerWhen(Func<bool> animationHasStarted)
+		{
+			var deadline = DateTime.UtcNow.AddSeconds(5);
+
+			while (!animationHasStarted() && DateTime.UtcNow < deadline)
+				await Task.Delay(1);
+
+			((AsyncTicker)Ticker.Default).SetEnabled(false);
+		}
+
 		static async Task EnableTicker()
 		{
 			await Task.Delay(32);
@@ -191,7 +216,8 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 			var view = new View { Opacity = 1 };
 
-			await Task.WhenAll(view.FadeTo(0, 2000), DisableTicker());
+			// Condition, not a fixed delay - see DisableTickerWhen. Fades 1 -> 0.
+			await Task.WhenAll(view.FadeTo(0, 2000), DisableTickerWhen(() => view.Opacity < 1));
 
 			Assert.Equal(0, view.Opacity);
 		}
@@ -202,7 +228,9 @@ namespace Xamarin.Forms.Core.UnitTests
 			var view1 = new View { Opacity = 1 };
 			var view2 = new View { Opacity = 0 };
 
-			await Task.WhenAll(SwapFadeViews(view1, view2), DisableTicker());
+			// Condition, not a fixed delay - see DisableTickerWhen. view1 fades 1 -> 0, so any
+			// value below 1 proves the animation is ticking and it is safe to pull the ticker.
+			await Task.WhenAll(SwapFadeViews(view1, view2), DisableTickerWhen(() => view1.Opacity < 1));
 
 			Assert.Equal(0, view1.Opacity);
 
@@ -227,7 +255,8 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 			var view = new View { Opacity = 0 };
 
-			await Task.WhenAll(RepeatFade(view), DisableTicker());
+			// Condition, not a fixed delay - see DisableTickerWhen. Fades 0 -> 1.
+			await Task.WhenAll(RepeatFade(view), DisableTickerWhen(() => view.Opacity > 0));
 
 			Assert.Equal(1, view.Opacity);
 		}

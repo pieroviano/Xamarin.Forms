@@ -34,20 +34,27 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				.FirstOrDefault(a => a.Key == "NetFrameworkReferenceAssemblies")
 				?.Value;
 
-		// Repository root, found by walking up from the test assembly until Xamarin.Forms.sln
-		// shows up. The generated projects are no longer at a fixed depth below it (they build
+		// Repository root, found by walking up from the test assembly until a solution file shows
+		// up. The generated projects are no longer at a fixed depth below it (they build
 		// under the OS temp directory), so _Directory.Build.[props|targets] cannot get here with
 		// "..\..\.." any more - Build() passes this down as the XFRepoRoot property instead.
 		// Forward slashes with a trailing one: MSBuild accepts them on every platform, and a
 		// trailing backslash immediately before a closing quote would escape that quote on a
 		// Windows command line.
+		//
+		// Matched by EXTENSION rather than by name. This used to look for "Xamarin.Forms.sln"
+		// specifically; the prune in cc8874b9b deleted that solution and every test in this class
+		// then failed in the type initializer with "Could not find Xamarin.Forms.sln". Globbing
+		// survives the rename - and there is exactly one .sln in the tree, at the root, so this
+		// cannot latch onto the wrong directory. (Directory.Build.props would: two project
+		// directories have one of their own.)
 		static readonly string repoRoot = FindRepoRoot();
 
 		static string FindRepoRoot()
 		{
 			for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
 			{
-				if (File.Exists(IOPath.Combine(dir.FullName, "Xamarin.Forms.sln")))
+				if (dir.GetFiles("*.sln").Length > 0)
 					return dir.FullName.Replace('\\', '/').TrimEnd('/') + "/";
 			}
 			// VSTS may run the tests from a staging directory that is not under the sources.
@@ -56,7 +63,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 				return sourcesDirectory.Replace('\\', '/').TrimEnd('/') + "/";
 
 			throw new InvalidOperationException(
-				$"Could not find Xamarin.Forms.sln above {AppContext.BaseDirectory}, and "
+				$"Could not find a .sln above {AppContext.BaseDirectory}, and "
 				+ "BUILD_SOURCESDIRECTORY is not set.");
 		}
 

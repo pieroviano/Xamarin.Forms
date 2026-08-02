@@ -276,7 +276,10 @@ namespace Xamarin.Forms.Xaml
 				if (Context.ExceptionHandler != null)
 					Context.ExceptionHandler(e);
 				else
-					throw e;
+					// `throw;`, not `throw e;` - the latter re-anchors the stack trace here and
+					// discards where the value provider actually failed, which is the only part
+					// of the trace with any diagnostic value.
+					throw;
 			}
 		}
 

@@ -357,8 +357,19 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private async void OnRemovedPageRequested(object sender, NavigationRequestedEventArgs e)
 		{
-			await RemovePageAsync(e.Page, true, true);
-			UpdateToolBar();
+			// async void: nothing can observe a failure here, so an exception escaping this
+			// handler is rethrown on the synchronization context unhandled and terminates the
+			// process. A page removal that fails should leave the navigation stack untouched and
+			// logged, not crash the app.
+			try
+			{
+				await RemovePageAsync(e.Page, true, true);
+				UpdateToolBar();
+			}
+			catch (Exception ex)
+			{
+				Internals.Log.Warning("NavigationPageRenderer", "Could not remove page: {0}", ex);
+			}
 		}
 
 		private void OnInsertPageBeforeRequested(object sender, NavigationRequestedEventArgs e)

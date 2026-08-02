@@ -10,7 +10,7 @@ jobs:
         run: dotnet tool install -g dotnet-format
 
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
 
@@ -21,7 +21,9 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           action: "fix"
           #only-changed-files: true # only works for PRs
-          workspace: "Xamarin.Forms.sln"
+          # Xamarin.Forms.sln was deleted by the prune in cc8874b9b; this job failed nightly
+          # against it until 2026-08-02. Xamarin.Forms.Gtk.sln is the only solution in the tree.
+          workspace: "Xamarin.Forms.Gtk.sln"
     
       - name: Commit files
         if: steps.format.outputs.has-changes == 'true'
@@ -39,8 +41,9 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           labels: t/housekeeping ♻︎
-          assignees: rmarinho, jsuarezruiz
-          reviewers: rmarinho, jsuarezruiz
+          # rmarinho/jsuarezruiz are upstream Xamarin maintainers and are not on this fork.
+          assignees: pieroviano
+          reviewers: pieroviano
           branch: housekeeping/fix-codeformatting
 
       # Pushing won't work to forked repos

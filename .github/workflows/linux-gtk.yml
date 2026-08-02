@@ -1,8 +1,9 @@
 name: linux-gtk
 
-# The GTK backend is the only one of this fork's platform legs that builds and runs on Linux,
-# so it is the only one with CI here. The existing azure-pipelines.yml / build/steps/*.yml are
-# Windows and macOS and do not cover any of this.
+# The GTK backend is the only one of this fork's platform legs that still exists after the prune
+# in cc8874b9b, so it is the only one with CI here. This workflow is not a supplement to the
+# upstream Windows/macOS pipelines - azure-pipelines.yml and build/steps/*.yml were deleted by
+# that prune, so this IS the CI for this fork.
 on:
   push:
     branches: [ 5.0.0 ]
@@ -75,13 +76,29 @@ jobs:
       # G_DEBUG=fatal-criticals. So the two OSes agree.
       # The Core and XAML numbers below were measured on 2026-08-01, both in Debug and in Release:
       #
-      #   Core.UnitTests   4860 passed / 8 failed / 8 skipped of 4876. The 8 are GC-liveness
+      #   Core.UnitTests   WAS 4860 passed / 8 failed / 8 skipped of 4876, the 8 being GC-liveness
       #                    assertions - WeakToWeak, ElementIsGarbageCollectedAfterItsRemoved,
       #                    LayoutIsGarbageCollectedAfterItsRemoved,
       #                    SubscriberCollectableAfterUnsubscribeEvenIfHeldByClosure,
       #                    TestImageSourceToNullCancelsLoading - i.e. tests whose outcome
-      #                    depends on when the runtime actually collects. Same 8 in both
-      #                    configurations.
+      #                    depends on when the runtime actually collects.
+      #                    RE-MEASURED 2026-08-02, after the xUnit conversion defects and the
+      #                    missing parallelisation guard were fixed: Failed 0 / Passed 4839 /
+      #                    Skipped 9 / Total 4848, on Windows repeatedly and on Linux in 8 of 9
+      #                    runs. So continue-on-error is REMOVED from this step - it now gates.
+      #
+      #                    An intermittent ~1-in-8 failure was tracked down on 2026-08-02, and it
+      #                    was NOT one of the GC-liveness assertions, which had been the standing
+      #                    assumption. It was TickerSystemEnabledTests.DisablingTicker* in
+      #                    MotionTests.cs: those disabled the animation ticker after a fixed
+      #                    Task.Delay(32) and then asserted the in-flight animation had been
+      #                    finished off. Isolated they passed 12/12, but under the load of the full
+      #                    4848-test suite the delay could elapse before the animation started
+      #                    ticking, leaving nothing to finish. They now wait on the animation's own
+      #                    progress rather than the clock: 12/12 clean full-suite runs after.
+      #                    If this step does go red intermittently again, identify and fix or
+      #                    [Skip] THAT test. Do not restore continue-on-error over the whole suite:
+      #                    that is what hid 4839 working tests behind 8 known-bad ones.
       #   Xaml.UnitTests   WAS FLAKY: three consecutive runs of the same binary gave 2, 11 and 3
       #                    failures out of 1046, with a DIFFERENT set each time, plus a
       #                    deterministic LoaderTests.MissingStaticResourceShouldThrow at 3/3. The
@@ -96,15 +113,12 @@ jobs:
       #                    order-dependence repro `--filter FullyQualifiedName~XArray` at 6/6.
       #                    So continue-on-error is REMOVED from this step - it now gates.
       #
-      # The Core flag stays until the 8 GC-liveness failures are dealt with; those are real and
-      # unfixed, not flaky. Do not instead delete or [Skip] the tests.
       #
       # One caveat kept deliberately: the 2026-08-02 re-measurement was on Ubuntu 22.04 (WSL2),
       # and this job runs 24.04. If the XAML step goes red here and nobody can reproduce it
       # locally, that difference is the first thing to check - but re-gate by fixing it, not by
       # putting continue-on-error back.
       - name: Core unit tests
-        continue-on-error: true
         run: dotnet test Xamarin.Forms.Core.UnitTests -c Debug --no-build --logger trx
 
       - name: XAML unit tests

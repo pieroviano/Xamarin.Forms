@@ -182,37 +182,59 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private async void HandleFlyoutPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
-			if (e.PropertyName == Xamarin.Forms.Page.IconImageSourceProperty.PropertyName)
+			if (e.PropertyName != Xamarin.Forms.Page.IconImageSourceProperty.PropertyName)
+				return;
+
+			// async void: there is no Task for anyone to observe, so an exception escaping here is
+			// rethrown on the synchronization context with no handler and takes the process down.
+			// Loading the icon is file/network I/O, so a missing or malformed IconImageSource is
+			// an ordinary authoring mistake - it should leave the icon blank, not kill the app.
+			try
+			{
 				await UpdateHamburguerIconAsync();
+			}
+			catch (Exception ex)
+			{
+				Internals.Log.Warning("FlyoutPageRenderer", "Could not update the flyout icon: {0}", ex);
+			}
 		}
 
 		private void UpdateFlyoutPage()
 		{
+			// The delegate is async, so this is an async void in all but name - same reasoning as
+			// HandleFlyoutPropertyChanged above.
 			Gtk.Application.Invoke(async delegate
 			{
-				await UpdateHamburguerIconAsync();
-				if (Page.Flyout != _currentFlyout)
+				try
 				{
-					if (_currentFlyout != null)
+					await UpdateHamburguerIconAsync();
+					if (Page.Flyout != _currentFlyout)
 					{
-						_currentFlyout.PropertyChanged -= HandleFlyoutPropertyChanged;
+						if (_currentFlyout != null)
+						{
+							_currentFlyout.PropertyChanged -= HandleFlyoutPropertyChanged;
+						}
+						if (Platform.GetRenderer(Page.Flyout) == null)
+							Platform.SetRenderer(Page.Flyout, Platform.CreateRenderer(Page.Flyout));
+						Widget.Flyout = Platform.GetRenderer(Page.Flyout).Container;
+						Widget.FlyoutTitle = Page.Flyout?.Title ?? string.Empty;
+						Page.Flyout.PropertyChanged += HandleFlyoutPropertyChanged;
+						_currentFlyout = Page.Flyout;
 					}
-					if (Platform.GetRenderer(Page.Flyout) == null)
-						Platform.SetRenderer(Page.Flyout, Platform.CreateRenderer(Page.Flyout));
-					Widget.Flyout = Platform.GetRenderer(Page.Flyout).Container;
-					Widget.FlyoutTitle = Page.Flyout?.Title ?? string.Empty;
-					Page.Flyout.PropertyChanged += HandleFlyoutPropertyChanged;
-					_currentFlyout = Page.Flyout;
+					if (Page.Detail != _currentDetail)
+					{
+						if (Platform.GetRenderer(Page.Detail) == null)
+							Platform.SetRenderer(Page.Detail, Platform.CreateRenderer(Page.Detail));
+						Widget.Detail = Platform.GetRenderer(Page.Detail).Container;
+						_currentDetail = Page.Detail;
+					}
+					UpdateBarTextColor();
+					UpdateBarBackgroundColor();
 				}
-				if (Page.Detail != _currentDetail)
+				catch (Exception ex)
 				{
-					if (Platform.GetRenderer(Page.Detail) == null)
-						Platform.SetRenderer(Page.Detail, Platform.CreateRenderer(Page.Detail));
-					Widget.Detail = Platform.GetRenderer(Page.Detail).Container;
-					_currentDetail = Page.Detail;
+					Internals.Log.Warning("FlyoutPageRenderer", "Could not update the flyout page: {0}", ex);
 				}
-				UpdateBarTextColor();
-				UpdateBarBackgroundColor();
 			});
 		}
 

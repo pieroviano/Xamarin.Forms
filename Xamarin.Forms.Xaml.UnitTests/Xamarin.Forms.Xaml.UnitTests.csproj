@@ -90,10 +90,13 @@
       <Link>MockPlatformServices.cs</Link>
     </Compile>
     <!--
-      BaseTestFixture is NOT linked from Core.UnitTests any more: that copy is still NUnit
-      ([SetUp]/[TearDown]) and Core.UnitTests has not been migrated yet. Xaml.UnitTests uses
-      its own xUnit version (ctor / IDisposable) until Core follows, at which point the two
-      should be unified again.
+      Linked, not copied. This project used to carry its own near-identical BaseTestFixture,
+      from the period when the Core.UnitTests copy was still NUnit-based. Both suites are xUnit
+      now, and two copies meant a fix to one silently did not apply to the other - which is
+      exactly how the Application.Current teardown ended up missing from the suite that needed it.
     -->
+    <Compile Include="..\Xamarin.Forms.Core.UnitTests\BaseTestFixture.cs">
+      <Link>BaseTestFixture.cs</Link>
+    </Compile>
   </ItemGroup>
 </Project>

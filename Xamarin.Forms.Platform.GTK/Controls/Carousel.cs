@@ -176,7 +176,23 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public async void SetBackgroundImage(ImageSource imageSource)
 		{
-			_image.Pixbuf = await imageSource.GetNativeImageAsync();
+			// async void: a load failure here has nowhere to surface and would crash the process.
+			// See the note on Page.SetBackgroundImage.
+			Gdk.Pixbuf pixbuf;
+
+			try
+			{
+				pixbuf = await imageSource.GetNativeImageAsync();
+			}
+			catch (Exception)
+			{
+				return;
+			}
+
+			var image = _image;
+
+			if (image != null)
+				image.Pixbuf = pixbuf;
 		}
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)

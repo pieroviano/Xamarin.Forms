@@ -68,7 +68,28 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public async void SetBackgroundImage(ImageSource imageSource)
 		{
-			_image.Pixbuf = await imageSource.GetNativeImageAsync();
+			// This is async void, so nothing can observe a failure here: an exception would be
+			// rethrown on the synchronization context with no handler and take the process down.
+			// GetNativeImageAsync does file and network I/O, so a missing file or a dead URI is
+			// an ordinary outcome, not an exceptional one.
+			Pixbuf pixbuf;
+
+			try
+			{
+				pixbuf = await imageSource.GetNativeImageAsync();
+			}
+			catch (Exception)
+			{
+				return;
+			}
+
+			// Re-read the field after the await: Destroy() nulls it, and a page navigated away
+			// from while its background image was still loading would otherwise dereference null
+			// on that same unobservable path. Same guard ImageRenderer.SetImage already uses.
+			var image = _image;
+
+			if (image != null)
+				image.Pixbuf = pixbuf;
 		}
 
 		public override void Destroy()

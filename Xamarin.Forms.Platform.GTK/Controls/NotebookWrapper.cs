@@ -1,4 +1,5 @@
-﻿using Gdk;
+﻿using System;
+using Gdk;
 using Gtk;
 using Xamarin.Forms.Platform.GTK.Extensions;
 
@@ -98,7 +99,19 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public async void SetBackgroundImage(ImageSource imageSource)
 		{
-			_backgroundPixbuf = await imageSource.GetNativeImageAsync();
+			// async void: a load failure here has nowhere to surface and would crash the process.
+			// See the note on Page.SetBackgroundImage.
+			try
+			{
+				_backgroundPixbuf = await imageSource.GetNativeImageAsync();
+			}
+			catch (Exception)
+			{
+				return;
+			}
+
+			if (_noteBook == null)
+				return;
 
 			for (int i = 0; i < _noteBook.NPages; i++)
 			{

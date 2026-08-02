@@ -368,7 +368,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			stateGroups.Add(new VisualStateGroup { Name = name });
 		}
 
-		[Theory(Skip = "explicit in NUnit")]
+		[Theory(Skip = "Benchmark, not a unit test: it measures elapsed milliseconds and reports them via Assert.Fail, so it has no pass condition and would be non-deterministic on CI hardware. Kept as a manually-runnable micro-benchmark.")]
 		[InlineData(1, 10)]
 		[InlineData(1, 10000)]
 		[InlineData(10, 100)]

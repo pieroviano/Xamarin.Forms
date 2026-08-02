@@ -1553,7 +1553,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			return; //doesn't throw
 		}
 
-		[Fact(Skip = "SpeedTestApply")]
+		[Fact(Skip = "Benchmark, not a unit test: it measures elapsed milliseconds and reports them via Assert.Fail, so it has no pass condition and would be non-deterministic on CI hardware. Kept as a manually-runnable micro-benchmark.")]
 		public void SpeedTestApply()
 		{
 
@@ -1625,7 +1625,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Fail($"Applying {it} Typedbindings\t\t\t: {swtb.ElapsedMilliseconds}ms.\nApplying {it} Typedbindings (without INPC)\t: {swtbh.ElapsedMilliseconds}ms.\nApplying {it} Bindings\t\t\t: {swb.ElapsedMilliseconds}ms.\nSetting  {it} values\t\t\t\t: {swsv.ElapsedMilliseconds}ms.");
 		}
 
-		[Fact(Skip = "SpeedTestSetBC")]
+		[Fact(Skip = "Benchmark, not a unit test: it measures elapsed milliseconds and reports them via Assert.Fail, so it has no pass condition and would be non-deterministic on CI hardware. Kept as a manually-runnable micro-benchmark.")]
 		public void SpeedTestSetBC()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));

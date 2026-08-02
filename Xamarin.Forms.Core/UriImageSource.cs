@@ -25,10 +25,27 @@ namespace Xamarin.Forms
 
 		bool _cachingEnabled = true;
 
-		static UriImageSource()
+		/// <summary>
+		/// Ensures the on-disk cache directory exists, without blocking.
+		/// </summary>
+		/// <remarks>
+		/// This work used to live in a STATIC CONSTRUCTOR that blocked on the two tasks with
+		/// <c>.Result</c> and <c>.Wait()</c>. Sync-over-async is a deadlock risk under any UI
+		/// synchronization context, and a type initializer is the worst possible place to take
+		/// that risk: the CLR caches the failure, so a single deadlock or fault would make
+		/// <see cref="UriImageSource"/> permanently unusable for the rest of the process, with
+		/// every later use throwing a <c>TypeInitializationException</c> whose real cause is
+		/// several frames down and long past.
+		///
+		/// Awaited from the cache path instead. The existence check is one cheap local I/O call
+		/// against an operation that is already doing network I/O. Deliberately NOT memoised in a
+		/// cached <c>Task</c>: a cached faulted task would reintroduce exactly the permanent
+		/// poisoning this removes.
+		/// </remarks>
+		static async Task EnsureCacheDirectoryAsync()
 		{
-			if (!Store.GetDirectoryExistsAsync(CacheName).Result)
-				Store.CreateDirectoryAsync(CacheName).Wait();
+			if (!await Store.GetDirectoryExistsAsync(CacheName).ConfigureAwait(false))
+				await Store.CreateDirectoryAsync(CacheName).ConfigureAwait(false);
 		}
 
 		public override bool IsEmpty => Uri == null;
@@ -126,10 +143,21 @@ namespace Xamarin.Forms
 
 			Stream stream = null;
 
+			// else, NOT "if (stream == null)". The cache path already performs the download itself
+			// (GetStreamAsyncUnchecked calls Device.GetStreamAsync when there is no locally cached
+			// copy), so falling through on a null result issued a SECOND identical request for
+			// every failed retrieval - two network round-trips for one missing image. The direct
+			// fetch is only the right thing to do when caching is switched off and the branch
+			// above was therefore skipped entirely.
+			//
+			// Covered by UriImageSourceTests.DoNotKeepFailedRetrieveInCache, which asserts exactly
+			// one network call per attempt and was disabled - as [Ignore("DoNotKeepFailedRetrieve
+			// InCache")] - for long enough to hide this.
 			if (CachingEnabled)
+			{
 				stream = await GetStreamFromCacheAsync(uri, cancellationToken).ConfigureAwait(false);
-
-			if (stream == null)
+			}
+			else
 			{
 				try
 				{
@@ -212,6 +240,10 @@ namespace Xamarin.Forms
 
 		async Task<Stream> GetStreamFromCacheAsync(Uri uri, CancellationToken cancellationToken)
 		{
+			// Replaces the blocking static constructor - see EnsureCacheDirectoryAsync. This is
+			// the only entry point that touches the cache directory, so it is the right gate.
+			await EnsureCacheDirectoryAsync().ConfigureAwait(false);
+
 			string key = GetCacheKey(uri);
 			LockingSemaphore sem;
 			lock (s_syncHandle)

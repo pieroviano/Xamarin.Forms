@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using GLib;
 
@@ -43,8 +44,13 @@ namespace Xamarin.Forms.Platform.GTK
 
 				evt.WaitOne();
 
+				// ExceptionDispatchInfo rather than `throw exception;`. This is a cross-thread
+				// rethrow - the exception was captured on the GTK main loop and is being surfaced
+				// on the caller's thread - so a bare `throw;` is not available, and `throw
+				// exception;` would overwrite the trace from the delegate that actually failed
+				// with one anchored here. Capture().Throw() preserves the original.
 				if (exception != null)
-					throw exception;
+					ExceptionDispatchInfo.Capture(exception).Throw();
 			}
 		}
 	}

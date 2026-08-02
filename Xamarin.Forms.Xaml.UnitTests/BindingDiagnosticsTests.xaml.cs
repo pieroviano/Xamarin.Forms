@@ -20,9 +20,27 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		public class Tests: IDisposable
 		{
-			public Tests() => Device.PlatformServices = new MockPlatformServices();
+			bool _debuggerinitialstate;
 
-			public void Dispose() => Device.PlatformServices = null;
+			public Tests()
+			{
+				Device.PlatformServices = new MockPlatformServices();
+
+				// VisualDiagnostics.RegisterSourceInfo only records anything when a debugger is
+				// attached, and DebuggerHelper fakes that automatically ONLY under #if DEBUG. So
+				// without this the XamlSourceInfo assertion below dereferences null in a Release
+				// run - the product is behaving correctly, the test was just relying on the build
+				// configuration. Same save/set/restore the Gh10803, Gh11334 and Gh11335 fixtures
+				// already use.
+				_debuggerinitialstate = DebuggerHelper._mockDebuggerIsAttached;
+				DebuggerHelper._mockDebuggerIsAttached = true;
+			}
+
+			public void Dispose()
+			{
+				DebuggerHelper._mockDebuggerIsAttached = _debuggerinitialstate;
+				Device.PlatformServices = null;
+			}
 
 			[Theory]
 			[InlineData(false)]
