@@ -1,19 +1,18 @@
-using System;
-using NUnit.Framework;
+﻿using System;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class LayoutOptionsUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestTypeConverter()
 		{
 			var converter = new LayoutOptionsConverter();
 			Assert.True(converter.CanConvertFrom(typeof(string)));
-			Assert.AreEqual(LayoutOptions.Center, converter.ConvertFromInvariantString("LayoutOptions.Center"));
-			Assert.AreEqual(LayoutOptions.Center, converter.ConvertFromInvariantString("Center"));
-			Assert.AreNotEqual(LayoutOptions.CenterAndExpand, converter.ConvertFromInvariantString("Center"));
+			Assert.Equal(LayoutOptions.Center, converter.ConvertFromInvariantString("LayoutOptions.Center"));
+			Assert.Equal(LayoutOptions.Center, converter.ConvertFromInvariantString("Center"));
+			Assert.NotEqual(LayoutOptions.CenterAndExpand, converter.ConvertFromInvariantString("Center"));
 			Assert.Throws<InvalidOperationException>(() => converter.ConvertFromInvariantString("foo"));
 			Assert.Throws<InvalidOperationException>(() => converter.ConvertFromInvariantString("foo.bar"));
 			Assert.Throws<InvalidOperationException>(() => converter.ConvertFromInvariantString("foo.bar.baz"));

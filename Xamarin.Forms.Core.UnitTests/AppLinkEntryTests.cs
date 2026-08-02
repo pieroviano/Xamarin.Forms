@@ -1,34 +1,33 @@
-using System;
-using NUnit.Framework;
+﻿using System;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class AppLinkEntryTests : BaseTestFixture
 	{
 
-		[Test]
+		[Fact]
 		public void KeyValuesTest()
 		{
 			var entry = new AppLinkEntry();
 
 			entry.KeyValues.Add("contentType", "GalleryPage");
 			entry.KeyValues.Add("companyName", "Xamarin");
-			Assert.AreEqual(entry.KeyValues.Count, 2);
+			Assert.Equal(entry.KeyValues.Count, 2);
 		}
 
 
-		[Test]
+		[Fact]
 		public void FromUriTest()
 		{
 			var uri = new Uri("http://foo.com");
 
 			var entry = AppLinkEntry.FromUri(uri);
 
-			Assert.AreEqual(uri, entry.AppLinkUri);
+			Assert.Equal(uri, entry.AppLinkUri);
 		}
 
-		[Test]
+		[Fact]
 		public void ToStringTest()
 		{
 			var str = "http://foo.com";
@@ -36,7 +35,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var entry = new AppLinkEntry { AppLinkUri = uri };
 
-			Assert.AreEqual(uri.ToString(), entry.ToString());
+			Assert.Equal(uri.ToString(), entry.ToString());
 		}
 	}
 }

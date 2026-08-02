@@ -1,25 +1,22 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
+
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class SpanTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public SpanTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void StyleApplied()
 		{
 			var pinkStyle = new Style(typeof(Span))
@@ -50,10 +47,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				Content = label
 			};
 
-			Assert.AreEqual(Color.Pink, span.TextColor);
+			Assert.Equal(Color.Pink, span.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void BindingApplied()
 		{
 			var vm = new ViewModel()
@@ -75,7 +72,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			label.BindingContext = vm;
 
-			Assert.AreEqual(vm.Text, span.Text);
+			Assert.Equal(vm.Text, span.Text);
 		}
 
 		class ViewModel

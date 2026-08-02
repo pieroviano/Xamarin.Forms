@@ -1,14 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class BoxViewUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var box = new BoxView
@@ -19,13 +18,13 @@ namespace Xamarin.Forms.Core.UnitTests
 				IsPlatformEnabled = true,
 			};
 
-			Assert.AreEqual(new Color(0.2, 0.3, 0.4), box.Color);
+			Assert.Equal(new Color(0.2, 0.3, 0.4), box.Color);
 			var request = box.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request;
-			Assert.AreEqual(20, request.Width);
-			Assert.AreEqual(30, request.Height);
+			Assert.Equal(20, request.Width);
+			Assert.Equal(30, request.Height);
 		}
 
-		[Test]
+		[Fact]
 		public void DefaultSize()
 		{
 			var box = new BoxView
@@ -34,8 +33,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			var request = box.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request;
-			Assert.AreEqual(40, request.Width);
-			Assert.AreEqual(40, request.Height);
+			Assert.Equal(40, request.Width);
+			Assert.Equal(40, request.Height);
 		}
 	}
 }

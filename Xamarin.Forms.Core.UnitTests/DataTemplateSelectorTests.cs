@@ -1,23 +1,19 @@
-using System;
-using NUnit.Framework;
+﻿using System;
 using Xamarin.Forms;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DataTemplateSelectorTests : BaseTestFixture
 	{
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[SetUp]
-		public override void Setup()
+		public DataTemplateSelectorTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
@@ -58,32 +54,32 @@ namespace Xamarin.Forms.Core.UnitTests
 			readonly DataTemplate templateTwo;
 		}
 
-		[Test]
+		[Fact]
 		public void Constructor()
 		{
 			var dts = new TestDTS();
 		}
 
-		[Test]
+		[Fact]
 		public void ReturnsCorrectType()
 		{
 			var dts = new TestDTS();
-			Assert.IsInstanceOf<TemplateOne>(dts.SelectTemplate(1d, null));
-			Assert.IsInstanceOf<TemplateTwo>(dts.SelectTemplate("test", null));
+			Assert.IsAssignableFrom<TemplateOne>(dts.SelectTemplate(1d, null));
+			Assert.IsAssignableFrom<TemplateTwo>(dts.SelectTemplate("test", null));
 		}
 
-		[Test]
+		[Fact]
 		public void ListViewSupport()
 		{
 			var listView = new ListView(ListViewCachingStrategy.RecycleElement);
 			listView.ItemsSource = new object[] { 0d, "test" };
 
 			listView.ItemTemplate = new TestDTS();
-			Assert.IsInstanceOf<ViewCell>(listView.TemplatedItems[0]);
-			Assert.IsInstanceOf<EntryCell>(listView.TemplatedItems[1]);
+			Assert.IsAssignableFrom<ViewCell>(listView.TemplatedItems[0]);
+			Assert.IsAssignableFrom<EntryCell>(listView.TemplatedItems[1]);
 		}
 
-		[Test]
+		[Fact]
 		public void NestingThrowsException()
 		{
 			var dts = new TestDTS();
@@ -91,20 +87,16 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class DataTemplateRecycleTests : BaseTestFixture
 	{
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[SetUp]
-		public override void Setup()
+		public DataTemplateRecycleTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
@@ -132,24 +124,24 @@ namespace Xamarin.Forms.Core.UnitTests
 			public int Counter = 0;
 		}
 
-		[Test]
+		[Fact]
 		public void ListViewSupport()
 		{
 			var listView = new ListView(ListViewCachingStrategy.RecycleElementAndDataTemplate);
 			listView.ItemsSource = new object[] { "foo", "bar", 0 };
 
-			Assert.That(listView.CachingStrategy ==
+			Assert.True(listView.CachingStrategy ==
 				ListViewCachingStrategy.RecycleElementAndDataTemplate);
 
 			var selector = new TestDataTemplateSelector();
 			listView.ItemTemplate = selector;
-			Assert.That(selector.Counter == 0);
+			Assert.True(selector.Counter == 0);
 
-			Assert.IsInstanceOf<ViewCell>(listView.TemplatedItems[0]);
-			Assert.That(selector.Counter == 1);
+			Assert.IsAssignableFrom<ViewCell>(listView.TemplatedItems[0]);
+			Assert.True(selector.Counter == 1);
 
-			Assert.IsInstanceOf<ViewCell>(listView.TemplatedItems[1]);
-			Assert.That(selector.Counter == 1);
+			Assert.IsAssignableFrom<ViewCell>(listView.TemplatedItems[1]);
+			Assert.True(selector.Counter == 1);
 
 			Assert.Throws<NotSupportedException>(
 				() => { var o = listView.TemplatedItems[2]; });

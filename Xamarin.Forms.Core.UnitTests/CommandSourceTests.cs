@@ -1,12 +1,12 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public abstract class CommandSourceTests<T> : BaseTestFixture
 		where T : BindableObject
 	{
-		[Test]
+		[Fact]
 		public void TestCommand()
 		{
 			var source = CreateSource();
@@ -15,7 +15,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			source.SetValue(CommandProperty, new Command(o =>
 			{
 				executed = true;
-				Assert.AreEqual(source, o);
+				Assert.Equal(source, o);
 			}));
 
 			source.SetValue(CommandParameterProperty, source);
@@ -25,36 +25,38 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(executed);
 		}
 
-		[Test]
-		public void CommandCanExecuteModifiesEnabled([Values(true, false)] bool initial)
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public void CommandCanExecuteModifiesEnabled(bool initial)
 		{
 			bool canExecute = initial;
 			Command command;
 			var source = CreateSource();
 			source.SetValue(CommandProperty, command = new Command(() => { }, () => canExecute));
 
-			Assert.AreEqual(canExecute, source.GetValue(IsEnabledProperty));
+			Assert.Equal(canExecute, source.GetValue(IsEnabledProperty));
 
 			canExecute = !initial;
 			command.ChangeCanExecute();
 
-			Assert.AreEqual(canExecute, source.GetValue(IsEnabledProperty));
+			Assert.Equal(canExecute, source.GetValue(IsEnabledProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void ReenabledAfterCommandRemoved()
 		{
 			var source = CreateSource();
 			source.SetValue(CommandProperty, new Command(() => { }, () => false));
 
-			Assert.That(source.GetValue(IsEnabledProperty), Is.False);
+			Assert.False((bool)source.GetValue(IsEnabledProperty));
 
 			source.SetValue(CommandProperty, null);
 
-			Assert.That(source.GetValue(IsEnabledProperty), Is.True);
+			Assert.True((bool)source.GetValue(IsEnabledProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void CommandUnhooksOnNull()
 		{
 			bool canExecute = false;
@@ -77,7 +79,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(raised);
 		}
 
-		[Test]
+		[Fact]
 		public void CommandCanExecuteInvokedOnCommandSet()
 		{
 			bool fired = false;
@@ -87,14 +89,14 @@ namespace Xamarin.Forms.Core.UnitTests
 				return true;
 			};
 
-			Assert.IsFalse(fired);
+			Assert.False(fired);
 			var source = CreateSource();
 			source.SetValue(CommandProperty, new Command(() => { }, canExecute));
 
 			Assert.True(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void CommandCanExecuteInvokedOnCommandParameterSet()
 		{
 			bool fired;
@@ -108,12 +110,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			source.SetValue(CommandProperty, new Command(() => { }, canExecute));
 
 			fired = false;
-			Assert.IsFalse(fired);
+			Assert.False(fired);
 			source.SetValue(CommandParameterProperty, new object());
 			Assert.True(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void CommandCanExecuteInvokedOnChange()
 		{
 			bool fired;
@@ -132,7 +134,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			cmd.ChangeCanExecute();
 
-			Assert.That(fired, Is.True, "CanExecute was not called when the event was raised");
+			Assert.True(fired, "CanExecute was not called when the event was raised");
 
 			// Preserve source from GC during the test in Release mode
 			GC.KeepAlive(source);
@@ -157,7 +159,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void EnabledUpdatesDoNotRemoveBindings()
 		{
 			var vm = new BoolViewModel { Toggle = true };
@@ -165,11 +167,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			source.BindingContext = vm;
 			source.SetBinding(IsEnabledProperty, "Toggle");
 
-			Assert.That(source.GetValue(IsEnabledProperty), Is.True);
+			Assert.True((bool)source.GetValue(IsEnabledProperty));
 
 			source.SetValue(CommandProperty, new Command(() => { }));
 
-			Assert.That(source.GetIsBound(IsEnabledProperty), Is.True);
+			Assert.True(source.GetIsBound(IsEnabledProperty));
 		}
 
 		protected abstract T CreateSource();

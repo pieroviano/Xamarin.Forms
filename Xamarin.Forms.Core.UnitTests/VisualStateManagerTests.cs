@@ -1,13 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class VisualStateManagerTests
 	{
 		const string NormalStateName = "Normal";
@@ -48,7 +47,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			return stateGroups;
 		}
 
-		[Test]
+		[Fact]
 		public void InitialStateIsNormalIfAvailable()
 		{
 			var label1 = new Label();
@@ -57,10 +56,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var groups1 = VisualStateManager.GetVisualStateGroups(label1);
 
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void InitialStateIsNullIfNormalNotAvailable()
 		{
 			var label1 = new Label();
@@ -72,7 +71,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(groups1[0].CurrentState);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualElementsStateGroupsAreDistinct()
 		{
 			var label1 = new Label();
@@ -84,18 +83,18 @@ namespace Xamarin.Forms.Core.UnitTests
 			var groups1 = VisualStateManager.GetVisualStateGroups(label1);
 			var groups2 = VisualStateManager.GetVisualStateGroups(label2);
 
-			Assert.AreNotSame(groups1, groups2);
+			Assert.NotSame(groups1, groups2);
 
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
-			Assert.That(groups2[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
+			Assert.Equal(NormalStateName, groups2[0].CurrentState.Name);
 
 			VisualStateManager.GoToState(label1, InvalidStateName);
 
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(InvalidStateName));
-			Assert.That(groups2[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(InvalidStateName, groups1[0].CurrentState.Name);
+			Assert.Equal(NormalStateName, groups2[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualStateGroupsFromSettersAreDistinct()
 		{
 			var x = new Setter();
@@ -114,18 +113,18 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.NotNull(groups1);
 			Assert.NotNull(groups2);
 
-			Assert.AreNotSame(groups1, groups2);
+			Assert.NotSame(groups1, groups2);
 
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
-			Assert.That(groups2[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
+			Assert.Equal(NormalStateName, groups2[0].CurrentState.Name);
 
 			VisualStateManager.GoToState(label1, InvalidStateName);
 
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(InvalidStateName));
-			Assert.That(groups2[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(InvalidStateName, groups1[0].CurrentState.Name);
+			Assert.Equal(NormalStateName, groups2[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void ElementsDoNotHaveVisualStateGroupsCollectionByDefault()
 		{
 			var label1 = new Label();
@@ -136,7 +135,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(label1.HasVisualStateGroups());
 		}
 
-		[Test]
+		[Fact]
 		public void StateNamesMustBeUniqueWithinGroup()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -146,7 +145,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => vsgs[0].States.Add(duplicate));
 		}
 
-		[Test]
+		[Fact]
 		public void StateNamesMustBeUniqueWithinGroupList()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -161,7 +160,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => secondGroup.States.Add(duplicate));
 		}
 
-		[Test]
+		[Fact]
 		public void StateNamesMustBeUniqueWithinGroupListWhenAddingGroup()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -176,7 +175,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => vsgs.Add(secondGroup));
 		}
 
-		[Test]
+		[Fact]
 		public void GroupNamesMustBeUniqueWithinGroupList()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -185,7 +184,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => vsgs.Add(secondGroup));
 		}
 
-		[Test]
+		[Fact]
 		public void StateNamesInGroupMayNotBeNull()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -195,7 +194,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => vsgs[0].States.Add(nullStateName));
 		}
 
-		[Test]
+		[Fact]
 		public void StateNamesInGroupMayNotBeEmpty()
 		{
 			IList<VisualStateGroup> vsgs = CreateTestStateGroups();
@@ -205,37 +204,37 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => vsgs[0].States.Add(emptyStateName));
 		}
 
-		[Test]
+		[Fact]
 		public void VerifyVisualStateChanges()
 		{
 			var label1 = new Label();
 			VisualStateManager.SetVisualStateGroups(label1, CreateTestStateGroups());
 
 			var groups1 = VisualStateManager.GetVisualStateGroups(label1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
 
 			label1.IsEnabled = false;
 
 			groups1 = VisualStateManager.GetVisualStateGroups(label1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(DisabledStateName));
+			Assert.Equal(DisabledStateName, groups1[0].CurrentState.Name);
 
 
 			label1.SetValue(VisualElement.IsFocusedPropertyKey, true);
 			groups1 = VisualStateManager.GetVisualStateGroups(label1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(DisabledStateName));
+			Assert.Equal(DisabledStateName, groups1[0].CurrentState.Name);
 
 			label1.IsEnabled = true;
 			groups1 = VisualStateManager.GetVisualStateGroups(label1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(FocusedStateName));
+			Assert.Equal(FocusedStateName, groups1[0].CurrentState.Name);
 
 
 			label1.SetValue(VisualElement.IsFocusedPropertyKey, false);
 			groups1 = VisualStateManager.GetVisualStateGroups(label1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
 
 		}
 
-		[Test]
+		[Fact]
 		public void VisualElementGoesToCorrectStateWhenAvailable()
 		{
 			var label = new Label();
@@ -252,10 +251,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			VisualStateManager.SetVisualStateGroups(label, list);
 
-			Assert.That(label.Margin.Bottom, Is.EqualTo(targetBottomMargin));
+			Assert.Equal(targetBottomMargin, label.Margin.Bottom);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualElementGoesToCorrectStateWhenAvailableFromSetter()
 		{
 			double targetBottomMargin = 1.5;
@@ -281,11 +280,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			x.Apply(label1);
 			x.Apply(label2);
 
-			Assert.That(label1.Margin.Bottom, Is.EqualTo(targetBottomMargin));
-			Assert.That(label2.Margin.Bottom, Is.EqualTo(targetBottomMargin));
+			Assert.Equal(targetBottomMargin, label1.Margin.Bottom);
+			Assert.Equal(targetBottomMargin, label2.Margin.Bottom);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualElementGoesToCorrectStateWhenSetterHasTarget()
 		{
 			double defaultMargin = default(double);
@@ -320,15 +319,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			VisualStateManager.SetVisualStateGroups(label1, list);
 
-			Assert.That(label1.Margin.Top, Is.EqualTo(defaultMargin));
-			Assert.That(label1.Margin.Bottom, Is.EqualTo(targetMargin));
-			Assert.That(label1.Margin.Left, Is.EqualTo(defaultMargin));
+			Assert.Equal(defaultMargin, label1.Margin.Top);
+			Assert.Equal(targetMargin, label1.Margin.Bottom);
+			Assert.Equal(defaultMargin, label1.Margin.Left);
 
-			Assert.That(label2.Margin.Top, Is.EqualTo(targetMargin));
-			Assert.That(label2.Margin.Bottom, Is.EqualTo(defaultMargin));
+			Assert.Equal(targetMargin, label2.Margin.Top);
+			Assert.Equal(defaultMargin, label2.Margin.Bottom);
 		}
 
-		[Test]
+		[Fact]
 		public void CanRemoveAStateAndAddANewStateWithTheSameName()
 		{
 			var stateGroups = new VisualStateGroupList();
@@ -347,7 +346,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			visualStateGroup.States.Add(new VisualState { Name = name });
 		}
 
-		[Test]
+		[Fact]
 		public void CanRemoveAGroupAndAddANewGroupWithTheSameName()
 		{
 			var stateGroups = new VisualStateGroupList();
@@ -369,12 +368,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			stateGroups.Add(new VisualStateGroup { Name = name });
 		}
 
-		[Test]
-		[Explicit("This test was created to check performance characteristics; leaving it in because it may be useful again.")]
-		[TestCase(1, 10)]
-		[TestCase(1, 10000)]
-		[TestCase(10, 100)]
-		[TestCase(10, 10000)]
+		[Theory(Skip = "explicit in NUnit")]
+		[InlineData(1, 10)]
+		[InlineData(1, 10000)]
+		[InlineData(10, 100)]
+		[InlineData(10, 10000)]
 		public void ValidatePerformance(int groups, int states)
 		{
 			IList<VisualStateGroup> vsgs = new VisualStateGroupList();

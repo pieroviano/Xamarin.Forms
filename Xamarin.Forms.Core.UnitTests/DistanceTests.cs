@@ -1,21 +1,20 @@
-using System;
-using NUnit.Framework;
+﻿using System;
 using Xamarin.Forms.Maps;
+using Xunit;
 
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DistanceTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Constructor()
 		{
 			var distance = new Distance(25);
-			Assert.AreEqual(25, distance.Meters);
+			Assert.Equal(25, distance.Meters);
 		}
 
-		[Test]
+		[Fact]
 		public void ConstructFromKilometers()
 		{
 			const double EPSILON = 0.001;
@@ -27,7 +26,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Miles - 1.24274) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void ConstructFromMeters()
 		{
 			const double EPSILON = 0.001;
@@ -39,7 +38,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Kilometers - 10.56) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void ConstructFromMiles()
 		{
 			const double EPSILON = 0.001;
@@ -58,7 +57,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Kilometers - 6378.09999805) < EPSILON_FOR_LARGE_MILES_TO_KM);
 		}
 
-		[Test]
+		[Fact]
 		public void ConstructFromPositions()
 		{
 			const double EPSILON = 0.001;
@@ -73,8 +72,33 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Miles - 33.15828) < EPSILON);
 		}
 
-		[Test]
-		public void EqualityOp([Range(5, 9)] double x, [Range(5, 9)] double y)
+		[Theory]
+		[InlineData(5, 5)]
+		[InlineData(5, 6)]
+		[InlineData(5, 7)]
+		[InlineData(5, 8)]
+		[InlineData(5, 9)]
+		[InlineData(6, 5)]
+		[InlineData(6, 6)]
+		[InlineData(6, 7)]
+		[InlineData(6, 8)]
+		[InlineData(6, 9)]
+		[InlineData(7, 5)]
+		[InlineData(7, 6)]
+		[InlineData(7, 7)]
+		[InlineData(7, 8)]
+		[InlineData(7, 9)]
+		[InlineData(8, 5)]
+		[InlineData(8, 6)]
+		[InlineData(8, 7)]
+		[InlineData(8, 8)]
+		[InlineData(8, 9)]
+		[InlineData(9, 5)]
+		[InlineData(9, 6)]
+		[InlineData(9, 7)]
+		[InlineData(9, 8)]
+		[InlineData(9, 9)]
+		public void EqualityOp(double x, double y)
 		{
 			bool result = Distance.FromMeters(x) == Distance.FromMeters(y);
 
@@ -84,8 +108,33 @@ namespace Xamarin.Forms.Core.UnitTests
 				Assert.False(result);
 		}
 
-		[Test]
-		public void Equals([Range(3, 7)] double x, [Range(3, 7)] double y)
+		[Theory]
+		[InlineData(3, 3)]
+		[InlineData(3, 4)]
+		[InlineData(3, 5)]
+		[InlineData(3, 6)]
+		[InlineData(3, 7)]
+		[InlineData(4, 3)]
+		[InlineData(4, 4)]
+		[InlineData(4, 5)]
+		[InlineData(4, 6)]
+		[InlineData(4, 7)]
+		[InlineData(5, 3)]
+		[InlineData(5, 4)]
+		[InlineData(5, 5)]
+		[InlineData(5, 6)]
+		[InlineData(5, 7)]
+		[InlineData(6, 3)]
+		[InlineData(6, 4)]
+		[InlineData(6, 5)]
+		[InlineData(6, 6)]
+		[InlineData(6, 7)]
+		[InlineData(7, 3)]
+		[InlineData(7, 4)]
+		[InlineData(7, 5)]
+		[InlineData(7, 6)]
+		[InlineData(7, 7)]
+		public void EqualsForCoordinates(double x, double y)
 		{
 			bool result = Distance.FromMiles(x).Equals(Distance.FromMiles(y));
 			if (x == y)
@@ -94,13 +143,13 @@ namespace Xamarin.Forms.Core.UnitTests
 				Assert.False(result);
 		}
 
-		[Test]
+		[Fact]
 		public void EqualsNull()
 		{
 			Assert.False(Distance.FromMeters(5).Equals(null));
 		}
 
-		[Test]
+		[Fact]
 		public void GettingAndSettingKilometers()
 		{
 			const double EPSILON = 0.001;
@@ -109,7 +158,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Kilometers - 1891) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void GettingAndSettingMeters()
 		{
 			const double EPSILON = 0.001;
@@ -118,7 +167,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Meters - 123434) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void GettingAndSettingMiles()
 		{
 			const double EPSILON = 0.001;
@@ -127,8 +176,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Miles - 515) < EPSILON);
 		}
 
-		[Test]
-		public void HashCode([Range(4, 5)] double x, [Range(4, 5)] double y)
+		[Theory]
+		[InlineData(4, 4)]
+		[InlineData(4, 5)]
+		[InlineData(5, 4)]
+		[InlineData(5, 5)]
+		public void HashCode(double x, double y)
 		{
 			Distance distance1 = Distance.FromMiles(x);
 			Distance distance2 = Distance.FromMiles(y);
@@ -141,8 +194,33 @@ namespace Xamarin.Forms.Core.UnitTests
 				Assert.False(result);
 		}
 
-		[Test]
-		public void InequalityOp([Range(5, 9)] double x, [Range(5, 9)] double y)
+		[Theory]
+		[InlineData(5, 5)]
+		[InlineData(5, 6)]
+		[InlineData(5, 7)]
+		[InlineData(5, 8)]
+		[InlineData(5, 9)]
+		[InlineData(6, 5)]
+		[InlineData(6, 6)]
+		[InlineData(6, 7)]
+		[InlineData(6, 8)]
+		[InlineData(6, 9)]
+		[InlineData(7, 5)]
+		[InlineData(7, 6)]
+		[InlineData(7, 7)]
+		[InlineData(7, 8)]
+		[InlineData(7, 9)]
+		[InlineData(8, 5)]
+		[InlineData(8, 6)]
+		[InlineData(8, 7)]
+		[InlineData(8, 8)]
+		[InlineData(8, 9)]
+		[InlineData(9, 5)]
+		[InlineData(9, 6)]
+		[InlineData(9, 7)]
+		[InlineData(9, 8)]
+		[InlineData(9, 9)]
+		public void InequalityOp(double x, double y)
 		{
 			bool result = Distance.FromMeters(x) != Distance.FromMeters(y);
 
@@ -152,7 +230,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				Assert.False(result);
 		}
 
-		[Test]
+		[Fact]
 		public void ObjectInitializerKilometers()
 		{
 			const double EPSILON = 0.001;
@@ -161,7 +239,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Meters - 10000) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void ObjectInitializerMeters()
 		{
 			const double EPSILON = 0.001;
@@ -170,7 +248,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Kilometers - 1.057) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void ObjectInitializerMiles()
 		{
 			const double EPSILON = 0.001;
@@ -179,32 +257,32 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(Math.Abs(distance.Meters - 160934.4) < EPSILON);
 		}
 
-		[Test]
+		[Fact]
 		public void ClampFromMeters()
 		{
 			var distance = Distance.FromMeters(-1);
 
-			Assert.AreEqual(0, distance.Meters);
+			Assert.Equal(0, distance.Meters);
 		}
 
-		[Test]
+		[Fact]
 		public void ClampFromMiles()
 		{
 			var distance = Distance.FromMiles(-1);
 
-			Assert.AreEqual(0, distance.Meters);
+			Assert.Equal(0, distance.Meters);
 		}
 
-		[Test]
+		[Fact]
 		public void ClampFromKilometers()
 		{
 			var distance = Distance.FromKilometers(-1);
 
-			Assert.AreEqual(0, distance.Meters);
+			Assert.Equal(0, distance.Meters);
 		}
 
-		[Test]
-		public void Equals()
+		[Fact]
+		public void EqualsTest()
 		{
 			Assert.True(Distance.FromMiles(2).Equals((object)Distance.FromMiles(2)));
 		}

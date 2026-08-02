@@ -1,19 +1,19 @@
 ﻿using System;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public class PinchGestureRecognizerTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Constructor()
 		{
 			var pinch = new PinchGestureRecognizer();
 
 		}
 
-		[Test]
+		[Fact]
 		public void PinchStartedTest()
 		{
 			var view = new View();
@@ -29,11 +29,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			((IPinchGestureController)pinch).SendPinchStarted(view, point);
-			Assert.AreEqual(GestureStatus.Started, result);
-			Assert.AreEqual(point, resultPoint);
+			Assert.Equal(GestureStatus.Started, result);
+			Assert.Equal(point, resultPoint);
 		}
 
-		[Test]
+		[Fact]
 		public void PinchCompletedTest()
 		{
 			var view = new View();
@@ -46,10 +46,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			((IPinchGestureController)pinch).SendPinchEnded(view);
-			Assert.AreEqual(GestureStatus.Completed, result);
+			Assert.Equal(GestureStatus.Completed, result);
 		}
 
-		[Test]
+		[Fact]
 		public void PinchUpdatedTest()
 		{
 			var view = new View();
@@ -64,10 +64,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			((IPinchGestureController)pinch).SendPinch(view, 2, point);
-			Assert.AreEqual(2, result);
+			Assert.Equal(2, result);
 		}
 
-		[Test]
+		[Fact]
 		public void OnlyOnePinchGesturePerViewTest()
 		{
 			var view = new View();

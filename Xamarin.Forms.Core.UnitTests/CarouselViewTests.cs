@@ -3,38 +3,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public class CarouselViewTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public CarouselViewTests()
 		{
-			base.Setup();
 			var mockDeviceInfo = new TestDeviceInfo();
 			Device.Info = mockDeviceInfo;
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.Info = null;
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructorAndDefaults()
 		{
 			var carouselView = new CarouselView();
-			Assert.IsNull(carouselView.ItemsSource);
-			Assert.IsNull(carouselView.ItemTemplate);
-			Assert.IsNotNull(carouselView.ItemsLayout);
-			Assert.IsTrue(carouselView.Position == 0);
+			Assert.Null(carouselView.ItemsSource);
+			Assert.Null(carouselView.ItemTemplate);
+			Assert.NotNull(carouselView.ItemsLayout);
+			Assert.True(carouselView.Position == 0);
 		}
 
-		[Test]
+		[Fact]
 		public void TestPositionChangedCommand()
 		{
 			var source = new List<string> { "1", "2", "3" };
@@ -48,12 +45,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			{
 				countFired = countFired + 1;
 			});
-			Assert.AreSame(source, carouselView.ItemsSource);
+			Assert.Same(source, carouselView.ItemsSource);
 			carouselView.Position = 1;
-			Assert.IsTrue(countFired == 1);
+			Assert.True(countFired == 1);
 		}
 
-		[Test]
+		[Fact]
 		public void TestPositionChangedEvent()
 		{
 			var gotoPosition = 1;
@@ -68,12 +65,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			{
 				countFired += 1;
 			};
-			Assert.AreSame(source, carouselView.ItemsSource);
+			Assert.Same(source, carouselView.ItemsSource);
 			carouselView.Position = gotoPosition;
-			Assert.IsTrue(countFired == 1);
+			Assert.True(countFired == 1);
 		}
 
-		[Test]
+		[Fact]
 		public void TestCurrentItemChangedCommand()
 		{
 			var gotoPosition = 1;
@@ -88,12 +85,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			{
 				countFired += 1;
 			});
-			Assert.AreSame(source, carouselView.ItemsSource);
+			Assert.Same(source, carouselView.ItemsSource);
 			carouselView.CurrentItem = source[gotoPosition];
-			Assert.IsTrue(countFired == 1);
+			Assert.True(countFired == 1);
 		}
 
-		[Test]
+		[Fact]
 		public void TestCurrentItemChangedEvent()
 		{
 			var gotoPosition = 1;
@@ -108,12 +105,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			{
 				countFired += 1;
 			};
-			Assert.AreSame(source, carouselView.ItemsSource);
+			Assert.Same(source, carouselView.ItemsSource);
 			carouselView.CurrentItem = source[gotoPosition];
-			Assert.IsTrue(countFired == 1);
+			Assert.True(countFired == 1);
 		}
 
-		[Test]
+		[Fact]
 		public void TestAddRemoveItems()
 		{
 			var source = new List<string>();
@@ -129,7 +126,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			carouselView.ScrollTo(1, position: ScrollToPosition.Center, animate: false);
 			source.Remove("2");
 
-			Assert.AreEqual(0, carouselView.Position);
+			Assert.Equal(0, carouselView.Position);
 		}
 	}
 }

@@ -1,20 +1,19 @@
-﻿using System.Threading.Tasks;
-using NUnit.Framework;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Xamarin.Forms.Controls.Tests
 {
-	[TestFixture]
 	public class CrossPlatformTests : CrossPlatformTestFixture
 	{
-		[Test]
-		[Description("Always Passes")]
+		[Fact]
+		[Trait("Description", "Always Passes")]
 		public void PassingCrossPlatformTest()
 		{
-			Assert.Pass();
+			// xUnit has no Assert.Pass; a test that returns without throwing has passed.
 		}
 
-		[Test]
-		[Description("Setting ListView Header to null should not crash")]
+		[Fact]
+		[Trait("Description", "Setting ListView Header to null should not crash")]
 		public void Bugzilla28575()
 		{
 			string header = "Hello I am Header!!!!";
@@ -32,8 +31,8 @@ namespace Xamarin.Forms.Controls.Tests
 			listview.Header = null;
 		}
 
-		[Test]
-		[Description("isPresentedChanged raises multiple times")]
+		[Fact]
+		[Trait("Description", "isPresentedChanged raises multiple times")]
 		public void Bugzilla32230()
 		{
 			var mdp = new FlyoutPage();
@@ -41,31 +40,31 @@ namespace Xamarin.Forms.Controls.Tests
 			mdp.IsPresentedChanged += (sender, args) => { count += 1; };
 
 			mdp.IsPresented = true;
-			Assert.That(count, Is.EqualTo(1));
+			Assert.Equal(1, count);
 
 			mdp.IsPresented = false;
 			mdp.IsPresented = true;
-			Assert.That(count, Is.EqualTo(3));
+			Assert.Equal(3, count);
 		}
 
-		[Test]
-		[Description("ButtonRenderer UpdateTextColor function crash")]
+		[Fact]
+		[Trait("Description", "ButtonRenderer UpdateTextColor function crash")]
 		public async Task Bugzilla35738()
 		{
 			var customButton = new TestClasses.CustomButton() { Text = "This is a custom button", TextColor = Color.Fuchsia };
 			await TestingPlatform.CreateRenderer(customButton);
 		}
 
-		[Test]
-		[Description("[Bug] CollectionView exception when IsGrouped=true and null ItemSource")]
+		[Fact]
+		[Trait("Description", "[Bug] CollectionView exception when IsGrouped=true and null ItemSource")]
 		public async Task GitHub8269()
 		{
 			var collectionView = new CollectionView { ItemsSource = null, IsGrouped = true };
 			await TestingPlatform.CreateRenderer(collectionView);
 		}
 
-		[Test]
-		[Description("[Bug] [UWP] NullReferenceException when call SavePropertiesAsync method off the main thread")]
+		[Fact]
+		[Trait("Description", "[Bug] [UWP] NullReferenceException when call SavePropertiesAsync method off the main thread")]
 		public async Task GitHub8682()
 		{
 			await Task.Run(async () =>

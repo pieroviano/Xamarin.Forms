@@ -1,12 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows.Input;
-using NUnit.Framework;
 using Xamarin.Forms.Maps;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class NotifiedPropertiesTests : BaseTestFixture
 	{
 		public abstract class PropertyTestCase
@@ -58,7 +59,10 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 #pragma warning disable 0414
-		static PropertyTestCase[] Properties = {
+		public static IEnumerable<object[]> PropertiesData =>
+			Properties.Select(p => new object[] { p });
+
+		public static PropertyTestCase[] Properties = {
 			new PropertyTestCase<View, bool> ("InputTransparent", v => v.InputTransparent, (v, o) => v.InputTransparent = o, () => false, true),
 			new PropertyTestCase<View, double> ("Scale", v => v.Scale, (v, o) => v.Scale = o, () => 1d, 2d),
 			new PropertyTestCase<View, double> ("Rotation", v => v.Rotation, (v, o) => v.Rotation = o, () => 0d, 90d),
@@ -161,28 +165,27 @@ namespace Xamarin.Forms.Core.UnitTests
 		};
 #pragma warning restore 0414
 
-		[SetUp]
-		public override void Setup()
+		public NotifiedPropertiesTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test, TestCaseSource("Properties")]
+		[Theory]
+		[MemberData(nameof(PropertiesData))]
 		public void DefaultValues(PropertyTestCase property)
 		{
 			var view = property.CreateView();
-			Assert.AreEqual(property.ExpectedDefaultValue, property.PropertyGetter(view), property.DebugName);
+			Assert.Equal(property.ExpectedDefaultValue, property.PropertyGetter(view));
 		}
 
-		[Test, TestCaseSource("Properties")]
+		[Theory]
+		[MemberData(nameof(PropertiesData))]
 		public void Set(PropertyTestCase property)
 		{
 			var view = property.CreateView();
@@ -198,10 +201,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			property.PropertySetter(view, testvalue);
 
 			Assert.True(changed, property.DebugName);
-			Assert.AreEqual(testvalue, property.PropertyGetter(view), property.DebugName);
+			Assert.Equal(testvalue, property.PropertyGetter(view));
 		}
 
-		[Test, TestCaseSource("Properties")]
+		[Theory]
+		[MemberData(nameof(PropertiesData))]
 		public void DoubleSet(PropertyTestCase property)
 		{
 			var view = property.CreateView();
@@ -219,7 +223,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			property.PropertySetter(view, testvalue);
 
 			Assert.False(changed, property.DebugName);
-			Assert.AreEqual(testvalue, property.PropertyGetter(view), property.DebugName);
+			Assert.Equal(testvalue, property.PropertyGetter(view));
 		}
 	}
 }

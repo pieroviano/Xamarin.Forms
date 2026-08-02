@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using Xamarin.Forms.CustomAttributes;
 using Xamarin.Forms.Internals;
+
+#if UITEST
+using NUnit.Framework;
+#endif
 
 namespace Xamarin.Forms.Controls.Issues
 {

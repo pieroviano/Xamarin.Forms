@@ -1,43 +1,40 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DataTemplateTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void CtorInvalid()
 		{
-			Assert.Throws<ArgumentNullException>(() => new DataTemplate((Func<object>)null),
-				"Allowed null creator delegate");
+			Assert.Throws<ArgumentNullException>(() => new DataTemplate((Func<object>)null));
 
-			Assert.Throws<ArgumentNullException>(() => new DataTemplate((Type)null),
-				"Allowed null type");
+			Assert.Throws<ArgumentNullException>(() => new DataTemplate((Type)null));
 		}
 
-		[Test]
+		[Fact]
 		public void CreateContent()
 		{
 			var template = new DataTemplate(() => new MockBindable());
 			object obj = template.CreateContent();
 
-			Assert.IsNotNull(obj);
-			Assert.That(obj, Is.InstanceOf<MockBindable>());
+			Assert.NotNull(obj);
+			Assert.IsAssignableFrom<MockBindable>(obj);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateContentType()
 		{
 			var template = new DataTemplate(typeof(MockBindable));
 			object obj = template.CreateContent();
 
-			Assert.IsNotNull(obj);
-			Assert.That(obj, Is.InstanceOf<MockBindable>());
+			Assert.NotNull(obj);
+			Assert.IsAssignableFrom<MockBindable>(obj);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateContentValues()
 		{
 			var template = new DataTemplate(typeof(MockBindable))
@@ -46,10 +43,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			MockBindable bindable = (MockBindable)template.CreateContent();
-			Assert.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo("value"));
+			Assert.Equal("value", bindable.GetValue(MockBindable.TextProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void CreateContentBindings()
 		{
 			var template = new DataTemplate(() => new MockBindable())
@@ -59,18 +56,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MockBindable bindable = (MockBindable)template.CreateContent();
 			bindable.BindingContext = "text";
-			Assert.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo("text"));
+			Assert.Equal("text", bindable.GetValue(MockBindable.TextProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void SetBindingInvalid()
 		{
 			var template = new DataTemplate(typeof(MockBindable));
-			Assert.That(() => template.SetBinding(null, new Binding(".")), Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => template.SetBinding(MockBindable.TextProperty, null), Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => template.SetBinding(null, new Binding(".")));
+			Assert.ThrowsAny<ArgumentNullException>(() => template.SetBinding(MockBindable.TextProperty, null));
 		}
 
-		[Test]
+		[Fact]
 		public void SetBindingOverridesValue()
 		{
 			var template = new DataTemplate(typeof(MockBindable));
@@ -78,13 +75,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			template.SetBinding(MockBindable.TextProperty, new Binding("."));
 
 			MockBindable bindable = (MockBindable)template.CreateContent();
-			Assume.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo(bindable.BindingContext));
+			Assert.Equal(bindable.BindingContext, bindable.GetValue(MockBindable.TextProperty));
 
 			bindable.BindingContext = "binding";
-			Assert.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo("binding"));
+			Assert.Equal("binding", bindable.GetValue(MockBindable.TextProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void SetValueOverridesBinding()
 		{
 			var template = new DataTemplate(typeof(MockBindable));
@@ -92,19 +89,19 @@ namespace Xamarin.Forms.Core.UnitTests
 			template.SetValue(MockBindable.TextProperty, "value");
 
 			MockBindable bindable = (MockBindable)template.CreateContent();
-			Assert.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo("value"));
+			Assert.Equal("value", bindable.GetValue(MockBindable.TextProperty));
 			bindable.BindingContext = "binding";
-			Assert.That(bindable.GetValue(MockBindable.TextProperty), Is.EqualTo("value"));
+			Assert.Equal("value", bindable.GetValue(MockBindable.TextProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void SetValueInvalid()
 		{
 			var template = new DataTemplate(typeof(MockBindable));
-			Assert.That(() => template.SetValue(null, "string"), Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => template.SetValue(null, "string"));
 		}
 
-		[Test]
+		[Fact]
 		public void SetValueAndBinding()
 		{
 			var template = new DataTemplate(typeof(TextCell))
@@ -116,7 +113,7 @@ namespace Xamarin.Forms.Core.UnitTests
 					{TextCell.TextProperty, "Text"}
 				}
 			};
-			Assert.That(() => template.CreateContent(), Throws.InstanceOf<InvalidOperationException>());
+			Assert.ThrowsAny<InvalidOperationException>(() => template.CreateContent());
 		}
 	}
 }

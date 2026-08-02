@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xamarin.Forms.CustomAttributes;
 using Xamarin.Forms.Internals;
-using CategoryAttribute = NUnit.Framework.CategoryAttribute;
 
 // Thanks to GitHub user [@Matmork](https://github.com/Matmork) for this reproducible test case.
 // https://github.com/xamarin/Xamarin.Forms/issues/9711#issuecomment-602520024
@@ -14,6 +13,7 @@ using CategoryAttribute = NUnit.Framework.CategoryAttribute;
 #if UITEST
 using Xamarin.Forms.Core.UITests;
 using NUnit.Framework;
+using CategoryAttribute = NUnit.Framework.CategoryAttribute;
 #endif
 
 namespace Xamarin.Forms.Controls.Issues

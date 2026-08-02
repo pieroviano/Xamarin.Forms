@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,54 +6,50 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class RefreshViewTests : BaseTestFixture
 	{
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 			Device.Info = null;
 		}
 
-		[SetUp]
-		public override void Setup()
+		public RefreshViewTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 			Device.Info = new TestDeviceInfo();
 		}
 
-		[Test]
+		[Fact]
 		public void StartsEnabled()
 		{
 			RefreshView refreshView = new RefreshView();
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void CanExecuteDisablesRefreshView()
 		{
 			RefreshView refreshView = new RefreshView();
 			refreshView.Command = new Command(() => { }, () => false);
-			Assert.IsFalse(refreshView.IsEnabled);
+			Assert.False(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void CanExecuteEnablesRefreshView()
 		{
 			RefreshView refreshView = new RefreshView();
 			refreshView.Command = new Command(() => { }, () => true);
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void CanExecuteChangesEnabled()
 		{
 			RefreshView refreshView = new RefreshView();
@@ -64,15 +60,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			canExecute = false;
 			command.ChangeCanExecute();
-			Assert.IsFalse(refreshView.IsEnabled);
+			Assert.False(refreshView.IsEnabled);
 
 
 			canExecute = true;
 			command.ChangeCanExecute();
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void CommandPropertyChangesEnabled()
 		{
 			RefreshView refreshView = new RefreshView();
@@ -82,14 +78,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			refreshView.CommandParameter = true;
 			refreshView.Command = command;
 
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 			refreshView.CommandParameter = false;
-			Assert.IsFalse(refreshView.IsEnabled);
+			Assert.False(refreshView.IsEnabled);
 			refreshView.CommandParameter = true;
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void RemovedCommandEnablesRefreshView()
 		{
 			RefreshView refreshView = new RefreshView();
@@ -97,14 +93,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			bool canExecute = true;
 			var command = new Command(() => { }, () => false);
 			refreshView.Command = command;
-			Assert.IsFalse(refreshView.IsEnabled);
+			Assert.False(refreshView.IsEnabled);
 			refreshView.Command = null;
-			Assert.IsTrue(refreshView.IsEnabled);
+			Assert.True(refreshView.IsEnabled);
 			refreshView.Command = command;
-			Assert.IsFalse(refreshView.IsEnabled);
+			Assert.False(refreshView.IsEnabled);
 		}
 
-		[Test]
+		[Fact]
 		public void IsRefreshingStaysFalseWithDisabledCommand()
 		{
 			RefreshView refreshView = new RefreshView();
@@ -112,46 +108,46 @@ namespace Xamarin.Forms.Core.UnitTests
 			bool canExecute = true;
 			refreshView.Command = new Command(() => { }, () => false);
 			refreshView.IsRefreshing = true;
-			Assert.IsFalse(refreshView.IsRefreshing);
+			Assert.False(refreshView.IsRefreshing);
 		}
 
-		[Test]
+		[Fact]
 		public void IsRefreshingSettableToTrue()
 		{
 			RefreshView refreshView = new RefreshView();
-			Assert.IsFalse(refreshView.IsRefreshing);
+			Assert.False(refreshView.IsRefreshing);
 
 			refreshView.IsRefreshing = true;
-			Assert.IsTrue(refreshView.IsRefreshing);
+			Assert.True(refreshView.IsRefreshing);
 		}
 
-		[Test]
+		[Fact]
 		public void IsRefreshingStaysFalseWithDisabledRefreshView()
 		{
 			RefreshView refreshView = new RefreshView();
 			refreshView.IsEnabled = false;
 			refreshView.IsRefreshing = true;
-			Assert.IsFalse(refreshView.IsRefreshing);
+			Assert.False(refreshView.IsRefreshing);
 		}
 
-		[Test]
+		[Fact]
 		public void IsRefreshingTogglesFalseWhenIsEnabledSetToFalse()
 		{
 			RefreshView refreshView = new RefreshView();
 			refreshView.IsRefreshing = true;
 			refreshView.IsEnabled = false;
-			Assert.IsFalse(refreshView.IsRefreshing);
+			Assert.False(refreshView.IsRefreshing);
 		}
 
-		[Test]
+		[Fact]
 		public void IsRefreshingEventFires()
 		{
 			RefreshView refreshView = new RefreshView();
 			bool eventFired = false;
 			refreshView.Refreshing += (_, __) => eventFired = true;
-			Assert.IsFalse(eventFired);
+			Assert.False(eventFired);
 			refreshView.IsRefreshing = true;
-			Assert.IsTrue(eventFired);
+			Assert.True(eventFired);
 		}
 	}
 }

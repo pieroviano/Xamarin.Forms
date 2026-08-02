@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
-	internal class BindingSystemTests : BaseTestFixture
+	public class BindingSystemTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public BindingSystemTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
@@ -42,7 +38,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void RecursiveSettingInSystem()
 		{
 			var tempObjects = new[] {
@@ -66,11 +62,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			var viewCell1 = (BindableViewCell)cell1;
 			var viewCell2 = (BindableViewCell)cell2;
 
-			Assert.AreEqual("Test1", viewCell1.Name);
-			Assert.AreEqual("Test2", viewCell2.Name);
+			Assert.Equal("Test1", viewCell1.Name);
+			Assert.Equal("Test2", viewCell2.Name);
 
-			Assert.AreEqual("Test1", viewCell1.NameLabel.Text);
-			Assert.AreEqual("Test2", viewCell2.NameLabel.Text);
+			Assert.Equal("Test1", viewCell1.NameLabel.Text);
+			Assert.Equal("Test2", viewCell2.NameLabel.Text);
 		}
 	}
 }

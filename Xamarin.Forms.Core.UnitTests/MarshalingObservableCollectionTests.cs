@@ -6,33 +6,30 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
-	public class MarshalingObservableCollectionTests
+	public class MarshalingObservableCollectionTests : IDisposable
 	{
 		MarshalingTestPlatformServices _services;
 
-		[SetUp]
-		public void Setup()
+		public MarshalingObservableCollectionTests()
 		{
 			_services = new MarshalingTestPlatformServices();
 			Device.PlatformServices = _services;
 			_services.Start();
 		}
 
-		[TearDown]
-		public void TearDown()
+		public void Dispose()
 		{
 			_services.Stop();
 			_services = null;
 		}
 
-		[Test]
-		[Description("Added items don't show up until they've been processed on the UI thread")]
+		[Fact]
+		[Trait("Description", "Added items don't show up until they've been processed on the UI thread")]
 		public async Task AddOffUIThread()
 		{
 			int insertCount = 0;
@@ -62,24 +59,24 @@ namespace Xamarin.Forms.Core.UnitTests
 				return moc.Count;
 			});
 
-			Assert.That(countFromThreadPool, Is.EqualTo(0), "Count should be zero because the update on the UI thread hasn't run yet");
-			Assert.That(onMainThreadCount, Is.EqualTo(1), "Count should be 1 because the UI thread has updated");
-			Assert.That(insertCount, Is.EqualTo(1), "The CollectionChanged event should have fired with an Add exactly 1 time");
+			Assert.Equal(0, countFromThreadPool);
+			Assert.Equal(1, onMainThreadCount);
+			Assert.Equal(1, insertCount);
 		}
 
-		[Test]
-		[Description("Intial item count should match wrapped collection.")]
+		[Fact]
+		[Trait("Description", "Intial item count should match wrapped collection.")]
 		public async Task InitialItemCountsMatch()
 		{
 			var source = new ObservableCollection<int> { 1, 2 };
 
 			var moc = new MarshalingObservableCollection(source);
 
-			Assert.That(source.Count, Is.EqualTo(moc.Count));
+			Assert.Equal(moc.Count, source.Count);
 		}
 
-		[Test]
-		[Description("Clears don't show up until they've been processed on the UI thread")]
+		[Fact]
+		[Trait("Description", "Clears don't show up until they've been processed on the UI thread")]
 		public async Task ClearOnUIThread()
 		{
 			var countFromThreadPool = -1;
@@ -102,12 +99,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Check the result on the main thread
 			var onMainThreadCount = await Device.InvokeOnMainThreadAsync<int>(() => moc.Count);
 
-			Assert.That(countFromThreadPool, Is.EqualTo(2), "Count should be pre-clear");
-			Assert.That(onMainThreadCount, Is.EqualTo(0), "Count should be zero because the Clear has been processed");
+			Assert.Equal(2, countFromThreadPool);
+			Assert.Equal(0, onMainThreadCount);
 		}
 
-		[Test]
-		[Description("A Reset should reflect the state at the time of the Reset")]
+		[Fact]
+		[Trait("Description", "A Reset should reflect the state at the time of the Reset")]
 		public async Task ClearAndAddOffUIThread()
 		{
 			var countFromThreadPool = -1;
@@ -131,12 +128,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Check the result on the main thread
 			var onMainThreadCount = await Device.InvokeOnMainThreadAsync<int>(() => moc.Count);
 
-			Assert.That(countFromThreadPool, Is.EqualTo(2), "Count should be pre-clear");
-			Assert.That(onMainThreadCount, Is.EqualTo(1), "Should have processed a Clear and an Add");
+			Assert.Equal(2, countFromThreadPool);
+			Assert.Equal(1, onMainThreadCount);
 		}
 
-		[Test]
-		[Description("Removed items are still there until they're removed on the UI thread")]
+		[Fact]
+		[Trait("Description", "Removed items are still there until they're removed on the UI thread")]
 		public async Task RemoveOffUIThread()
 		{
 			var countFromThreadPool = -1;
@@ -155,12 +152,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Check the result on the main thread
 			var onMainThreadCount = await Device.InvokeOnMainThreadAsync<int>(() => moc.Count);
 
-			Assert.That(countFromThreadPool, Is.EqualTo(2), "Count should be pre-remove");
-			Assert.That(onMainThreadCount, Is.EqualTo(1), "Remove has now processed");
+			Assert.Equal(2, countFromThreadPool);
+			Assert.Equal(1, onMainThreadCount);
 		}
 
-		[Test]
-		[Description("Until the UI thread processes a change, the indexer should remain consistent")]
+		[Fact]
+		[Trait("Description", "Until the UI thread processes a change, the indexer should remain consistent")]
 		public async Task IndexerConsistent()
 		{
 			int itemFromThreadPool = -1;
@@ -176,11 +173,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				itemFromThreadPool = (int)moc[1];
 			});
 
-			Assert.That(itemFromThreadPool, Is.EqualTo(2), "Should have indexer value from before remove");
+			Assert.Equal(2, itemFromThreadPool);
 		}
 
-		[Test]
-		[Description("Don't show replacements until the UI thread has processed them")]
+		[Fact]
+		[Trait("Description", "Don't show replacements until the UI thread has processed them")]
 		public async Task ReplaceOffUIThread()
 		{
 			int itemFromThreadPool = -1;
@@ -199,12 +196,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Check the result on the main thread
 			var onMainThreadValue = await Device.InvokeOnMainThreadAsync(() => moc[0]);
 
-			Assert.That(itemFromThreadPool, Is.EqualTo(1), "Should have value from before replace");
-			Assert.That(onMainThreadValue, Is.EqualTo(42), "Should have value from after replace");
+			Assert.Equal(1, itemFromThreadPool);
+			Assert.Equal(42, onMainThreadValue);
 		}
 
-		[Test]
-		[Description("Don't show moves until the UI thread has processed them")]
+		[Fact]
+		[Trait("Description", "Don't show moves until the UI thread has processed them")]
 		public async Task MoveOffUIThread()
 		{
 			int itemFromThreadPool = -1;
@@ -223,8 +220,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Check the result on the main thread
 			var onMainThreadValue = await Device.InvokeOnMainThreadAsync(() => moc[0]);
 
-			Assert.That(itemFromThreadPool, Is.EqualTo(1), "Should have value from before move");
-			Assert.That(onMainThreadValue, Is.EqualTo(2), "Should have value from after move");
+			Assert.Equal(1, itemFromThreadPool);
+			Assert.Equal(2, onMainThreadValue);
 		}
 
 		// This class simulates running a single UI thread with a queue and non-UI threads;

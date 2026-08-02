@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
@@ -27,18 +27,15 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class MasterDetailPageUnitTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public MasterDetailPageUnitTests()
 		{
-			base.Setup();
 			var mockDeviceInfo = new TestDeviceInfo();
 			Device.Info = mockDeviceInfo;
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 
@@ -48,17 +45,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(page.Detail);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMasterSetter()
 		{
 			MasterDetailPage page = new MasterDetailPage();
 			var child = new ContentPage { Content = new Label(), Title = "Foo" };
 			page.Master = child;
 
-			Assert.AreEqual(child, page.Master);
+			Assert.Equal(child, page.Master);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMasterSetNull()
 		{
 			MasterDetailPage page = new MasterDetailPage();
@@ -68,7 +65,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<ArgumentNullException>(() => { page.Master = null; });
 		}
 
-		[Test]
+		[Fact]
 		public void TestMasterChanged()
 		{
 			MasterDetailPage page = new MasterDetailPage();
@@ -86,17 +83,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(changed);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDetailSetter()
 		{
 			MasterDetailPage page = new MasterDetailPage();
 			var child = new ContentPage { Content = new Label() };
 			page.Detail = child;
 
-			Assert.AreEqual(child, page.Detail);
+			Assert.Equal(child, page.Detail);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDetailSetNull()
 		{
 			MasterDetailPage page = new MasterDetailPage();
@@ -106,7 +103,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<ArgumentNullException>(() => { page.Detail = null; });
 		}
 
-		[Test]
+		[Fact]
 		public void TestDetailChanged()
 		{
 			MasterDetailPage page = new MasterDetailPage();
@@ -124,21 +121,23 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(changed);
 		}
 
-		[Test]
-		public void ThrowsWhenMasterSetWithoutValidTitle([Values(null, "")] string title)
+		[Theory]
+		[InlineData(null)]
+		[InlineData("")]
+		public void ThrowsWhenMasterSetWithoutValidTitle(string title)
 		{
 			var page = new MasterDetailPage();
 			Assert.Throws<InvalidOperationException>(() => page.Master = new ContentPage { Title = title });
 		}
 
-		[Test]
+		[Fact]
 		public void TestThrowsWhenPackedWithoutSetting()
 		{
 			MasterDetailPage page = new MasterDetailPage();
 			Assert.Throws<InvalidOperationException>(() => new TabbedPage { Children = { page } });
 		}
 
-		[Test]
+		[Fact]
 		public void TestDoesNotThrowWhenPackedWithSetting()
 		{
 			MasterDetailPage page = new MasterDetailPage
@@ -146,15 +145,15 @@ namespace Xamarin.Forms.Core.UnitTests
 				Master = new ContentPage { Content = new View(), Title = "Foo" },
 				Detail = new ContentPage { Content = new View() }
 			};
-			Assert.DoesNotThrow(() => new TabbedPage { Children = { page } });
+			AssertEx.DoesNotThrow(() => new TabbedPage { Children = { page } });
 		}
 
-		[Test]
+		[Fact]
 		public void TestMasterVisible()
 		{
 			var page = new MasterDetailPage();
 
-			Assert.AreEqual(false, page.IsPresented);
+			Assert.Equal(false, page.IsPresented);
 
 			bool signaled = false;
 			page.PropertyChanged += (sender, args) =>
@@ -165,11 +164,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.IsPresented = true;
 
-			Assert.AreEqual(true, page.IsPresented);
+			Assert.Equal(true, page.IsPresented);
 			Assert.True(signaled);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMasterVisibleDoubleSet()
 		{
 			var page = new MasterDetailPage();
@@ -186,7 +185,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(signaled);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSetMasterBounds()
 		{
 			var page = new MasterDetailPage
@@ -196,11 +195,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			((IMasterDetailPageController)page).MasterBounds = new Rectangle(0, 0, 100, 100);
-			Assert.AreEqual(new Rectangle(0, 0, 100, 100), page.Master.Bounds);
-			Assert.AreEqual(new Rectangle(0, 0, 100, 100), ((IMasterDetailPageController)page).MasterBounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 100), page.Master.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 100), ((IMasterDetailPageController)page).MasterBounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSetDetailBounds()
 		{
 			var page = new MasterDetailPage
@@ -210,11 +209,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			((IMasterDetailPageController)page).DetailBounds = new Rectangle(0, 0, 100, 100);
-			Assert.AreEqual(new Rectangle(0, 0, 100, 100), page.Detail.Bounds);
-			Assert.AreEqual(new Rectangle(0, 0, 100, 100), ((IMasterDetailPageController)page).DetailBounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 100), page.Detail.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 100), ((IMasterDetailPageController)page).DetailBounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutChildren()
 		{
 			var page = new MasterDetailPage
@@ -232,11 +231,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(0, 0, 100, 200), page.Master.Bounds);
-			Assert.AreEqual(new Rectangle(0, 0, 100, 100), page.Detail.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 200), page.Master.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 100), page.Detail.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void ThorwsInLayoutChildrenWithNullDetail()
 		{
 			var page = new MasterDetailPage
@@ -248,7 +247,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => page.Layout(new Rectangle(0, 0, 200, 200)));
 		}
 
-		[Test]
+		[Fact]
 		public void ThorwsInLayoutChildrenWithNullMaster()
 		{
 			var page = new MasterDetailPage
@@ -260,7 +259,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => page.Layout(new Rectangle(0, 0, 200, 200)));
 		}
 
-		[Test]
+		[Fact]
 		public void ThorwsInSetDetailBoundsWithNullDetail()
 		{
 			var page = new MasterDetailPage
@@ -272,7 +271,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => ((IMasterDetailPageController)page).DetailBounds = new Rectangle(0, 0, 200, 200));
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsInSetMasterBoundsWithNullMaster()
 		{
 			var page = new MasterDetailPage
@@ -284,7 +283,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => ((IMasterDetailPageController)page).MasterBounds = new Rectangle(0, 0, 200, 200));
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsInSetIsPresentOnSplitModeOnTablet()
 		{
 			Device.Idiom = TargetIdiom.Tablet;
@@ -299,7 +298,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => page.IsPresented = false);
 		}
 
-		[Test]
+		[Fact]
 		public void ThorwsInSetIsPresentOnSplitPortraitModeOnTablet()
 		{
 			Device.Idiom = TargetIdiom.Tablet;
@@ -316,7 +315,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => page.IsPresented = false);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSetIsPresentedOnPopoverMode()
 		{
 			Device.Info.CurrentOrientation = DeviceOrientation.Landscape;
@@ -330,10 +329,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 			page.IsPresented = true;
 
-			Assert.AreEqual(true, page.IsPresented);
+			Assert.Equal(true, page.IsPresented);
 		}
 
-		[Test]
+		[Fact]
 		public void SendsBackEventToPresentedMasterFirst()
 		{
 			var detail = new BackButtonPage() { Handle = true };
@@ -365,7 +364,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(result);
 		}
 
-		[Test]
+		[Fact]
 		public void EmitsCorrectlyWhenPresentedOnBackPressed()
 		{
 			var detail = new BackButtonPage();
@@ -397,7 +396,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(result);
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsExceptionWhenAddingAlreadyParentedDetail()
 		{
 			var detail = new ContentPage { };
@@ -409,7 +408,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => mdp.Detail = detail);
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsExceptionWhenAddingAlreadyParentedMaster()
 		{
 			var master = new ContentPage { Title = "Foo" };
@@ -422,15 +421,15 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[Test]
+		[Fact]
 		public void TestFlyoutLayoutBehaviorGetsSetViaBinding()
 		{
 			var master = new MasterDetailPage { Title = "Foo" };
 
 			master.SetValue(MasterDetailPage.MasterBehaviorProperty, MasterBehavior.Split);
 
-			Assert.AreEqual(MasterBehavior.Split, master.MasterBehavior);
-			Assert.AreEqual(FlyoutLayoutBehavior.Split, master.FlyoutLayoutBehavior);
+			Assert.Equal(MasterBehavior.Split, master.MasterBehavior);
+			Assert.Equal(FlyoutLayoutBehavior.Split, master.FlyoutLayoutBehavior);
 		}
 	}
 

@@ -1,13 +1,14 @@
-using NUnit.Framework;
+﻿using Xunit;
+
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class EditorTests : BaseTestFixture
 	{
-		[TestCase("Hi", "My text has changed")]
-		[TestCase(null, "My text has changed")]
-		[TestCase("Hi", null)]
+		[Theory]
+		[InlineData("Hi", "My text has changed")]
+		[InlineData(null, "My text has changed")]
+		[InlineData("Hi", null)]
 		public void EditorTextChangedEventArgs(string initialText, string finalText)
 		{
 			var editor = new Editor
@@ -28,23 +29,24 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			editor.Text = finalText;
 
-			Assert.AreEqual(editor, editorFromSender);
-			Assert.AreEqual(initialText, oldText);
-			Assert.AreEqual(finalText, newText);
+			Assert.Equal(editor, editorFromSender);
+			Assert.Equal(initialText, oldText);
+			Assert.Equal(finalText, newText);
 		}
 
-		[TestCase(true)]
+		[Theory]
+		[InlineData(true)]
 		public void IsReadOnlyTest(bool isReadOnly)
 		{
 			Editor editor = new Editor();
 			editor.SetValue(InputView.IsReadOnlyProperty, isReadOnly);
-			Assert.AreEqual(isReadOnly, editor.IsReadOnly);
+			Assert.Equal(isReadOnly, editor.IsReadOnly);
 		}
-		[Test]
+		[Fact]
 		public void IsReadOnlyDefaultValueTest()
 		{
 			Editor editor = new Editor();
-			Assert.AreEqual(editor.IsReadOnly, false);
+			Assert.Equal(editor.IsReadOnly, false);
 		}
 	}
 }

@@ -1,9 +1,8 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class WeakEventManagerTests
 	{
 		static int s_count;
@@ -78,41 +77,41 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void AddHandlerWithEmptyEventNameThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.AddEventHandler((sender, args) => { }, ""));
 		}
 
-		[Test]
+		[Fact]
 		public void AddHandlerWithNullEventHandlerThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.AddEventHandler(null, "test"));
 		}
 
-		[Test]
+		[Fact]
 		public void AddHandlerWithNullEventNameThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.AddEventHandler((sender, args) => { }, null));
 		}
 
-		[Test]
+		[Fact]
 		public void CanRemoveEventHandler()
 		{
 			var source = new TestSource();
 			int beforeRun = source.Count;
 			source.Fire();
 
-			Assert.IsTrue(source.Count == 1);
+			Assert.True(source.Count == 1);
 			source.Clean();
 			source.Fire();
-			Assert.IsTrue(source.Count == 1);
+			Assert.True(source.Count == 1);
 		}
 
-		[Test]
+		[Fact]
 		public void CanRemoveStaticEventHandler()
 		{
 			int beforeRun = s_count;
@@ -123,10 +122,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			source.FireTestEvent();
 
-			Assert.IsTrue(s_count == beforeRun);
+			Assert.True(s_count == beforeRun);
 		}
 
-		[Test]
+		[Fact]
 		public void EventHandlerCalled()
 		{
 			var called = false;
@@ -136,17 +135,17 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			source.FireTestEvent();
 
-			Assert.IsTrue(called);
+			Assert.True(called);
 		}
 
-		[Test]
+		[Fact]
 		public void FiringEventWithoutHandlerShouldNotThrow()
 		{
 			var source = new TestEventSource();
 			source.FireTestEvent();
 		}
 
-		[Test]
+		[Fact]
 		public void MultipleHandlersCalled()
 		{
 			var called1 = false;
@@ -157,31 +156,31 @@ namespace Xamarin.Forms.Core.UnitTests
 			source.TestEvent += (sender, args) => { called2 = true; };
 			source.FireTestEvent();
 
-			Assert.IsTrue(called1 && called2);
+			Assert.True(called1 && called2);
 		}
 
-		[Test]
+		[Fact]
 		public void RemoveHandlerWithEmptyEventNameThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.RemoveEventHandler((sender, args) => { }, ""));
 		}
 
-		[Test]
+		[Fact]
 		public void RemoveHandlerWithNullEventHandlerThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.RemoveEventHandler(null, "test"));
 		}
 
-		[Test]
+		[Fact]
 		public void RemoveHandlerWithNullEventNameThrowsException()
 		{
 			var wem = new WeakEventManager();
 			Assert.Throws<ArgumentNullException>(() => wem.RemoveEventHandler((sender, args) => { }, null));
 		}
 
-		[Test]
+		[Fact]
 		public void RemovingNonExistentHandlersShouldNotThrow()
 		{
 			var wem = new WeakEventManager();
@@ -189,7 +188,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			wem.RemoveEventHandler(Handler, "alsofake");
 		}
 
-		[Test]
+		[Fact]
 		public void RemoveHandlerWithMultipleSubscriptionsRemovesOne()
 		{
 			int beforeRun = s_count;
@@ -201,10 +200,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			source.FireTestEvent();
 
-			Assert.AreEqual(beforeRun + 1, s_count);
+			Assert.Equal(beforeRun + 1, s_count);
 		}
 
-		[Test]
+		[Fact]
 		public void StaticHandlerShouldRun()
 		{
 			int beforeRun = s_count;
@@ -214,10 +213,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			source.FireTestEvent();
 
-			Assert.IsTrue(s_count > beforeRun);
+			Assert.True(s_count > beforeRun);
 		}
 
-		[Test]
+		[Fact]
 		public void VerifySubscriberCanBeCollected()
 		{
 			WeakReference wr = null;
@@ -232,8 +231,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 
-			Assert.IsNotNull(wr);
-			Assert.IsFalse(wr.IsAlive);
+			Assert.NotNull(wr);
+			Assert.False(wr.IsAlive);
 
 			// The handler for this calls Assert.Fail, so if the subscriber has not been collected
 			// the handler will be called and the test will fail

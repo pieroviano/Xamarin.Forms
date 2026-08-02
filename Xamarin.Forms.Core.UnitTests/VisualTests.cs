@@ -1,24 +1,21 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class VisualTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public VisualTests()
 		{
-			base.Setup();
 			var mockDeviceInfo = new TestDeviceInfo();
 			Device.Info = mockDeviceInfo;
 		}
 
 
-		[Test]
+		[Fact]
 		public void ShellPropagatesChangeToNewElements()
 		{
 			Button button = new Button();
@@ -75,12 +72,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var buttonVisualController = (button as IVisualController);
 			var stacklayoutVisualController = (flyout as IVisualController);
-			Assert.AreEqual(Forms.VisualMarker.Material, buttonVisualController.EffectiveVisual);
-			Assert.AreEqual(Forms.VisualMarker.Material, stacklayoutVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Material, buttonVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Material, stacklayoutVisualController.EffectiveVisual);
 		}
 
 
-		[Test]
+		[Fact]
 		public void ShellPropagatesDownVisualChange()
 		{
 			Button button = new Button();
@@ -117,15 +114,15 @@ namespace Xamarin.Forms.Core.UnitTests
 			var buttonVisualController = (button as IVisualController);
 			var stacklayoutVisualController = (flyout as IVisualController);
 
-			Assert.AreEqual(Forms.VisualMarker.Default, buttonVisualController.EffectiveVisual);
-			Assert.AreEqual(Forms.VisualMarker.Default, stacklayoutVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Default, buttonVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Default, stacklayoutVisualController.EffectiveVisual);
 			shell.Visual = VisualMarker.Material;
-			Assert.AreEqual(Forms.VisualMarker.Material, buttonVisualController.EffectiveVisual);
-			Assert.AreEqual(Forms.VisualMarker.Material, stacklayoutVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Material, buttonVisualController.EffectiveVisual);
+			Assert.Equal(Forms.VisualMarker.Material, stacklayoutVisualController.EffectiveVisual);
 		}
 
 
-		[Test]
+		[Fact]
 		public void ListViewVisualIsInheritedByViewCells()
 		{
 			var lv = new ListView { Visual = Forms.VisualMarker.Material, ItemTemplate = new DataTemplate(() => new ViewCell { View = new View() }) };
@@ -134,10 +131,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			ViewCell cell = lv.TemplatedItems[0] as ViewCell;
 			IVisualController target = cell.View;
-			Assert.AreEqual(Forms.VisualMarker.Material, target.EffectiveVisual, "ViewCell View is not Material");
+			Assert.Equal(Forms.VisualMarker.Material, target.EffectiveVisual);
 		}
 
-		[Test]
+		[Fact]
 		public void ListViewVisualIsInheritedByImageInViewCells()
 		{
 			var lv = new ListView { Visual = Forms.VisualMarker.Material, ItemTemplate = new DataTemplate(() => new ViewCell { View = new Label() }) };
@@ -146,10 +143,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			ViewCell cell = lv.TemplatedItems[0] as ViewCell;
 			IVisualController target = cell.View;
-			Assert.AreEqual(Forms.VisualMarker.Material, target.EffectiveVisual, "ViewCell View is not Material");
+			Assert.Equal(Forms.VisualMarker.Material, target.EffectiveVisual);
 		}
 
-		[Test]
+		[Fact]
 		public void ScrollViewSetsVisualAndGrandchildMaintainsParentExplicitValue()
 		{
 			var layout = ImplicitDefaultScrollView();
@@ -163,13 +160,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target == Forms.VisualMarker.Material, "EffectiveVisual should be Material");
+			Assert.True(target == Forms.VisualMarker.Material, "EffectiveVisual should be Material");
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, ((View)view).Visual);
-			Assert.AreEqual(Forms.VisualMarker.Material, layout2.Visual);
+			Assert.Equal(Forms.VisualMarker.MatchParent, ((View)view).Visual);
+			Assert.Equal(Forms.VisualMarker.Material, layout2.Visual);
 		}
 
-		[Test]
+		[Fact]
 		public void GrandparentSetsVisualAndGrandchildMaintainsParentExplicitValue()
 		{
 			var layout = ImplicitDefaultLayout();
@@ -183,14 +180,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, ((View)view).Visual);
-			Assert.AreEqual(Forms.VisualMarker.Default, layout2.Visual);
+			Assert.Equal(Forms.VisualMarker.MatchParent, ((View)view).Visual);
+			Assert.Equal(Forms.VisualMarker.Default, layout2.Visual);
 		}
 
-		[Test]
+		[Fact]
 		public void GrandparentSetsVisualAndImplicitDescendentsInheritValue()
 		{
 			var layout = ImplicitDefaultLayout();
@@ -203,19 +200,19 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			layout.Visual = Forms.VisualMarker.Material;
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsMaterial());
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsMaterial());
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, ((View)view).Visual);
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, layout2.Visual);
+			Assert.Equal(Forms.VisualMarker.MatchParent, ((View)view).Visual);
+			Assert.Equal(Forms.VisualMarker.MatchParent, layout2.Visual);
 		}
 
-		[Test]
+		[Fact]
 		public void GrandparentSetsOppositeVisualAndGrandchildInheritsParentExplicitValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -228,18 +225,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			layout.Visual = Forms.VisualMarker.Default;
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsDefault());
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsMaterial());
 
-			Assume.That(view.EffectiveVisual.IsMaterial());
+			Assert.True(view.EffectiveVisual.IsMaterial());
 
 			var target = ((View)view).Visual;
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, target);
+			Assert.Equal(Forms.VisualMarker.MatchParent, target);
 		}
 
-		[Test]
+		[Fact]
 		public void NotifyVisualChangedDoesNotTriggerVisualPropertyChangedUnnecessarily()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -251,18 +248,18 @@ namespace Xamarin.Forms.Core.UnitTests
 			AddImplicitToMaterial(layout2, (View)view);
 
 			layout2.Visual = Forms.VisualMarker.Material;
-			Assume.That(view.EffectiveVisual.IsMaterial(), "Implicit Visual not set on view");
+			Assert.True(view.EffectiveVisual.IsMaterial(), "Implicit Visual not set on view");
 
 			layout.Visual = Forms.VisualMarker.Default;
-			Assume.That(layout2.Visual == Forms.VisualMarker.Material, "Explicit Visual not respected on inner layout");
-			Assume.That(view.EffectiveVisual.IsMaterial(), "Implicit Visual not set on view");
+			Assert.True(layout2.Visual == Forms.VisualMarker.Material, "Explicit Visual not respected on inner layout");
+			Assert.True(view.EffectiveVisual.IsMaterial(), "Implicit Visual not set on view");
 
 			var target = ((PropertyWatchingView)view).VisualPropertyChangedCount;
 
-			Assert.AreEqual(1, target);
+			Assert.Equal(1, target);
 		}
 
-		[Test]
+		[Fact]
 		public void ReParentAndInheritNewParentValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -273,17 +270,17 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			((View)view).Parent = layout2;
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsDefault());
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, ((View)view).Visual);
+			Assert.Equal(Forms.VisualMarker.MatchParent, ((View)view).Visual);
 		}
 
-		[Test]
+		[Fact]
 		public void ReParentParentAndInheritNewGrandParentValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -296,16 +293,16 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			layout2.Parent = layout3;
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsDefault());
 
-			Assume.That(view.EffectiveVisual.IsDefault());
+			Assert.True(view.EffectiveVisual.IsDefault());
 
 			var target = ((View)view).Visual;
 
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, target);
+			Assert.Equal(Forms.VisualMarker.MatchParent, target);
 		}
 
-		[Test]
+		[Fact]
 		public void SetVisualToMatchParentAndInheritParentValue()
 		{
 			var layout = ImplicitDefaultLayout();
@@ -320,11 +317,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
 		}
 
-		[Test]
+		[Fact]
 		public void SetGrandparentAndInheritExplicitParentValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -336,15 +333,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsMaterial());
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsDefault());
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
 		}
 
-		[Test]
+		[Fact]
 		public void SetGrandparentUsingAnonCtorAndMaintainExplicitParentValue()
 		{
 			var layout = new StackLayout
@@ -363,15 +360,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsMaterial());
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsDefault());
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
 		}
 
-		[Test]
+		[Fact]
 		public void SetGrandparentUsingCtorAndMaintainExplicitParentValue()
 		{
 			IVisualController view = ImplicitDefaultView();
@@ -380,15 +377,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsMaterial());
 
-			Assume.That(((IVisualController)layout2).EffectiveVisual.IsDefault());
+			Assert.True(((IVisualController)layout2).EffectiveVisual.IsDefault());
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
 		}
 
-		[Test]
+		[Fact]
 		public void SetParentAndGrandchildrenInheritValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -401,11 +398,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
 		}
 
-		[Test]
+		[Fact]
 		public void SetParentAndContentAndGrandchildrenInheritValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -418,12 +415,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
 		}
 
 
-		[Test]
+		[Fact]
 		public void SetParentAndInheritExplicitParentValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -433,11 +430,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
 		}
 
-		[Test]
+		[Fact]
 		public void SetParentAndMaintainExplicitValue()
 		{
 			var layout = ExplicitMaterialLayout();
@@ -447,32 +444,31 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(!target.IsMaterial(), "EffectiveVisual should be Default");
-			Assert.IsTrue(target.IsDefault(), "EffectiveVisual should be Default");
-			Assert.AreEqual(Forms.VisualMarker.Default, ((View)view).Visual);
+			Assert.True(!target.IsMaterial(), "EffectiveVisual should be Default");
+			Assert.True(target.IsDefault(), "EffectiveVisual should be Default");
+			Assert.Equal(Forms.VisualMarker.Default, ((View)view).Visual);
 		}
 
-		[Test]
+		[Fact]
 		public void SetParentUsingCtorAndInheritParentValue()
 		{
 			IVisualController view = ImplicitDefaultView();
 			var layout = new StackLayout { Visual = Forms.VisualMarker.Material, Children = { (View)view } };
 
-			Assume.That(((IVisualController)layout).EffectiveVisual.IsMaterial());
+			Assert.True(((IVisualController)layout).EffectiveVisual.IsMaterial());
 
-			Assume.That(((View)view).Visual == Forms.VisualMarker.MatchParent);
+			Assert.True(((View)view).Visual == Forms.VisualMarker.MatchParent);
 
 			var target = view.EffectiveVisual;
 
-			Assert.IsTrue(target.IsMaterial(), "EffectiveVisual should be Material");
-			Assert.IsTrue(!target.IsDefault(), "EffectiveVisual should be Material");
-			Assert.AreEqual(Forms.VisualMarker.MatchParent, ((View)view).Visual);
+			Assert.True(target.IsMaterial(), "EffectiveVisual should be Material");
+			Assert.True(!target.IsDefault(), "EffectiveVisual should be Material");
+			Assert.Equal(Forms.VisualMarker.MatchParent, ((View)view).Visual);
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
@@ -482,8 +478,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(controller.EffectiveVisual.IsDefault(), "child view Visual should be Default");
-			Assume.That(child.Visual == Forms.VisualMarker.Default, "child view Visual should be Default");
+			Assert.True(controller.EffectiveVisual.IsDefault(), "child view Visual should be Default");
+			Assert.True(child.Visual == Forms.VisualMarker.Default, "child view Visual should be Default");
 		}
 
 		static void AddExplicitDefaultToLayout(StackLayout parent, View child)
@@ -492,8 +488,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(controller.EffectiveVisual.IsDefault(), "child view Visual should be Default");
-			Assume.That(child.Visual == Forms.VisualMarker.Default, "child view Visual should be Default");
+			Assert.True(controller.EffectiveVisual.IsDefault(), "child view Visual should be Default");
+			Assert.True(child.Visual == Forms.VisualMarker.Default, "child view Visual should be Default");
 		}
 
 		static void AddExplicitMaterialToScrollView(ScrollView parent, View child)
@@ -502,7 +498,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(child.Visual == Forms.VisualMarker.Material, "child view Visual should be Material");
+			Assert.True(child.Visual == Forms.VisualMarker.Material, "child view Visual should be Material");
 		}
 
 		static void AddExplicitMaterialToLayout(StackLayout parent, View child)
@@ -511,8 +507,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(controller.EffectiveVisual.IsMaterial(), "child view EffectiveVisual should be Material");
-			Assume.That(child.Visual == Forms.VisualMarker.Material, "child view Visual should be Material");
+			Assert.True(controller.EffectiveVisual.IsMaterial(), "child view EffectiveVisual should be Material");
+			Assert.True(child.Visual == Forms.VisualMarker.Material, "child view Visual should be Material");
 		}
 
 		static void AddImplicitToDefault(StackLayout parent, View child)
@@ -521,7 +517,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
+			Assert.True(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
 		}
 
 		static void AddImplicitToMaterial(StackLayout parent, View child)
@@ -531,8 +527,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			IVisualController controller = child;
 
 
-			Assume.That(controller.EffectiveVisual.IsMaterial(), "child view EffectiveVisual should be Material");
-			Assume.That(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
+			Assert.True(controller.EffectiveVisual.IsMaterial(), "child view EffectiveVisual should be Material");
+			Assert.True(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
 		}
 
 		static void AddImplicitToMaterialScrollView(ScrollView parent, View child)
@@ -541,8 +537,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = child;
 
-			Assume.That(controller.EffectiveVisual == Forms.VisualMarker.Material, "child view EffectiveVisual should be Material");
-			Assume.That(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
+			Assert.True(controller.EffectiveVisual == Forms.VisualMarker.Material, "child view EffectiveVisual should be Material");
+			Assert.True(child.Visual == Forms.VisualMarker.MatchParent, "child view Visual should be MatchParent");
 		}
 
 		static StackLayout ExplicitDefaultLayout()
@@ -551,8 +547,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = layout;
 
-			Assume.That(controller.EffectiveVisual == Forms.VisualMarker.Default, "Explicit Default view EffectiveVisual should be Default");
-			Assume.That(layout.Visual == Forms.VisualMarker.Default, "Explicit Default view Visual should be Default");
+			Assert.True(controller.EffectiveVisual == Forms.VisualMarker.Default, "Explicit Default view EffectiveVisual should be Default");
+			Assert.True(layout.Visual == Forms.VisualMarker.Default, "Explicit Default view Visual should be Default");
 			return layout;
 		}
 
@@ -562,8 +558,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = view;
 
-			Assume.That(controller.EffectiveVisual.IsDefault(), "Explicit Default view EffectiveVisual should be Default");
-			Assume.That(((View)view).Visual == Forms.VisualMarker.Default, "Explicit Default view Visual should be Default");
+			Assert.True(controller.EffectiveVisual.IsDefault(), "Explicit Default view EffectiveVisual should be Default");
+			Assert.True(((View)view).Visual == Forms.VisualMarker.Default, "Explicit Default view Visual should be Default");
 
 			return view;
 		}
@@ -574,8 +570,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = layout;
 
-			Assume.That(controller.EffectiveVisual == Forms.VisualMarker.Material, "Explicit RTL view EffectiveVisual should be Material");
-			Assume.That(layout.Visual == Forms.VisualMarker.Material, "Explicit RTL view Visual should be Material");
+			Assert.True(controller.EffectiveVisual == Forms.VisualMarker.Material, "Explicit RTL view EffectiveVisual should be Material");
+			Assert.True(layout.Visual == Forms.VisualMarker.Material, "Explicit RTL view Visual should be Material");
 
 			return layout;
 		}
@@ -586,8 +582,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = layout;
 
-			Assume.That(controller.EffectiveVisual.IsMaterial(), "Explicit RTL view EffectiveVisual should be Material");
-			Assume.That(layout.Visual == Forms.VisualMarker.Material, "Explicit RTL view Visual should be Material");
+			Assert.True(controller.EffectiveVisual.IsMaterial(), "Explicit RTL view EffectiveVisual should be Material");
+			Assert.True(layout.Visual == Forms.VisualMarker.Material, "Explicit RTL view Visual should be Material");
 
 			return layout;
 		}
@@ -598,8 +594,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = layout;
 
-			Assume.That(controller.EffectiveVisual == Forms.VisualMarker.Default, "New view EffectiveVisual should be Default");
-			Assume.That(layout.Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
+			Assert.True(controller.EffectiveVisual == Forms.VisualMarker.Default, "New view EffectiveVisual should be Default");
+			Assert.True(layout.Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
 
 			return layout;
 		}
@@ -611,8 +607,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			IVisualController controller = layout;
 
 
-			Assume.That(controller.EffectiveVisual == Forms.VisualMarker.Default, "New view EffectiveVisual should be Default");
-			Assume.That(layout.Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
+			Assert.True(controller.EffectiveVisual == Forms.VisualMarker.Default, "New view EffectiveVisual should be Default");
+			Assert.True(layout.Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
 
 			return layout;
 		}
@@ -623,7 +619,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			IVisualController controller = view;
 
-			Assume.That(((View)view).Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
+			Assert.True(((View)view).Visual == Forms.VisualMarker.MatchParent, "New view Visual should be MatchParent");
 
 			return view;
 		}

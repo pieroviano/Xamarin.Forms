@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections;
-using NUnit.Framework;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture(Category = "RadioButton")]
 	public class RadioButtonTemplateTests : BaseTestFixture
 	{
-		class FrameStyleCases : IEnumerable
+		// xUnit's [ClassData] requires IEnumerable<object[]>, where NUnit's
+		// [TestCaseSource] accepted the non-generic IEnumerable.
+		class FrameStyleCases : IEnumerable<object[]>
 		{
-			public IEnumerator GetEnumerator()
+			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+			public IEnumerator<object[]> GetEnumerator()
 			{
 				yield return new object[] { Frame.VerticalOptionsProperty, LayoutOptions.End };
 				yield return new object[] { Frame.HorizontalOptionsProperty, LayoutOptions.End };
@@ -26,8 +30,9 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[TestCaseSource(typeof(FrameStyleCases))]
-		[Description("Frame Style properties should not affect RadioButton")]
+		[Theory]
+		[ClassData(typeof(FrameStyleCases))]
+		[Trait("Description", "Frame Style properties should not affect RadioButton")]
 		public void RadioButtonIgnoresFrameStyleProperties(BindableProperty property, object value)
 		{
 			var implicitFrameStyle = new Style(typeof(Frame));
@@ -41,13 +46,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var root = (radioButton as IControlTemplated)?.TemplateRoot as Frame;
 
-			Assert.IsNotNull(root);
-			Assert.That(root.GetValue(property), Is.Not.EqualTo(value), $"{property.PropertyName} should be ignored.");
+			Assert.NotNull(root);
+			Assert.NotEqual(value, root.GetValue(property));
 		}
 
-		class RadioButtonStyleCases : IEnumerable
+		class RadioButtonStyleCases : IEnumerable<object[]>
 		{
-			public IEnumerator GetEnumerator()
+			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+			public IEnumerator<object[]> GetEnumerator()
 			{
 				yield return new object[] { RadioButton.VerticalOptionsProperty, LayoutOptions.End };
 				yield return new object[] { RadioButton.HorizontalOptionsProperty, LayoutOptions.End };
@@ -63,8 +70,9 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[TestCaseSource(typeof(RadioButtonStyleCases))]
-		[Description("RadioButton Style properties should affect RadioButton")]
+		[Theory]
+		[ClassData(typeof(RadioButtonStyleCases))]
+		[Trait("Description", "RadioButton Style properties should affect RadioButton")]
 		public void RadioButtonStyleSetsPropertyOnTemplateRoot(BindableProperty property, object value)
 		{
 			var radioButtonStyle = new Style(typeof(RadioButton));
@@ -74,8 +82,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var root = (radioButton as IControlTemplated)?.TemplateRoot as Frame;
 
-			Assert.IsNotNull(root);
-			Assert.That(root.GetValue(property), Is.EqualTo(value), $"{property.PropertyName} should match.");
+			Assert.NotNull(root);
+			Assert.Equal(value, root.GetValue(property));
 		}
 	}
 }

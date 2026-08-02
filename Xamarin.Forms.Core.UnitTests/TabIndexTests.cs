@@ -1,13 +1,12 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TabIndexTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_ImplicitZero()
 		{
 			var target = new StackLayout
@@ -25,7 +24,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			var tabIndexes = target.GetTabIndexesOnParentPage(out int _);
 
 			//StackLayout is technically the first element with TabIndex 0.
-			Assert.AreEqual(target, tabIndexes[0][0]);
+			Assert.Equal(target, tabIndexes[0][0]);
 		}
 
 		class CustomGrid : Grid
@@ -67,7 +66,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_CompositeControls()
 		{
 			var label = new Label() { TabIndex = 1 };
@@ -108,56 +107,56 @@ namespace Xamarin.Forms.Core.UnitTests
 				break;
 			}
 
-			Assert.That(tabIndexes.Any());
+			Assert.True(tabIndexes.Any());
 
-			Assert.AreEqual(3, tabIndexes[0].Count, "Too many items in group 0");
-			Assert.AreEqual(tabIndexes[0][0], scroll);
-			Assert.AreEqual(tabIndexes[0][1], stack);
-			Assert.AreEqual(tabIndexes[0][2], composite);
+			Assert.Equal(3, tabIndexes[0].Count);
+			Assert.Equal(tabIndexes[0][0], scroll);
+			Assert.Equal(tabIndexes[0][1], stack);
+			Assert.Equal(tabIndexes[0][2], composite);
 
-			Assert.AreEqual(2, tabIndexes[1].Count, "Too many items in group 1");
-			Assert.AreEqual(tabIndexes[1][0], label);
+			Assert.Equal(2, tabIndexes[1].Count);
+			Assert.Equal(tabIndexes[1][0], label);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[1][1]);
-			Assert.AreEqual("1", AutomationProperties.GetHelpText(((Frame)tabIndexes[1][1])));
+			Assert.Equal("1", AutomationProperties.GetHelpText(((Frame)tabIndexes[1][1])));
 
-			Assert.AreEqual(1, tabIndexes[2].Count, "Too many items in group 2");
+			Assert.Equal(1, tabIndexes[2].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[2][0]);
-			Assert.AreEqual("2", AutomationProperties.GetHelpText(((Frame)tabIndexes[2][0])));
+			Assert.Equal("2", AutomationProperties.GetHelpText(((Frame)tabIndexes[2][0])));
 
-			Assert.AreEqual(1, tabIndexes[3].Count, "Too many items in group 3");
+			Assert.Equal(1, tabIndexes[3].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[3][0]);
-			Assert.AreEqual("3", AutomationProperties.GetHelpText(((Frame)tabIndexes[3][0])));
+			Assert.Equal("3", AutomationProperties.GetHelpText(((Frame)tabIndexes[3][0])));
 
-			Assert.AreEqual(1, tabIndexes[4].Count, "Too many items in group 4");
+			Assert.Equal(1, tabIndexes[4].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[4][0]);
-			Assert.AreEqual("4", AutomationProperties.GetHelpText(((Frame)tabIndexes[4][0])));
+			Assert.Equal("4", AutomationProperties.GetHelpText(((Frame)tabIndexes[4][0])));
 
-			Assert.AreEqual(1, tabIndexes[5].Count, "Too many items in group 5");
+			Assert.Equal(1, tabIndexes[5].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[5][0]);
-			Assert.AreEqual("5", AutomationProperties.GetHelpText(((Frame)tabIndexes[5][0])));
+			Assert.Equal("5", AutomationProperties.GetHelpText(((Frame)tabIndexes[5][0])));
 
-			Assert.AreEqual(1, tabIndexes[6].Count, "Too many items in group 6");
+			Assert.Equal(1, tabIndexes[6].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[6][0]);
-			Assert.AreEqual("6", AutomationProperties.GetHelpText(((Frame)tabIndexes[6][0])));
+			Assert.Equal("6", AutomationProperties.GetHelpText(((Frame)tabIndexes[6][0])));
 
-			Assert.AreEqual(1, tabIndexes[7].Count, "Too many items in group 7");
+			Assert.Equal(1, tabIndexes[7].Count);
 			Assert.IsAssignableFrom(typeof(Frame), tabIndexes[7][0]);
-			Assert.AreEqual("7", AutomationProperties.GetHelpText(((Frame)tabIndexes[7][0])));
+			Assert.Equal("7", AutomationProperties.GetHelpText(((Frame)tabIndexes[7][0])));
 
-			Assert.IsFalse(tabIndexes.ContainsKey(8), "Something unexpected in group 8");
-			Assert.IsFalse(tabIndexes.ContainsKey(9), "Something unexpected in group 9");
+			Assert.False(tabIndexes.ContainsKey(8), "Something unexpected in group 8");
+			Assert.False(tabIndexes.ContainsKey(9), "Something unexpected in group 9");
 
-			Assert.AreEqual(1, tabIndexes[10].Count, "Too many items in group 10");
-			Assert.AreEqual(tabIndexes[10][0], label2);
-			Assert.AreEqual(1, tabIndexes[11].Count, "Too many items in group 11");
-			Assert.AreEqual(tabIndexes[11][0], timePicker);
-			Assert.AreEqual(1, tabIndexes[12].Count, "Too many items in group 12");
-			Assert.AreEqual(tabIndexes[12][0], label3);
-			Assert.AreEqual(1, tabIndexes[13].Count, "Too many items in group 13");
-			Assert.AreEqual(tabIndexes[13][0], timePicker2);
+			Assert.Equal(1, tabIndexes[10].Count);
+			Assert.Equal(tabIndexes[10][0], label2);
+			Assert.Equal(1, tabIndexes[11].Count);
+			Assert.Equal(tabIndexes[11][0], timePicker);
+			Assert.Equal(1, tabIndexes[12].Count);
+			Assert.Equal(tabIndexes[12][0], label3);
+			Assert.Equal(1, tabIndexes[13].Count);
+			Assert.Equal(tabIndexes[13][0], timePicker2);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_GetTabIndexForLayoutChildren()
 		{
 			var target = new Label { TabIndex = 0 };
@@ -176,11 +175,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var tabIndexes = stack.GetTabIndexesOnParentPage(out int _);
 
-			Assert.That(tabIndexes.Any());
-			Assert.AreEqual(target, tabIndexes[0][0]);
+			Assert.True(tabIndexes.Any());
+			Assert.Equal(target, tabIndexes[0][0]);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_MasterPage()
 		{
 			var target = new Label { TabIndex = 0 };
@@ -213,11 +212,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var tabIndexes = stack.GetTabIndexesOnParentPage(out int _);
 
-			Assert.That(tabIndexes.Any());
-			Assert.AreEqual(target, tabIndexes[0][0]);
+			Assert.True(tabIndexes.Any());
+			Assert.Equal(target, tabIndexes[0][0]);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_DetailPage()
 		{
 			var target = new Label { TabIndex = 0 };
@@ -250,22 +249,22 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var tabIndexes = stack.GetTabIndexesOnParentPage(out int _);
 
-			Assert.That(tabIndexes.Any());
-			Assert.AreEqual(target, tabIndexes[0][0]);
+			Assert.True(tabIndexes.Any());
+			Assert.Equal(target, tabIndexes[0][0]);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_NoPageZeroCount()
 		{
 			var element = new Label { TabIndex = 0 };
 
 			var _ = element.GetTabIndexesOnParentPage(out int target);
 
-			Assert.AreEqual(0, target);
-			Assert.AreEqual(new Dictionary<int, List<ITabStopElement>>(), _);
+			Assert.Equal(0, target);
+			Assert.Equal(new Dictionary<int, List<ITabStopElement>>(), _);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_ExplicitZero()
 		{
 			Label target = new Label { TabIndex = 0 };
@@ -283,10 +282,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var tabIndexes = stackLayout.GetTabIndexesOnParentPage(out int _);
 
-			Assert.AreEqual(target, tabIndexes[0][1]);
+			Assert.Equal(target, tabIndexes[0][1]);
 		}
 
-		[Test]
+		[Fact]
 		public void GetTabIndexesOnParentPage_NegativeTabIndex()
 		{
 			Label target = new Label { TabIndex = -1 };
@@ -304,10 +303,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var tabIndexes = stackLayout.GetTabIndexesOnParentPage(out int _);
 
-			Assert.AreEqual(target, tabIndexes[-1][0]);
+			Assert.Equal(target, tabIndexes[-1][0]);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Forward_NextTabIndex()
 		{
 			Label target = new Label { TabIndex = 1 };
@@ -330,10 +329,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(true, tabIndexes, ref _);
 
-			Assert.AreEqual(nextElement, found);
+			Assert.Equal(nextElement, found);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Forward_DeclarationOrder()
 		{
 			Label target = new Label { TabIndex = 1 };
@@ -356,10 +355,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(true, tabIndexes, ref _);
 
-			Assert.AreEqual(nextElement, found);
+			Assert.Equal(nextElement, found);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Forward_TabIndex()
 		{
 			Label target = new Label { TabIndex = 1 };
@@ -382,10 +381,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(true, tabIndexes, ref tabIndex);
 
-			Assert.AreEqual(2, tabIndex);
+			Assert.Equal(2, tabIndex);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Backward_NextTabIndex()
 		{
 			Label target = new Label { TabIndex = 2 };
@@ -408,10 +407,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(false, tabIndexes, ref _);
 
-			Assert.AreEqual(nextElement, found);
+			Assert.Equal(nextElement, found);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Backward_DeclarationOrder()
 		{
 			Label target = new Label { TabIndex = 2 };
@@ -434,10 +433,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(false, tabIndexes, ref _);
 
-			Assert.AreEqual(nextElement, found);
+			Assert.Equal(nextElement, found);
 		}
 
-		[Test]
+		[Fact]
 		public void FindNextElement_Backward_TabIndex()
 		{
 			Label target = new Label { TabIndex = 2 };
@@ -460,7 +459,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var found = target.FindNextElement(false, tabIndexes, ref tabIndex);
 
-			Assert.AreEqual(1, tabIndex);
+			Assert.Equal(1, tabIndex);
 		}
 	}
 }

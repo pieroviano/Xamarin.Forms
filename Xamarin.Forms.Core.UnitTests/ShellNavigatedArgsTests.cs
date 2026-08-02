@@ -4,22 +4,20 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ShellNavigatedArgsTests : ShellTestBase
 	{
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Routing.Clear();
 		}
 
-		[Test]
+		[Fact]
 		public async Task RemoveInnerPagesNavigatingArgs()
 		{
 			Routing.RegisterRoute("SecondPageView", typeof(ContentPage));
@@ -32,29 +30,29 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("//HomePageView/FourthPage");
 
 			shell.TestNavigatedArgs(ShellNavigationSource.Pop, "//HomePageView/SecondPageView/ThirdPageView", "//HomePageView/FourthPage");
-			Assert.AreEqual(3, shell.NavigatedCount);
+			Assert.Equal(3, shell.NavigatedCount);
 		}
 
-		[Test]
+		[Fact]
 		public async Task PopToRootSetsCorrectNavigationSource()
 		{
 			var shell = new TestShell(CreateShellItem());
 			await shell.Navigation.PushAsync(new ContentPage());
 			await shell.Navigation.PushAsync(new ContentPage());
 			await shell.Navigation.PopToRootAsync();
-			Assert.AreEqual(ShellNavigationSource.PopToRoot, shell.LastShellNavigatingEventArgs.Source);
+			Assert.Equal(ShellNavigationSource.PopToRoot, shell.LastShellNavigatingEventArgs.Source);
 
 			await shell.Navigation.PushAsync(new ContentPage());
 			await shell.Navigation.PushAsync(new ContentPage());
 
 			await shell.Navigation.PopAsync();
-			Assert.AreEqual(ShellNavigationSource.Pop, shell.LastShellNavigatingEventArgs.Source);
+			Assert.Equal(ShellNavigationSource.Pop, shell.LastShellNavigatingEventArgs.Source);
 
 			await shell.Navigation.PopAsync();
-			Assert.AreEqual(ShellNavigationSource.PopToRoot, shell.LastShellNavigatingEventArgs.Source);
+			Assert.Equal(ShellNavigationSource.PopToRoot, shell.LastShellNavigatingEventArgs.Source);
 		}
 
-		[Test]
+		[Fact]
 		public async Task PushingSetsCorrectNavigationSource()
 		{
 			var shell = new TestShell(CreateShellItem(shellItemRoute: "item1"));
@@ -68,7 +66,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item1", $"//item1/{nameof(PushingSetsCorrectNavigationSource)}");
 		}
 
-		[Test]
+		[Fact]
 		public async Task ChangingShellItemSetsCorrectNavigationSource()
 		{
 			var shell = new TestShell(
@@ -82,7 +80,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item1", "//item2");
 		}
 
-		[Test]
+		[Fact]
 		public async Task ChangingShellSectionSetsCorrectNavigationSource()
 		{
 			var shell = new TestShell(
@@ -97,7 +95,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item1", "//item2");
 		}
 
-		[Test]
+		[Fact]
 		public async Task PoppingSamePageSetsCorrectNavigationSource()
 		{
 			Routing.RegisterRoute("detailspage", typeof(ContentPage));
@@ -113,7 +111,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item1/detailspage/detailspage", $"//item1/detailspage");
 		}
 
-		[Test]
+		[Fact]
 		public async Task ChangingShellContentSetsCorrectNavigationSource()
 		{
 			var shell = new TestShell(
@@ -128,7 +126,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item1", "//item2");
 		}
 
-		[Test]
+		[Fact]
 		public async Task InsertPageSetsCorrectNavigationSource()
 		{
 			Routing.RegisterRoute("pagemiddle", typeof(ContentPage));
@@ -145,7 +143,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task InsertPageFromINavigationSetsCorrectNavigationSource()
 		{
 			Routing.RegisterRoute("pagemiddle", typeof(ContentPage));
@@ -164,7 +162,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task RemovePageFromINavigationSetsCorrectNavigationSource()
 		{
 			Routing.RegisterRoute("pagemiddle", typeof(ContentPage));
@@ -180,7 +178,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item/pagemiddle/page", "//item/page");
 		}
 
-		[Test]
+		[Fact]
 		public async Task RemovePageSetsCorrectNavigationSource()
 		{
 			Routing.RegisterRoute("pagemiddle", typeof(ContentPage));
@@ -197,7 +195,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				"//item/pagemiddle/page", "//item/page");
 		}
 
-		[Test]
+		[Fact]
 		public async Task InitialNavigatingArgs()
 		{
 			var shell = new TestShell(

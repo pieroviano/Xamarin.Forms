@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
@@ -85,16 +86,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			ComplexMockViewModel model;
 		}
 
-		[Test]
+		[Fact]
 		public void CloneMode()
 		{
 			var binding = CreateBinding(BindingMode.Default);
 			var clone = binding.Clone();
 
-			Assert.AreEqual(binding.Mode, clone.Mode);
+			Assert.Equal(binding.Mode, clone.Mode);
 		}
 
-		[Test]
+		[Fact]
 		public void StringFormat()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));
@@ -104,10 +105,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var bo = new MockBindable { BindingContext = vm };
 			bo.SetBinding(property, binding);
 
-			Assert.That(bo.GetValue(property), Is.EqualTo("Foo Bar"));
+			Assert.Equal("Foo Bar", bo.GetValue(property));
 		}
 
-		[Test]
+		[Fact]
 		public void StringFormatOnUpdate()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));
@@ -119,11 +120,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			vm.Text = "Baz";
 
-			Assert.That(bo.GetValue(property), Is.EqualTo("Foo Baz"));
+			Assert.Equal("Foo Baz", bo.GetValue(property));
 		}
 
-		[Test]
-		[Description("StringFormat should not be applied to OneWayToSource bindings")]
+		[Fact]
+		[Trait("Description", "StringFormat should not be applied to OneWayToSource bindings")]
 		public void StringFormatOneWayToSource()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));
@@ -135,11 +136,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			bo.SetValue(property, "Bar");
 
-			Assert.That(vm.Text, Is.EqualTo("Bar"));
+			Assert.Equal("Bar", vm.Text);
 		}
 
-		[Test]
-		[Description("StringFormat should only be applied from from source in TwoWay bindings")]
+		[Fact]
+		[Trait("Description", "StringFormat should only be applied from from source in TwoWay bindings")]
 		public void StringFormatTwoWay()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));
@@ -151,12 +152,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			bo.SetValue(property, "Baz");
 
-			Assert.That(vm.Text, Is.EqualTo("Baz"));
-			Assert.That(bo.GetValue(property), Is.EqualTo("Foo Baz"));
+			Assert.Equal("Baz", vm.Text);
+			Assert.Equal("Foo Baz", bo.GetValue(property));
 		}
 
-		[Test]
-		[Description("You should get an exception when trying to change a binding after it's been applied")]
+		[Fact]
+		[Trait("Description", "You should get an exception when trying to change a binding after it's been applied")]
 		public void ChangeAfterApply()
 		{
 			var property = BindableProperty.Create("Foo", typeof(string), typeof(MockBindable));
@@ -166,11 +167,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			var bo = new MockBindable { BindingContext = vm };
 			bo.SetBinding(property, binding);
 
-			Assert.That(() => binding.Mode = BindingMode.OneWayToSource, Throws.InvalidOperationException);
-			Assert.That(() => binding.StringFormat = "{0}", Throws.InvalidOperationException);
+			Assert.Throws<InvalidOperationException>(() => binding.Mode = BindingMode.OneWayToSource);
+			Assert.Throws<InvalidOperationException>(() => binding.StringFormat = "{0}");
 		}
 
-		[TestCase("en-US"), TestCase("tr-TR")]
+		[Theory]
+		[InlineData("en-US")]
+		[InlineData("tr-TR")]
 		public void StringFormatNonStringType(string culture)
 		{
 			System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo(culture);
@@ -182,10 +185,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var bo = new MockBindable { BindingContext = vm };
 			bo.SetBinding(property, binding);
 
-			Assert.That(bo.GetValue(property), Is.EqualTo(string.Format(new System.Globalization.CultureInfo(culture), "{0:P2}", .95d))); //%95,00 or 95.00%
+			Assert.Equal(string.Format(new System.Globalization.CultureInfo(culture), "{0:P2}", .95d), bo.GetValue(property)); //%95,00 or 95.00%
 		}
 
-		[Test]
+		[Fact]
 		public void ReuseBindingInstance()
 		{
 			var vm = new MockViewModel();
@@ -199,16 +202,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var bindable2 = new MockBindable();
 			bindable2.BindingContext = new MockViewModel();
-			Assert.Throws<InvalidOperationException>(() => bindable2.SetBinding(property, binding),
-				"Binding allowed reapplication with a different context");
+			Assert.Throws<InvalidOperationException>(() => bindable2.SetBinding(property, binding));
 
 			GC.KeepAlive(bindable);
 		}
 
-		[Test, Category("[Binding] Set Value")]
-		public void ValueSetOnOneWay(
-			[Values(true, false)] bool setContextFirst,
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Set Value")]
+		[InlineData(true, true)]
+		[InlineData(true, false)]
+		[InlineData(false, true)]
+		[InlineData(false, false)]
+		public void ValueSetOnOneWay(bool setContextFirst, bool isDefault)
 		{
 			const string value = "Foo";
 			var viewmodel = new MockViewModel
@@ -239,18 +244,18 @@ namespace Xamarin.Forms.Core.UnitTests
 				bindable.BindingContext = viewmodel;
 			}
 
-			Assert.AreEqual(value, viewmodel.Text,
-				"BindingContext property changed");
-			Assert.AreEqual(value, bindable.GetValue(property),
-				"Target property did not change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(value, viewmodel.Text);
+			Assert.Equal(value, bindable.GetValue(property));
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test, Category("[Binding] Set Value")]
-		public void ValueSetOnOneWayToSource(
-			[Values(true, false)] bool setContextFirst,
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Set Value")]
+		[InlineData(true, true)]
+		[InlineData(true, false)]
+		[InlineData(false, true)]
+		[InlineData(false, false)]
+		public void ValueSetOnOneWayToSource(bool setContextFirst, bool isDefault)
 		{
 			const string value = "Foo";
 			var viewmodel = new MockViewModel();
@@ -278,18 +283,18 @@ namespace Xamarin.Forms.Core.UnitTests
 				bindable.BindingContext = viewmodel;
 			}
 
-			Assert.AreEqual(value, bindable.GetValue(property),
-				"Target property changed");
-			Assert.AreEqual(value, viewmodel.Text,
-				"BindingContext property did not change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(value, bindable.GetValue(property));
+			Assert.Equal(value, viewmodel.Text);
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test, Category("[Binding] Set Value")]
-		public void ValueSetOnTwoWay(
-			[Values(true, false)] bool setContextFirst,
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Set Value")]
+		[InlineData(true, true)]
+		[InlineData(true, false)]
+		[InlineData(false, true)]
+		[InlineData(false, false)]
+		public void ValueSetOnTwoWay(bool setContextFirst, bool isDefault)
 		{
 			const string value = "Foo";
 			var viewmodel = new MockViewModel
@@ -320,17 +325,16 @@ namespace Xamarin.Forms.Core.UnitTests
 				bindable.BindingContext = viewmodel;
 			}
 
-			Assert.AreEqual(value, viewmodel.Text,
-				"BindingContext property changed");
-			Assert.AreEqual(value, bindable.GetValue(property),
-				"Target property did not change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(value, viewmodel.Text);
+			Assert.Equal(value, bindable.GetValue(property));
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test, Category("[Binding] Update Value")]
-		public void ValueUpdatedWithSimplePathOnOneWayBinding(
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Update Value")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public void ValueUpdatedWithSimplePathOnOneWayBinding(bool isDefault)
 		{
 			const string newvalue = "New Value";
 			var viewmodel = new MockViewModel
@@ -354,17 +358,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(newvalue, bindable.GetValue(property),
-				"Bindable did not update on binding context property change");
-			Assert.AreEqual(newvalue, viewmodel.Text,
-				"Source property changed when it shouldn't");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(newvalue, bindable.GetValue(property));
+			Assert.Equal(newvalue, viewmodel.Text);
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test, Category("[Binding] Update Value")]
-		public void ValueUpdatedWithSimplePathOnOneWayToSourceBinding(
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Update Value")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public void ValueUpdatedWithSimplePathOnOneWayToSourceBinding(bool isDefault)
 
 		{
 			const string newvalue = "New Value";
@@ -391,21 +394,19 @@ namespace Xamarin.Forms.Core.UnitTests
 			string original = (string)bindable.GetValue(property);
 			const string value = "value";
 			viewmodel.Text = value;
-			Assert.AreEqual(original, bindable.GetValue(property),
-				"Target updated from Source on OneWayToSource");
+			Assert.Equal(original, bindable.GetValue(property));
 
 			bindable.SetValue(property, newvalue);
-			Assert.AreEqual(newvalue, bindable.GetValue(property),
-				"Bindable did not update on binding context property change");
-			Assert.AreEqual(newvalue, viewmodel.Text,
-				"Source property changed when it shouldn't");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(newvalue, bindable.GetValue(property));
+			Assert.Equal(newvalue, viewmodel.Text);
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test, Category("[Binding] Update Value")]
-		public void ValueUpdatedWithSimplePathOnTwoWayBinding(
-			[Values(true, false)] bool isDefault)
+		[Theory]
+		[Trait("Category", "[Binding] Update Value")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public void ValueUpdatedWithSimplePathOnTwoWayBinding(bool isDefault)
 		{
 			const string newvalue = "New Value";
 			var viewmodel = new MockViewModel
@@ -429,24 +430,20 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(newvalue, bindable.GetValue(property),
-				"Target property did not update change");
-			Assert.AreEqual(newvalue, viewmodel.Text,
-				"Source property changed from what it was set to");
+			Assert.Equal(newvalue, bindable.GetValue(property));
+			Assert.Equal(newvalue, viewmodel.Text);
 
 			const string newvalue2 = "New Value in the other direction";
 
 			bindable.SetValue(property, newvalue2);
-			Assert.AreEqual(newvalue2, viewmodel.Text,
-				"Source property did not update with Target's change");
-			Assert.AreEqual(newvalue2, bindable.GetValue(property),
-				"Target property changed from what it was set to");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(newvalue2, viewmodel.Text);
+			Assert.Equal(newvalue2, bindable.GetValue(property));
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[TestCase(true)]
-		[TestCase(false)]
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
 		public void ValueUpdatedWithOldContextDoesNotUpdateWithOneWayBinding(bool isDefault)
 		{
 			const string newvalue = "New Value";
@@ -471,17 +468,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			bindable.BindingContext = new MockViewModel();
-			Assert.AreEqual(null, bindable.GetValue(property));
+			Assert.Equal(null, bindable.GetValue(property));
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(null, bindable.GetValue(property),
-				"Target updated from old Source property change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(null, bindable.GetValue(property));
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[TestCase(true)]
-		[TestCase(false)]
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
 		public void ValueUpdatedWithOldContextDoesNotUpdateWithTwoWayBinding(bool isDefault)
 		{
 			const string newvalue = "New Value";
@@ -506,23 +502,21 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			bindable.BindingContext = new MockViewModel();
-			Assert.AreEqual(null, bindable.GetValue(property));
+			Assert.Equal(null, bindable.GetValue(property));
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(null, bindable.GetValue(property),
-				"Target updated from old Source property change");
+			Assert.Equal(null, bindable.GetValue(property));
 
 			string original = viewmodel.Text;
 
 			bindable.SetValue(property, newvalue);
-			Assert.AreEqual(original, viewmodel.Text,
-				"Source updated from old Target property change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(original, viewmodel.Text);
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[TestCase(true)]
-		[TestCase(false)]
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
 		public void ValueUpdatedWithOldContextDoesNotUpdateWithOneWayToSourceBinding(bool isDefault)
 		{
 			const string newvalue = "New Value";
@@ -547,16 +541,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			bindable.BindingContext = new MockViewModel();
-			Assert.AreEqual(property.DefaultValue, bindable.GetValue(property));
+			Assert.Equal(property.DefaultValue, bindable.GetValue(property));
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(property.DefaultValue, bindable.GetValue(property),
-				"Target updated from old Source property change");
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(property.DefaultValue, bindable.GetValue(property));
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void BindingStaysOnUpdateValueFromBinding()
 		{
 			const string newvalue = "New Value";
@@ -573,17 +565,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			bindable.SetBinding(property, binding);
 
 			viewmodel.Text = newvalue;
-			Assert.AreEqual(newvalue, bindable.GetValue(property));
+			Assert.Equal(newvalue, bindable.GetValue(property));
 
 			const string newValue2 = "new value 2";
 			viewmodel.Text = newValue2;
-			Assert.AreEqual(newValue2, bindable.GetValue(property));
+			Assert.Equal(newValue2, bindable.GetValue(property));
 
-			Assert.That(log.Messages.Count, Is.EqualTo(0),
-				"An error was logged: " + log.Messages.FirstOrDefault());
+			Assert.Equal(0, log.Messages.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void OneWayToSourceContextSetToNull()
 		{
 			var binding = new Binding("Text", BindingMode.OneWayToSource);
@@ -594,13 +585,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 			bindable.SetBinding(MockBindable.TextProperty, binding);
 
-			Assert.That(() => bindable.BindingContext = null, Throws.Nothing);
+			AssertEx.DoesNotThrow(() => bindable.BindingContext = null);
 		}
 
-		[Category("[Binding] Simple paths")]
-		[TestCase(BindingMode.OneWay)]
-		[TestCase(BindingMode.OneWayToSource)]
-		[TestCase(BindingMode.TwoWay)]
+		[Theory]
+		[Trait("Category", "[Binding] Simple paths")]
+		[InlineData(BindingMode.OneWay)]
+		[InlineData(BindingMode.OneWayToSource)]
+		[InlineData(BindingMode.TwoWay)]
 		public void SourceAndTargetAreWeakWeakSimplePath(BindingMode mode)
 		{
 			var property = BindableProperty.Create("Text", typeof(string), typeof(MockBindable), "default value", BindingMode.OneWay);
@@ -627,7 +619,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				bindable.BindingContext = viewmodel;
 				bindable.SetBinding(property, binding);
 
-				Assume.That(() => bindable.BindingContext = null, Throws.Nothing);
+				AssertEx.DoesNotThrow(() => bindable.BindingContext = null);
 			};
 
 			create();
@@ -636,13 +628,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.WaitForPendingFinalizers();
 
 			if (mode == BindingMode.TwoWay || mode == BindingMode.OneWay)
-				Assert.IsFalse(weakViewModel.IsAlive, "ViewModel wasn't collected");
+				Assert.False(weakViewModel.IsAlive, "ViewModel wasn't collected");
 
 			if (mode == BindingMode.TwoWay || mode == BindingMode.OneWayToSource)
-				Assert.IsFalse(weakBindable.IsAlive, "Bindable wasn't collected");
+				Assert.False(weakBindable.IsAlive, "Bindable wasn't collected");
 		}
 
-		[Test]
+		[Fact]
 		public void PropertyChangeBindingsOccurThroughMainThread()
 		{
 			var vm = new MockViewModel { Text = "text" };
@@ -658,25 +650,27 @@ namespace Xamarin.Forms.Core.UnitTests
 			vm.Text = "updated";
 
 			// If we wait five seconds and invokeOnMainThreadWasCalled still hasn't been set, something is very wrong
-			Assert.That(invokeOnMainThreadWasCalled, Is.True.After(5000, 10));
+			// NUnit's Is.True.After polled for up to five seconds; xUnit has no delayed
+			// constraint, so the wait is explicit.
+			SpinWait.SpinUntil(() => invokeOnMainThreadWasCalled, TimeSpan.FromSeconds(5));
+			Assert.True(invokeOnMainThreadWasCalled);
 		}
 	}
 
-	[TestFixture]
 	public class BindingBaseTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void EnableCollectionSynchronizationInvalid()
 		{
-			Assert.That(() => BindingBase.EnableCollectionSynchronization(null, new object(),
-			   (collection, context, method, access) => { }), Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindingBase.EnableCollectionSynchronization(new string[0], new object(),
-			   null), Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindingBase.EnableCollectionSynchronization(new string[0], null,
-			   (collection, context, method, access) => { }), Throws.Nothing);
+			Assert.ThrowsAny<ArgumentNullException>(() => BindingBase.EnableCollectionSynchronization(null, new object(),
+			   (collection, context, method, access) => { }));
+			Assert.ThrowsAny<ArgumentNullException>(() => BindingBase.EnableCollectionSynchronization(new string[0], new object(),
+			   null));
+			AssertEx.DoesNotThrow(() => BindingBase.EnableCollectionSynchronization(new string[0], null,
+			   (collection, context, method, access) => { }));
 		}
 
-		[Test]
+		[Fact]
 		public void EnableCollectionSynchronization()
 		{
 			string[] stuff = new[] { "foo", "bar" };
@@ -686,14 +680,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			BindingBase.EnableCollectionSynchronization(stuff, context, callback);
 
 			CollectionSynchronizationContext syncContext;
-			Assert.IsTrue(BindingBase.TryGetSynchronizedCollection(stuff, out syncContext));
-			Assert.That(syncContext, Is.Not.Null);
-			Assert.AreSame(syncContext.Callback, callback);
-			Assert.That(syncContext.ContextReference, Is.Not.Null);
-			Assert.That(syncContext.ContextReference.Target, Is.SameAs(context));
+			Assert.True(BindingBase.TryGetSynchronizedCollection(stuff, out syncContext));
+			Assert.NotNull(syncContext);
+			Assert.Same(syncContext.Callback, callback);
+			Assert.NotNull(syncContext.ContextReference);
+			Assert.Same(context, syncContext.ContextReference.Target);
 		}
 
-		[Test]
+		[Fact]
 		public void DisableCollectionSynchronization()
 		{
 			string[] stuff = new[] { "foo", "bar" };
@@ -705,11 +699,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			BindingBase.DisableCollectionSynchronization(stuff);
 
 			CollectionSynchronizationContext syncContext;
-			Assert.IsFalse(BindingBase.TryGetSynchronizedCollection(stuff, out syncContext));
-			Assert.IsNull(syncContext);
+			Assert.False(BindingBase.TryGetSynchronizedCollection(stuff, out syncContext));
+			Assert.Null(syncContext);
 		}
 
-		[Test]
+		[Fact]
 		public void CollectionAndContextAreHeldWeakly()
 		{
 			WeakReference weakCollection = null, weakContext = null;
@@ -738,11 +732,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 
-			Assert.IsFalse(weakCollection.IsAlive);
-			Assert.IsFalse(weakContext.IsAlive);
+			Assert.False(weakCollection.IsAlive);
+			Assert.False(weakContext.IsAlive);
 		}
 
-		[Test]
+		[Fact]
 		public void CollectionAndContextAreHeldWeaklyClosingOverCollection()
 		{
 			WeakReference weakCollection = null, weakContext = null;
@@ -774,22 +768,21 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 
-			Assert.IsFalse(weakCollection.IsAlive);
-			Assert.IsFalse(weakContext.IsAlive);
+			Assert.False(weakCollection.IsAlive);
+			Assert.False(weakContext.IsAlive);
 		}
 
-		[Test]
+		[Fact]
 		public void DisableCollectionSynchronizationInvalid()
 		{
-			Assert.That(() => BindingBase.DisableCollectionSynchronization(null), Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => BindingBase.DisableCollectionSynchronization(null));
 		}
 
-		[Test]
+		[Fact]
 		public void TryGetSynchronizedCollectionInvalid()
 		{
 			CollectionSynchronizationContext context;
-			Assert.That(() => BindingBase.TryGetSynchronizedCollection(null, out context),
-				Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => BindingBase.TryGetSynchronizedCollection(null, out context));
 		}
 
 	}

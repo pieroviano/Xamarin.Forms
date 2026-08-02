@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class NotifyCollectionChangedEventArgsExtensionsTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Add()
 		{
 			List<string> applied = new List<string> { "foo", "bar", "baz" };
@@ -17,7 +16,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Action reset = () => Assert.Fail("Reset should not be called");
 			Action<object, int, bool> insert = (o, i, create) =>
 			{
-				Assert.That(create, Is.True);
+				Assert.True(create);
 				applied.Insert(i, (string)o);
 			};
 
@@ -28,10 +27,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			items.Add("monkey");
 
-			CollectionAssert.AreEqual(items, applied);
+			Assert.Equal(items, applied);
 		}
 
-		[Test]
+		[Fact]
 		public void Insert()
 		{
 			List<string> applied = new List<string> { "foo", "bar", "baz" };
@@ -39,7 +38,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Action reset = () => Assert.Fail("Reset should not be called");
 			Action<object, int, bool> insert = (o, i, create) =>
 			{
-				Assert.That(create, Is.True);
+				Assert.True(create);
 				applied.Insert(i, (string)o);
 			};
 			Action<object, int> removeAt = (o, i) => applied.RemoveAt(i);
@@ -49,10 +48,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			items.Insert(1, "monkey");
 
-			CollectionAssert.AreEqual(items, applied);
+			Assert.Equal(items, applied);
 		}
 
-		[Test]
+		[Fact]
 		public void Move()
 		{
 			List<string> applied = new List<string> { "foo", "bar", "baz" };
@@ -60,7 +59,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Action reset = () => Assert.Fail("Reset should not be called");
 			Action<object, int, bool> insert = (o, i, create) =>
 			{
-				Assert.That(create, Is.False);
+				Assert.False(create);
 				applied.Insert(i, (string)o);
 			};
 
@@ -71,10 +70,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			items.Move(0, 2);
 
-			CollectionAssert.AreEqual(items, applied);
+			Assert.Equal(items, applied);
 		}
 
-		[Test]
+		[Fact]
 		public void Replace()
 		{
 			List<string> applied = new List<string> { "foo", "bar", "baz" };
@@ -82,7 +81,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Action reset = () => Assert.Fail("Reset should not be called");
 			Action<object, int, bool> insert = (o, i, create) =>
 			{
-				Assert.That(create, Is.True);
+				Assert.True(create);
 				applied.Insert(i, (string)o);
 			};
 
@@ -93,7 +92,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			items[1] = "monkey";
 
-			CollectionAssert.AreEqual(items, applied);
+			Assert.Equal(items, applied);
 		}
 	}
 }

@@ -1,25 +1,19 @@
-﻿using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
+using Xamarin.Forms.Controls.Tests;
 using Xamarin.Forms.Internals;
+using Xunit.Sdk;
 
 namespace Xamarin.Forms.Controls.GalleryPages.PlatformTestsGallery
 {
 	[Preserve(AllMembers = true)]
-	public class TestNameContainsFilter : TestFilter
+	public class TestNameContainsFilter : ITestCaseFilter
 	{
 		string _substring;
 
 		public TestNameContainsFilter(string substring) => _substring = substring;
 
-		public override TNode AddToXml(TNode parentNode, bool recursive)
+		public bool Match(ITestCase testCase)
 		{
-			TNode result = parentNode.AddElement("contains", _substring);
-			return result;
-		}
-
-		public override bool Match(ITest test)
-		{
-			return test.Name.Contains(_substring);
+			return testCase.TestCaseDisplayName.Contains(_substring);
 		}
 	}
 }

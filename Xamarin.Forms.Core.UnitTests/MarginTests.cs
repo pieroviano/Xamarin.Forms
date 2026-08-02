@@ -1,25 +1,22 @@
-﻿using NUnit.Framework;
-using Xamarin.Forms;
+﻿using Xamarin.Forms;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public class MarginTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public MarginTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices(getNativeSizeFunc: (b, d, e) => new SizeRequest(new Size(100, 50)));
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void GetSizeRequestIncludesMargins()
 		{
 			var parent = new ContentView
@@ -37,10 +34,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			parent.Content = child;
 
 			var result = parent.Measure(double.PositiveInfinity, double.PositiveInfinity, MeasureFlags.IncludeMargins);
-			Assert.AreEqual(new Size(140, 110), result.Request);
+			Assert.Equal(new Size(140, 110), result.Request);
 		}
 
-		[Test]
+		[Fact]
 		public void MarginsAffectPositionInContentView()
 		{
 			var parent = new ContentView
@@ -58,10 +55,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			parent.Content = child;
 
 			parent.Layout(new Rectangle(0, 0, 140, 110));
-			Assert.AreEqual(new Rectangle(10, 20, 100, 50), child.Bounds);
+			Assert.Equal(new Rectangle(10, 20, 100, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void ChangingMarginCausesRelayout()
 		{
 			var parent = new ContentView
@@ -81,10 +78,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			parent.Content = child;
 
 			parent.Layout(new Rectangle(0, 0, 1000, 1000));
-			Assert.AreEqual(new Rectangle(10, 20, 100, 50), child.Bounds);
+			Assert.Equal(new Rectangle(10, 20, 100, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void IntegrationTest()
 		{
 			var parent = new StackLayout
@@ -114,13 +111,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			parent.Layout(new Rectangle(0, 0, 1000, 1000));
 
-			Assert.AreEqual(new Rectangle(0, 0, 100, 50), child1.Bounds);
-			Assert.AreEqual(new Rectangle(5, 60, 980, 50), child2.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 50), child1.Bounds);
+			Assert.Equal(new Rectangle(5, 60, 980, 50), child2.Bounds);
 
 			child1.Margin = new Thickness(10, 20, 30, 40);
 
-			Assert.AreEqual(new Rectangle(10, 20, 100, 50), child1.Bounds);
-			Assert.AreEqual(new Rectangle(5, 120, 980, 50), child2.Bounds);
+			Assert.Equal(new Rectangle(10, 20, 100, 50), child1.Bounds);
+			Assert.Equal(new Rectangle(5, 120, 980, 50), child2.Bounds);
 		}
 	}
 }

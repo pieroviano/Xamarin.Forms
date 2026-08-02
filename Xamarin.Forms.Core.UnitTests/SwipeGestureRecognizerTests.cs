@@ -1,22 +1,21 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class SwipeGestureRecognizerTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Constructor()
 		{
 			var swipe = new SwipeGestureRecognizer();
 
-			Assert.AreEqual(null, swipe.Command);
-			Assert.AreEqual(null, swipe.CommandParameter);
-			Assert.AreEqual(100, swipe.Threshold);
+			Assert.Equal(null, swipe.Command);
+			Assert.Equal(null, swipe.CommandParameter);
+			Assert.Equal(100u, swipe.Threshold);
 		}
 
-		[Test]
+		[Fact]
 		public void CallbackPassesParameter()
 		{
 			var view = new View();
@@ -27,10 +26,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			swipe.Command = new Command(o => result = o);
 
 			swipe.SendSwiped(view, SwipeDirection.Left);
-			Assert.AreEqual(result, swipe.CommandParameter);
+			Assert.Equal(result, swipe.CommandParameter);
 		}
 
-		[Test]
+		[Fact]
 		public void SwipedEventDirectionMatchesTotalXTest()
 		{
 			var view = new View();
@@ -44,10 +43,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			((ISwipeGestureController)swipe).SendSwipe(view, totalX: -150, totalY: 10);
 			((ISwipeGestureController)swipe).DetectSwipe(view, SwipeDirection.Left);
-			Assert.AreEqual(SwipeDirection.Left, direction);
+			Assert.Equal(SwipeDirection.Left, direction);
 		}
 
-		[Test]
+		[Fact]
 		public void SwipedEventDirectionMatchesTotalYTest()
 		{
 			var view = new View();
@@ -61,10 +60,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			((ISwipeGestureController)swipe).SendSwipe(view, totalX: 10, totalY: -150);
 			((ISwipeGestureController)swipe).DetectSwipe(view, SwipeDirection.Up);
-			Assert.AreEqual(SwipeDirection.Up, direction);
+			Assert.Equal(SwipeDirection.Up, direction);
 		}
 
-		[Test]
+		[Fact]
 		public void SwipeIgnoredIfBelowThresholdTest()
 		{
 			var view = new View();
@@ -81,7 +80,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			((ISwipeGestureController)swipe).SendSwipe(view, totalX: 0, totalY: -175);
 			((ISwipeGestureController)swipe).DetectSwipe(view, SwipeDirection.Up);
-			Assert.IsFalse(detected);
+			Assert.False(detected);
 		}
 	}
 }

@@ -1,26 +1,24 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Threading;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	public class BaseTestFixture
+	public class BaseTestFixture : IDisposable
 	{
 		CultureInfo _defaultCulture;
 		CultureInfo _defaultUICulture;
 
-		[SetUp]
-		public virtual void Setup()
+		public BaseTestFixture()
 		{
 			_defaultCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
 			_defaultUICulture = System.Threading.Thread.CurrentThread.CurrentUICulture;
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public virtual void TearDown()
+		public virtual void Dispose()
 		{
 			Device.PlatformServices = null;
 			System.Threading.Thread.CurrentThread.CurrentCulture = _defaultCulture;

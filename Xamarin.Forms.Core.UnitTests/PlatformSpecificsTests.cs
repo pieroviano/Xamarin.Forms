@@ -1,68 +1,67 @@
-using ImAVendor.Forms.PlatformConfiguration.iOS;
-using NUnit.Framework;
+﻿using ImAVendor.Forms.PlatformConfiguration.iOS;
 using Xamarin.Forms.PlatformConfiguration;
 using Xamarin.Forms.PlatformConfiguration.AndroidSpecific;
 using Xamarin.Forms.PlatformConfiguration.iOSSpecific;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class PlatformSpecificsTests
 	{
-		[Test]
+		[Fact]
 		public void VendorPlatformProperty()
 		{
 			var x = new FlyoutPage();
 
-			Assert.IsTrue(x.On<iOS>().GetVendorFoo());
+			Assert.True(x.On<iOS>().GetVendorFoo());
 
 			x.On<iOS>().SetVendorFoo(false);
 
-			Assert.IsFalse(x.On<iOS>().GetVendorFoo());
+			Assert.False(x.On<iOS>().GetVendorFoo());
 		}
 
-		[Test]
+		[Fact]
 		public void ConsumeVendorSetting()
 		{
 			var x = new FlyoutPage();
 			x.On<iOS>().SetVendorFoo(false);
 
-			Assert.IsFalse(x.On<iOS>().GetVendorFoo());
+			Assert.False(x.On<iOS>().GetVendorFoo());
 		}
 
-		[Test]
+		[Fact]
 		public void Properties()
 		{
 			var x = new FlyoutPage();
 			x.On<Android>().SetSomeAndroidThing(42);
 
-			Assert.IsTrue(x.On<Android>().GetSomeAndroidThing() == 42);
+			Assert.True(x.On<Android>().GetSomeAndroidThing() == 42);
 		}
 
-		[Test]
+		[Fact]
 		public void ConvenienceConfiguration()
 		{
 			var x = new FlyoutPage();
 
 			x.On<Android>().UseTabletDefaults();
 
-			Assert.IsTrue(x.On<Android>().GetSomeAndroidThing() == 10);
-			Assert.IsTrue(x.On<Android>().GetSomeOtherAndroidThing() == 45);
+			Assert.True(x.On<Android>().GetSomeAndroidThing() == 10);
+			Assert.True(x.On<Android>().GetSomeOtherAndroidThing() == 45);
 
 			x.On<Android>().UsePhabletDefaults();
 
-			Assert.IsTrue(x.On<Android>().GetSomeAndroidThing() == 8);
-			Assert.IsTrue(x.On<Android>().GetSomeOtherAndroidThing() == 40);
+			Assert.True(x.On<Android>().GetSomeAndroidThing() == 8);
+			Assert.True(x.On<Android>().GetSomeOtherAndroidThing() == 40);
 		}
 
-		[Test]
+		[Fact]
 		public void NavigationPageiOSConfiguration()
 		{
 			var x = new NavigationPage();
 
 			x.On<iOS>().SetIsNavigationBarTranslucent(true);
 
-			Assert.IsTrue(x.On<iOS>().IsNavigationBarTranslucent());
+			Assert.True(x.On<iOS>().IsNavigationBarTranslucent());
 		}
 	}
 }

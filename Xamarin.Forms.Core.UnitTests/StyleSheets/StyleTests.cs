@@ -1,63 +1,60 @@
 ﻿using System;
 using System.IO;
 
-using NUnit.Framework;
 
 using Xamarin.Forms.Core.UnitTests;
+using Xunit;
 
 namespace Xamarin.Forms.StyleSheets.UnitTests
 {
-	[TestFixture]
-	public class StyleTests
+	public class StyleTests : IDisposable
 	{
-		[SetUp]
-		public void SetUp()
+		public StyleTests()
 		{
 			Device.PlatformServices = new MockPlatformServices();
 			Internals.Registrar.RegisterAll(new Type[0]);
 		}
 
-		[TearDown]
-		public void TearDown()
+		public void Dispose()
 		{
 			Device.PlatformServices = null;
 			Application.ClearCurrent();
 		}
 
-		[Test]
+		[Fact]
 		public void PropertiesAreApplied()
 		{
 			var styleString = @"background-color: #ff0000;";
 			var style = Style.Parse(new CssReader(new StringReader(styleString)), '}');
-			Assume.That(style, Is.Not.Null);
+			Assert.NotNull(style);
 
 			var ve = new VisualElement();
-			Assume.That(ve.BackgroundColor, Is.EqualTo(Color.Default));
+			Assert.Equal(Color.Default, ve.BackgroundColor);
 			style.Apply(ve);
-			Assert.That(ve.BackgroundColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, ve.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void PropertiesSetByStyleDoesNotOverrideManualOne()
 		{
 			var styleString = @"background-color: #ff0000;";
 			var style = Style.Parse(new CssReader(new StringReader(styleString)), '}');
-			Assume.That(style, Is.Not.Null);
+			Assert.NotNull(style);
 
 			var ve = new VisualElement() { BackgroundColor = Color.Pink };
-			Assume.That(ve.BackgroundColor, Is.EqualTo(Color.Pink));
+			Assert.Equal(Color.Pink, ve.BackgroundColor);
 
 			style.Apply(ve);
-			Assert.That(ve.BackgroundColor, Is.EqualTo(Color.Pink));
+			Assert.Equal(Color.Pink, ve.BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StylesAreCascading()
 		{
 			//color should cascade, background-color should not
 			var styleString = @"background-color: #ff0000; color: #00ff00;";
 			var style = Style.Parse(new CssReader(new StringReader(styleString)), '}');
-			Assume.That(style, Is.Not.Null);
+			Assert.NotNull(style);
 
 			var label = new Label();
 			var layout = new StackLayout
@@ -67,28 +64,28 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 				}
 			};
 
-			Assume.That(layout.BackgroundColor, Is.EqualTo(Color.Default));
-			Assume.That(label.BackgroundColor, Is.EqualTo(Color.Default));
-			Assume.That(label.TextColor, Is.EqualTo(Color.Default));
+			Assert.Equal(Color.Default, layout.BackgroundColor);
+			Assert.Equal(Color.Default, label.BackgroundColor);
+			Assert.Equal(Color.Default, label.TextColor);
 
 			style.Apply(layout);
-			Assert.That(layout.BackgroundColor, Is.EqualTo(Color.Red));
-			Assert.That(label.BackgroundColor, Is.EqualTo(Color.Default));
-			Assert.That(label.TextColor, Is.EqualTo(Color.Lime));
+			Assert.Equal(Color.Red, layout.BackgroundColor);
+			Assert.Equal(Color.Default, label.BackgroundColor);
+			Assert.Equal(Color.Lime, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void PropertiesAreOnlySetOnMatchingElements()
 		{
 			var styleString = @"background-color: #ff0000; color: #00ff00;";
 			var style = Style.Parse(new CssReader(new StringReader(styleString)), '}');
-			Assume.That(style, Is.Not.Null);
+			Assert.NotNull(style);
 
 			var layout = new StackLayout();
-			Assert.That(layout.GetValue(TextElement.TextColorProperty), Is.EqualTo(Color.Default));
+			Assert.Equal(Color.Default, layout.GetValue(TextElement.TextColorProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void StyleSheetsOnAppAreApplied()
 		{
 			var app = new MockApplication();
@@ -98,10 +95,10 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 				Content = new Label()
 			};
 			app.MainPage = page;
-			Assert.That((page.Content as Label).TextColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, (page.Content as Label).TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StyleSheetsOnAppAreAppliedBeforePageStyleSheet()
 		{
 			var app = new MockApplication();
@@ -112,11 +109,11 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 			};
 			page.Resources.Add(StyleSheet.FromString("label{ color: red; }"));
 			app.MainPage = page;
-			Assert.That((page.Content as Label).TextColor, Is.EqualTo(Color.Red));
-			Assert.That((page.Content as Label).BackgroundColor, Is.EqualTo(Color.Blue));
+			Assert.Equal(Color.Red, (page.Content as Label).TextColor);
+			Assert.Equal(Color.Blue, (page.Content as Label).BackgroundColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StyleSheetsOnChildAreReAppliedWhenParentStyleSheetAdded()
 		{
 			var app = new MockApplication();
@@ -126,14 +123,14 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 			};
 			page.Resources.Add(StyleSheet.FromString("label{ color: red; }"));
 			app.MainPage = page;
-			Assert.That((page.Content as Label).TextColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Red, (page.Content as Label).TextColor);
 
 			app.Resources.Add(StyleSheet.FromString("label{ color: white; background-color: blue; }"));
-			Assert.That((page.Content as Label).BackgroundColor, Is.EqualTo(Color.Blue));
-			Assert.That((page.Content as Label).TextColor, Is.EqualTo(Color.Red));
+			Assert.Equal(Color.Blue, (page.Content as Label).BackgroundColor);
+			Assert.Equal(Color.Red, (page.Content as Label).TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void StyleSheetsOnSubviewAreAppliedBeforePageStyleSheet()
 		{
 			var app = new MockApplication();
@@ -147,7 +144,7 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 			};
 			page.Resources.Add(StyleSheet.FromString("label{ color: red; }"));
 			app.MainPage = page;
-			Assert.That((page.Content as Label).TextColor, Is.EqualTo(Color.Yellow));
+			Assert.Equal(Color.Yellow, (page.Content as Label).TextColor);
 		}
 
 	}

@@ -1,22 +1,22 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
+
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class SwipeViewTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var swipeView = new SwipeView();
 
-			Assert.AreEqual(0, swipeView.LeftItems.Count);
-			Assert.AreEqual(0, swipeView.TopItems.Count);
-			Assert.AreEqual(0, swipeView.RightItems.Count);
-			Assert.AreEqual(0, swipeView.BottomItems.Count);
+			Assert.Equal(0, swipeView.LeftItems.Count);
+			Assert.Equal(0, swipeView.TopItems.Count);
+			Assert.Equal(0, swipeView.RightItems.Count);
+			Assert.Equal(0, swipeView.BottomItems.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDefaultSwipeItems()
 		{
 			var swipeView = new SwipeView();
@@ -32,11 +32,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				swipeItem
 			};
 
-			Assert.AreEqual(SwipeMode.Reveal, swipeView.LeftItems.Mode);
-			Assert.AreEqual(SwipeBehaviorOnInvoked.Auto, swipeView.LeftItems.SwipeBehaviorOnInvoked);
+			Assert.Equal(SwipeMode.Reveal, swipeView.LeftItems.Mode);
+			Assert.Equal(SwipeBehaviorOnInvoked.Auto, swipeView.LeftItems.SwipeBehaviorOnInvoked);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSwipeItemsExecuteMode()
 		{
 			var swipeView = new SwipeView();
@@ -56,10 +56,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			swipeView.LeftItems = swipeItems;
 
-			Assert.AreEqual(SwipeMode.Execute, swipeView.LeftItems.Mode);
+			Assert.Equal(SwipeMode.Execute, swipeView.LeftItems.Mode);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSwipeItemsSwipeBehaviorOnInvoked()
 		{
 			var swipeView = new SwipeView();
@@ -79,10 +79,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			swipeView.LeftItems = swipeItems;
 
-			Assert.AreEqual(SwipeBehaviorOnInvoked.Close, swipeView.LeftItems.SwipeBehaviorOnInvoked);
+			Assert.Equal(SwipeBehaviorOnInvoked.Close, swipeView.LeftItems.SwipeBehaviorOnInvoked);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLeftItems()
 		{
 			var swipeView = new SwipeView();
@@ -98,10 +98,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				swipeItem
 			};
 
-			Assert.AreNotEqual(0, swipeView.LeftItems.Count);
+			Assert.NotEqual(0, swipeView.LeftItems.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestRightItems()
 		{
 			var swipeView = new SwipeView();
@@ -117,10 +117,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				swipeItem
 			};
 
-			Assert.AreNotEqual(0, swipeView.RightItems.Count);
+			Assert.NotEqual(0, swipeView.RightItems.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestTopItems()
 		{
 			var swipeView = new SwipeView();
@@ -136,10 +136,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				swipeItem
 			};
 
-			Assert.AreNotEqual(0, swipeView.TopItems.Count);
+			Assert.NotEqual(0, swipeView.TopItems.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestBottomItems()
 		{
 			var swipeView = new SwipeView();
@@ -155,10 +155,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				swipeItem
 			};
 
-			Assert.AreNotEqual(0, swipeView.BottomItems.Count);
+			Assert.NotEqual(0, swipeView.BottomItems.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestProgramaticallyOpen()
 		{
 			bool isOpen = false;
@@ -183,10 +183,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			swipeView.Open(OpenSwipeItem.LeftItems);
 
-			Assert.IsTrue(isOpen);
+			Assert.True(isOpen);
 		}
 
-		[Test]
+		[Fact]
 		public void TestProgramaticallyClose()
 		{
 			bool isOpen = false;
@@ -211,10 +211,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			swipeView.Close();
 
-			Assert.IsFalse(isOpen);
+			Assert.False(isOpen);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSwipeItemView()
 		{
 			var swipeView = new SwipeView();
@@ -241,7 +241,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			Assert.NotNull(swipeItemView);
 			Assert.NotNull(swipeItemView.Content);
-			Assert.AreNotEqual(0, swipeView.LeftItems.Count);
+			Assert.NotEqual(0, swipeView.LeftItems.Count);
 		}
 	}
 }

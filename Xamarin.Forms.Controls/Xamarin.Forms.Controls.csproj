@@ -49,16 +49,40 @@
         <ProjectReference Include="..\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" Condition="$(FromSource) == 'false'" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-      <PackageReference Include="NUnit" Version="3.13.1" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="Xam.Plugin.DeviceInfo" Version="3.0.2" />
+        <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+        <!--
+        NOT the "xunit.v3" metapackage: it ships only net472 and net8.0 assets, so it does
+        not restore against this project's netstandard2.0 target (NU1202). These three are
+        the v3 packages that do carry a netstandard2.0 leg, which is what lets the engine
+        load inside the MonoAndroid / Xamarin.iOS / uap10.0 gallery apps:
+
+          xunit.v3.extensibility.core   [Fact]/[Theory] plus XunitTestFramework, the
+                                        discoverer and the executor. v3 drops v2's
+                                        IAssemblyInfo reflection abstraction and takes a
+                                        loaded Assembly directly - exactly what an
+                                        on-device run needs, since there is no file path
+                                        to hand a console runner inside an APK or .app.
+          xunit.v3.assert               Assert.
+          xunit.v3.runner.common        Xunit.Runner.Common.TestFrameworkOptions, the only
+                                        public ITestFrameworkDiscoveryOptions/
+                                        ExecutionOptions implementation. v3 added ToJson()
+                                        to ITestFrameworkOptions, so hand-rolling one is no
+                                        longer just a typed dictionary.
+
+        xunit.runner.visualstudio is deliberately absent: it is a VSTest adapter, and
+        nothing discovers tests in a gallery app through VSTest. Its version was also
+        $(Net4xXUnit2Version).$(VersionBuildSuffix), which resolves to a non-existent
+        "1.0.0.*" - do not reintroduce a property-ised version for a third-party package.
+      -->
+        <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />
+        <PackageReference Include="xunit.v3.assert" Version="3.2.2" />
+        <PackageReference Include="xunit.v3.runner.common" Version="3.2.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Xam.Plugin.DeviceInfo" Version="3.0.2" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\DatesPage.xaml" />
-      <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\MainTabbedPage.xaml" />
-    </ItemGroup>
-    <ItemGroup>
+        <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\DatesPage.xaml" />
+        <EmbeddedResource Remove="GalleryPages\DateTimePickerGalleries\MainTabbedPage.xaml" />
         <EmbeddedResource Include="BuildNumber.txt" />
         <EmbeddedResource Include="GalleryPages\crimson.jpg" />
         <EmbeddedResource Include="coffee.png" />

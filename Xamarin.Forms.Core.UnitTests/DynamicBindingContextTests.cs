@@ -5,14 +5,13 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DynamicBindingContextTests
 	{
-		[Test]
+		[Fact]
 		public void BindingTwoWayToDynamicModel()
 		{
 			var view = new MockBindable();
@@ -27,11 +26,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			view.SetBinding(MockBindable.TextProperty, "Title");
 			view.BindingContext = model;
 
-			Assert.AreEqual("Foo", view.Text);
+			Assert.Equal("Foo", view.Text);
 
 			view.Text = "Bar";
 
-			Assert.AreEqual("Bar", model.Properties["Title"]);
+			Assert.Equal("Bar", model.Properties["Title"]);
 		}
 
 		// This whole class and inner types is just a very simple 
