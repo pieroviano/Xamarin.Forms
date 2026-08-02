@@ -304,6 +304,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_suggestionsWrapper.Add(_suggestionsScroller);
 			_body.AddOverlay(_suggestionsWrapper);
 
+			ApplySuggestionsBackground();
+
 			_flyoutWrapper = new EventBox
 			{
 				VisibleWindow = true,
@@ -994,6 +996,49 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 
 			_searchHost.Show();
+		}
+
+		/// <summary>
+		/// Paints the suggestion overlay opaque.
+		/// </summary>
+		/// <remarks>
+		/// An overlay child draws over the page but does not get a background of its own: a
+		/// <see cref="EventBox"/> with <c>VisibleWindow = true</c> still renders nothing but what CSS
+		/// gives it. Left unstyled the page shows straight through the suggestion rows and the two
+		/// texts collide - measured on the first run of <c>shell4-smoke.sh</c>, where the page's
+		/// "UNREAD MESSAGES" heading was painted between "beta" and "gamma". Every geometry assertion
+		/// in that suite passed while this was happening, which is why it took a screenshot to find.
+		///
+		/// All three layers are styled for the reason the flyout has to do the same (see
+		/// <see cref="UpdateFlyoutBackgroundColor"/>): a CssProvider added to a widget's own
+		/// StyleContext styles that widget only, so colouring the wrapper alone leaves the
+		/// ScrolledWindow and the Viewport inside it painting the theme's background over the top.
+		/// </remarks>
+		void ApplySuggestionsBackground()
+		{
+			var background = LookupThemeColor("theme_base_color")
+				?? LookupThemeColor("theme_bg_color")
+				?? new Gdk.Color(0xff, 0xff, 0xff);
+
+			_suggestionsWrapper.SetBackgroundColor(background);
+			_suggestionsScroller.SetBackgroundColor(background);
+			_suggestionsViewport.SetBackgroundColor(background);
+		}
+
+		Gdk.Color? LookupThemeColor(string name)
+		{
+			if (!StyleContext.LookupColor(name, out var rgba))
+				return null;
+
+			// An unresolvable or fully transparent theme colour is worse than no colour at all here,
+			// because the whole point is opacity.
+			if (rgba.Alpha <= 0.0)
+				return null;
+
+			return new Gdk.Color(
+				(byte)(rgba.Red * 255.0),
+				(byte)(rgba.Green * 255.0),
+				(byte)(rgba.Blue * 255.0));
 		}
 
 		void RefreshSuggestions()

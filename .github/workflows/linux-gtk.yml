@@ -68,9 +68,12 @@ jobs:
       # every result. What is scoped is which suite can fail the GTK job, and that is the GTK
       # one below, which is deterministic (159/159 over three consecutive runs, including under
       # G_DEBUG=fatal-criticals). That count is now 169: 168 passed / 1 skipped over ten
-      # consecutive runs, measured on WINDOWS on 2026-08-02 - the skip is the deliberately
-      # disabled M3-residual repro in LayoutTests, not an environment skip, and the Linux numbers
-      # above have not been re-measured since. Measured on 2026-08-01, both in Debug and in Release:
+      # consecutive runs on WINDOWS (2026-08-02) - the skip is the deliberately disabled
+      # M3-residual repro in LayoutTests, not an environment skip. RE-MEASURED ON LINUX the same
+      # day, under xvfb-run --server-args="-screen 0 1280x1024x24": identical, Failed 0 / Passed
+      # 168 / Skipped 1 / Total 169, with zero GTK criticals, and again under
+      # G_DEBUG=fatal-criticals. So the two OSes agree.
+      # The Core and XAML numbers below were measured on 2026-08-01, both in Debug and in Release:
       #
       #   Core.UnitTests   4860 passed / 8 failed / 8 skipped of 4876. The 8 are GC-liveness
       #                    assertions - WeakToWeak, ElementIsGarbageCollectedAfterItsRemoved,
@@ -79,23 +82,32 @@ jobs:
       #                    TestImageSourceToNullCancelsLoading - i.e. tests whose outcome
       #                    depends on when the runtime actually collects. Same 8 in both
       #                    configurations.
-      #   Xaml.UnitTests   FLAKY: three consecutive runs of the same binary gave 2, 11 and 3
-      #                    failures out of 1046, with a DIFFERENT set each time (DataTemplate
-      #                    fixtures once, Issue1501/Issue1794 the next). One failure is
-      #                    deterministic: LoaderTests.MissingStaticResourceShouldThrow, 3/3.
-      #                    The symptom of the rest is cross-test global-state contamination -
-      #                    "You must call Xamarin.Forms.Forms.Init(); prior to using this
-      #                    property" - surfacing because xUnit does not preserve NUnit's test
-      #                    ordering. That is M9 work, not M7's; see docs/plans/gtk-linux-net10.md.
+      #   Xaml.UnitTests   WAS FLAKY: three consecutive runs of the same binary gave 2, 11 and 3
+      #                    failures out of 1046, with a DIFFERENT set each time, plus a
+      #                    deterministic LoaderTests.MissingStaticResourceShouldThrow at 3/3. The
+      #                    cause was cross-test global-state contamination surfacing because xUnit
+      #                    does not preserve NUnit's ordering, and it was FIXED by the
+      #                    assembly-level [EnsurePlatformServices] in AssemblyTestConfig.cs. That
+      #                    measurement, however, predated the fix, which is why this step stayed
+      #                    de-gated long after it was green.
+      #                    RE-MEASURED ON LINUX 2026-08-02, after the fix: two consecutive runs of
+      #                    Failed 0 / Passed 1042 / Skipped 4 / Total 1046, no failure of any kind,
+      #                    MissingStaticResourceShouldThrow among them; and the isolated
+      #                    order-dependence repro `--filter FullyQualifiedName~XArray` at 6/6.
+      #                    So continue-on-error is REMOVED from this step - it now gates.
       #
-      # Both flags should be REMOVED once those are fixed. Do not instead delete or [Skip] the
-      # tests.
+      # The Core flag stays until the 8 GC-liveness failures are dealt with; those are real and
+      # unfixed, not flaky. Do not instead delete or [Skip] the tests.
+      #
+      # One caveat kept deliberately: the 2026-08-02 re-measurement was on Ubuntu 22.04 (WSL2),
+      # and this job runs 24.04. If the XAML step goes red here and nobody can reproduce it
+      # locally, that difference is the first thing to check - but re-gate by fixing it, not by
+      # putting continue-on-error back.
       - name: Core unit tests
         continue-on-error: true
         run: dotnet test Xamarin.Forms.Core.UnitTests -c Debug --no-build --logger trx
 
       - name: XAML unit tests
-        continue-on-error: true
         run: dotnet test Xamarin.Forms.Xaml.UnitTests -c Debug --no-build --logger trx
 
       # These are real GTK widgets: they need an X server, and GDK_BACKEND=x11 because the

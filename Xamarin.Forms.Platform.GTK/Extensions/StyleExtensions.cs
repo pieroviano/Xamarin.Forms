@@ -160,6 +160,25 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 		}
 
 		/// <summary>Replaces <c>ModifyFont</c>.</summary>
+		/// <remarks>
+		/// The CSS declarations alone are not enough, and the reason is measured rather than
+		/// theoretical (plan §8.3.1, <c>scratchpad/shell23-boldprobe2.sh</c>): a CSS
+		/// <c>font-weight</c>/<c>font-size</c> change does <b>not</b> invalidate the cached
+		/// <see cref="Pango.Layout"/> behind a <see cref="Gtk.Label"/> or <see cref="Gtk.Entry"/>.
+		/// The style context reports the new font and the colour repaints, while the widget keeps
+		/// the size - and, until something else invalidates it, the glyphs - it had under the old
+		/// one: a label taken bold and back through CSS measured 201 → 236 → <b>236</b>, where the
+		/// same round trip through <see cref="Pango.AttrList"/> gives 215 → 253 → 215. So the font
+		/// is *also* pushed as a Pango attribute, which is what clears the layout and queues the
+		/// resize; the CSS is kept because it is what reaches composite sub-nodes (an
+		/// <c>Gtk.Entry</c>'s <c>text</c> node, a <c>Gtk.Button</c>'s inner label) that have no
+		/// attribute list of their own.
+		///
+		/// A widget with neither an attribute list nor a cached layout of its own -
+		/// <see cref="Gtk.TextView"/> is the one this backend uses - gets an explicit
+		/// <c>QueueResize</c> instead, so no caller is left relying on a style change alone to
+		/// produce a new size request.
+		/// </remarks>
 		public static void SetFont(this Widget widget, Pango.FontDescription font)
 		{
 			if (widget == null)
@@ -168,6 +187,7 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			if (font == null)
 			{
 				widget.ClearStyle();
+				widget.ApplyFontAttributes(null);
 				return;
 			}
 
@@ -178,6 +198,63 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 				(font.Size / Pango.Scale.PangoScale).ToString("0.##", CultureInfo.InvariantCulture) + "pt");
 			widget.SetStyleProperty("font-weight", font.Weight >= Pango.Weight.Bold ? "bold" : "normal");
 			widget.SetStyleProperty("font-style", font.Style == Pango.Style.Italic ? "italic" : "normal");
+
+			widget.ApplyFontAttributes(font);
+		}
+
+		/// <summary>
+		/// Pushes <paramref name="font"/> onto the widget's Pango attribute list, or clears it when
+		/// <paramref name="font"/> is null. See the remarks on <see cref="SetFont"/> for why this
+		/// exists alongside the CSS.
+		/// </summary>
+		/// <remarks>
+		/// An attribute list built from a <see cref="Pango.FontDescription"/> only carries the
+		/// fields that description actually set, so leaving <c>Family</c> unset - which
+		/// <c>FontDescriptionHelper</c> does when the Forms element asks for no font family - still
+		/// leaves the theme font in place instead of pinning the label to a hardcoded one.
+		/// </remarks>
+		public static void ApplyFontAttributes(this Widget widget, Pango.FontDescription font)
+		{
+			if (widget == null)
+				return;
+
+			Pango.AttrList attributes = null;
+
+			if (font != null)
+			{
+				attributes = new Pango.AttrList();
+				attributes.Insert(new Pango.AttrFontDesc(font));
+			}
+
+			switch (widget)
+			{
+				case Gtk.Label label when label.UseMarkup:
+					// MEASURED: an explicit font-description attribute set here *overrides* the
+					// attributes the markup itself carries - a <b> in the output of
+					// GenerateMarkupText stopped measuring bold (70px against the plain 70px, where
+					// it is 76px on its own). A markup label carries its font inside the markup
+					// already - that is how LabelRenderer maps Forms fonts - so the markup wins here
+					// and this call only re-parses it, which is what clears the cached layout
+					// (gtk_label_set_markup runs gtk_label_recalculate unconditionally).
+					//
+					// Consequence, deliberate and worth knowing before calling this on a markup
+					// label: the FontDescription is then NOT applied to it. No renderer in this
+					// backend does - LabelRenderer goes through GenerateMarkupText and never through
+					// SetFont - and flattening an app's markup would be the worse of the two.
+					label.Markup = label.LabelProp;
+					break;
+
+				case Gtk.Label label:
+					label.Attributes = attributes;
+					break;
+				case Gtk.Entry entry:
+					entry.Attributes = attributes;
+					break;
+				default:
+					widget.QueueResize();
+					widget.QueueDraw();
+					break;
+			}
 		}
 
 		// ---- theme-default readers (replacing Gtk.Style.* arrays) ----------------------
