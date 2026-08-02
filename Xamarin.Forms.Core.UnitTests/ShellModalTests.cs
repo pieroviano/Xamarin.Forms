@@ -86,7 +86,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(appearing);
 		}
 
-		[Fact]
+		// CONFIRMED PRODUCT DEFECT, not a flaky or obsolete test. Verified 2026-08-02: after
+		// PopModalAsync reveals ModalStack[0], that page's Appearing event never fires, so the
+		// assertion below fails with "Appearing did not fire on the revealed modal page".
+		//
+		// The test previously ended in Assert.IsTrue(true) - inherited from the NUnit original, so
+		// it is upstream debt rather than a conversion artefact - and therefore could not fail
+		// whatever Shell did. It is skipped rather than reverted to the tautology so the defect
+		// stays recorded: delete this Skip once Shell raises Appearing on modal reveal.
+		[Fact(Skip = "Shell does not raise Appearing on the modal page revealed by PopModalAsync. "
+			+ "Confirmed 2026-08-02 by de-tautologising the assertion; the fix belongs in Shell's "
+			+ "modal lifecycle, not here.")]
 		public async Task PoppingModalStackFiresAppearingOnRevealedModalPage()
 		{
 			Shell shell = new Shell();
@@ -97,7 +107,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items[0].Items[0].Navigation.ModalStack[0].Appearing += (_, __) => appearing = true;
 
 			await shell.Navigation.PopModalAsync();
-			Assert.True(true);
+
+			// Assert.True(true) can never fail. The flag was collected and then discarded, so if
+			// Shell stopped raising Appearing on the revealed modal page - the exact regression
+			// this test is named for - the suite stayed green.
+			Assert.True(appearing, "Appearing did not fire on the revealed modal page");
 		}
 
 

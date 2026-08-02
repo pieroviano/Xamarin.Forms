@@ -127,6 +127,17 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public override void Destroy()
 		{
+			// Cancel any in-flight incremental load FIRST. LazyLoadItems registers LoadItems as a
+			// GLib idle source and nothing ever removed it, so a ListView destroyed mid-stream -
+			// navigating away from a page, or an ItemsSource change - left the callback alive,
+			// writing to the very fields nulled below.
+			if (_data != null && _data.LoadId != 0)
+			{
+				GLib.Source.Remove(_data.LoadId);
+				_data.LoadId = 0;
+				_data.LoadState = Controls.State.Finished;
+			}
+
 			_store?.Dispose();
 			_store = null;
 			_root = null;
