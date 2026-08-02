@@ -26,8 +26,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				if (Control != null)
 				{
-					Control.GotFocus += GotFocus;
-					Control.LostFocus += LostFocus;
+					Control.GotFocus -= GotFocus;
+					Control.LostFocus -= LostFocus;
 					Control.TimeChanged -= OnTimeChanged;
 				}
 

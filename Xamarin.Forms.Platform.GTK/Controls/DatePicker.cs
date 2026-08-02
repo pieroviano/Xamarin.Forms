@@ -268,8 +268,24 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 			set
 			{
+				if (_currentDate == value)
+					return;
+
 				_currentDate = value;
 				UpdateEntryText();
+
+				// Raised here rather than only from the calendar popup, which is what the sibling
+				// Controls.TimePicker effectively does (its CurrentTime setter retexts the entry,
+				// whose Changed handler raises TimeChanged). Two things were wrong without it:
+				// DatePickerRenderer.OnDateChanged - the whole native-to-element direction - never
+				// fired for any change that did not come from the popup, and OnPopupDateChanged's
+				// two clamping branches returned before their explicit Invoke, so picking a date
+				// outside Min/MaxDate moved the control and left the element stale.
+				//
+				// The guard above is what keeps this from echoing: the renderer's UpdateDate sets
+				// this property from the element, so the round trip back through
+				// SetValueFromRenderer must settle, and an unchanged value now stops at the door.
+				DateChanged?.Invoke(this, EventArgs.Empty);
 			}
 		}
 
@@ -377,8 +393,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				return;
 			}
 
+			// The setter raises DateChanged, including for the two clamped paths above.
 			CurrentDate = args.Date;
-			DateChanged?.Invoke(this, EventArgs.Empty);
 		}
 
 		void BuildDatePicker()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.GTK;
@@ -12,8 +13,9 @@ using Xunit;
 /// xUnit has no <c>[SetUpFixture]</c>/<c>[OneTimeSetUp]</c>, so the bootstrap is a latched static
 /// initializer instead. <see cref="GtkTestBase"/> calls it from its constructor, which xUnit runs
 /// before every test; the latch makes all but the first call free. That is on purpose rather than
-/// an assembly fixture: it keeps the failure ("no DISPLAY") attached to a test rather than to
-/// fixture construction, where xUnit reports it once and skips the rest.
+/// an assembly fixture: it keeps the verdict on an unusable environment ("no DISPLAY", "no native
+/// GTK") attached to each test rather than to fixture construction, where xUnit reports it once
+/// and swallows the rest.
 /// </summary>
 public static class GtkTestHost
 {
@@ -24,7 +26,17 @@ public static class GtkTestHost
 	/// </summary>
 	public const int DefaultPumpRounds = 6;
 
+	/// <summary>
+	/// Set this in an environment that is SUPPOSED to be able to run GTK - CI does, in
+	/// linux-gtk.yml - and an unusable environment becomes a hard failure instead of a skip.
+	/// Without it a broken xvfb, or a GTK runtime that silently stopped being installed, would
+	/// turn the whole suite green-by-absence, which is exactly the outcome the comments in that
+	/// workflow forbid.
+	/// </summary>
+	const string RequiredVariable = "XF_GTK_REQUIRE_NATIVE";
+
 	static bool s_initialized;
+	static string s_unavailable;
 	static readonly object s_gate = new object();
 
 	public static void EnsureInitialized()
@@ -34,16 +46,77 @@ public static class GtkTestHost
 			if (s_initialized)
 				return;
 
-			Assert.True(
-				!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")),
-				"No DISPLAY. These are real GTK widget tests and need an X server: " +
-				"run them as `xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests`.");
+			// Already ruled the environment out once - don't pay for 169 more DllNotFoundExceptions.
+			if (s_unavailable != null)
+				Unavailable(s_unavailable);
 
-			Gtk.Application.Init();
-			Forms.Init();
+			var reason = DisplayUnavailableReason();
 
-			s_initialized = true;
+			if (reason == null)
+			{
+				try
+				{
+					Gtk.Application.Init();
+					Forms.Init();
+
+					s_initialized = true;
+					return;
+				}
+				catch (DllNotFoundException e)
+				{
+					reason = NoNativeRuntime(e.Message);
+				}
+				catch (TypeInitializationException e) when (e.InnerException is DllNotFoundException inner)
+				{
+					reason = NoNativeRuntime(inner.Message);
+				}
+			}
+
+			s_unavailable = reason;
+			Unavailable(reason);
 		}
+	}
+
+	/// <summary>
+	/// Why GTK cannot be brought up here, or null if it can.
+	/// </summary>
+	/// <remarks>
+	/// DISPLAY is an X11 concept. GTK3 on Windows draws through the Win32 GDK backend and has no
+	/// DISPLAY at all, so gating on it there rejected an environment that was never asked for one;
+	/// the honest test on Windows is whether the native runtime loads, which is left to
+	/// <see cref="Gtk.Application.Init"/> to answer.
+	/// </remarks>
+	static string DisplayUnavailableReason()
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			return null;
+
+		// Wayland sessions have no DISPLAY either unless Xwayland is up.
+		if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) ||
+			!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
+			return null;
+
+		return "No DISPLAY. These are real GTK widget tests and need an X server: " +
+			"run them as `xvfb-run -a dotnet test Xamarin.Forms.Platform.GTK.UnitTests`.";
+	}
+
+	static string NoNativeRuntime(string detail) =>
+		"The native GTK 3 runtime is not available, so there are no widgets to test: " + detail +
+		". On Linux install libgtk-3-0; on Windows these tests need a GTK 3 runtime on PATH " +
+		"(the GtkSharp package ships managed bindings only).";
+
+	/// <summary>
+	/// Skips, so that an environment which cannot host GTK reports as such rather than as 169
+	/// identical assertion failures - unless <see cref="RequiredVariable"/> says the environment
+	/// was meant to be able to, in which case it fails.
+	/// </summary>
+	static void Unavailable(string reason)
+	{
+		Assert.False(
+			!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(RequiredVariable)),
+			$"{reason} ({RequiredVariable} is set, so this is a failure rather than a skip.)");
+
+		Assert.Skip(reason);
 	}
 
 	/// <summary>

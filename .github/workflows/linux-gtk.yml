@@ -67,7 +67,10 @@ jobs:
       # is skipped, filtered or weakened - the full suite runs and the .trx artifact carries
       # every result. What is scoped is which suite can fail the GTK job, and that is the GTK
       # one below, which is deterministic (159/159 over three consecutive runs, including under
-      # G_DEBUG=fatal-criticals). Measured on 2026-08-01, both in Debug and in Release:
+      # G_DEBUG=fatal-criticals). That count is now 169: 168 passed / 1 skipped over ten
+      # consecutive runs, measured on WINDOWS on 2026-08-02 - the skip is the deliberately
+      # disabled M3-residual repro in LayoutTests, not an environment skip, and the Linux numbers
+      # above have not been re-measured since. Measured on 2026-08-01, both in Debug and in Release:
       #
       #   Core.UnitTests   4860 passed / 8 failed / 8 skipped of 4876. The 8 are GC-liveness
       #                    assertions - WeakToWeak, ElementIsGarbageCollectedAfterItsRemoved,
@@ -99,9 +102,15 @@ jobs:
       # GTK backend's screenshot/pixbuf paths are unsupported under Wayland. The screen has to
       # be big enough for the 800x600 test windows - xvfb-run's 640x480 default would clamp
       # them and every allocation assertion would be measuring the wrong thing.
+      # XF_GTK_REQUIRE_NATIVE turns "this environment cannot host GTK" from a skip into a
+      # failure. The harness skips on a machine with no display or no GTK runtime - a Windows
+      # dev box has neither - but here both are installed above, so an unusable environment
+      # means the xvfb or apt step silently broke, and the suite must go red rather than
+      # green-by-absence.
       - name: GTK renderer tests (headless)
         env:
           GDK_BACKEND: x11
+          XF_GTK_REQUIRE_NATIVE: 1
         run: |
           xvfb-run -a --server-args="-screen 0 1280x1024x24" \
             dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Debug --no-build --logger trx
@@ -113,6 +122,7 @@ jobs:
         env:
           GDK_BACKEND: x11
           G_DEBUG: fatal-criticals
+          XF_GTK_REQUIRE_NATIVE: 1
         run: |
           xvfb-run -a --server-args="-screen 0 1280x1024x24" \
             dotnet test Xamarin.Forms.Platform.GTK.UnitTests -c Debug --no-build --logger trx

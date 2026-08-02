@@ -18,7 +18,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" Condition="'$(OS)' == 'Windows_NT'" />
-        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(VersionBuildSuffix)" />
+        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
     </ItemGroup>
     <!--
     Nothing is quarantined any more (plan M6 is complete for the renderer surface):

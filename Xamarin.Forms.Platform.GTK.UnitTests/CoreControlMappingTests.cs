@@ -35,20 +35,27 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				{
 					var native = host.Control<Controls.ImageControl>();
 
-					WaitFor(host, () => native.Pixbuf != null, "the Image never loaded its source");
+					// GetDesiredSize, NOT the Pixbuf property. Both report the decoded image, which
+					// is the independent ground truth wanted here - it comes from the PNG on disk,
+					// not from anything the test set - but only GetDesiredSize reports the ORIGINAL:
+					// ImageControl.Pixbuf returns the child Gtk.Image's pixbuf, which
+					// OnSizeAllocated replaces with an aspect-scaled copy sized to the allocation
+					// (ImageControl.cs:137). Asserting the source dimensions on it is a race that is
+					// only winnable between the load and the next allocation, and pumping for a
+					// reload loses it by construction. GetDesiredSize reads _original and is stable.
+					WaitFor(host, () => native.GetDesiredSize().Width == 24,
+						"the Image never loaded its source");
 
-					// The size is read back off the decoded pixbuf, which is independent ground
-					// truth: it comes from the PNG on disk, not from anything the test set.
-					Assert.Equal(24, native.Pixbuf.Width);
-					Assert.Equal(16, native.Pixbuf.Height);
+					Assert.Equal(24, native.GetDesiredSize().Width);
+					Assert.Equal(16, native.GetDesiredSize().Height);
 
 					image.Source = ImageSource.FromFile(large);
-					WaitFor(host, () => native.Pixbuf != null && native.Pixbuf.Width == 48,
+					WaitFor(host, () => native.GetDesiredSize().Width == 48,
 						"changing Image.Source did not reload the pixbuf - " +
 						"OnElementPropertyChanged is not handling SourceProperty");
 
-					Assert.Equal(48, native.Pixbuf.Width);
-					Assert.Equal(32, native.Pixbuf.Height);
+					Assert.Equal(48, native.GetDesiredSize().Width);
+					Assert.Equal(32, native.GetDesiredSize().Height);
 				}
 			}
 			finally
@@ -93,7 +100,12 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 			using (var host = GtkTestHost.HostView(box, 200, 160))
 			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(box);
+				// host.Renderer, not Platform.GetRenderer: ViewHost builds the renderer with
+				// Platform.CreateRenderer and parents it by hand, and never calls
+				// Platform.SetRenderer, so the RendererProperty this element carries is unset and
+				// the lookup returns null. Only the HostPage tests, which go through the real
+				// Forms path, can use the static accessor.
+				var widget = (Gtk.Widget)host.Renderer;
 
 				Assert.False(GtkTestHost.IsUnallocated(widget),
 					$"BoxView was never allocated: {GtkTestHost.Describe(widget)}");
@@ -258,6 +270,14 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		// assert on would silently be wrong. These are the pixbuf's own bytes, unscaled.
 		static (byte R, byte G, byte B) PixelAt(Gtk.Window window, int x, int y)
 		{
+			// Flush queued redraws before photographing, for the same reason GtkTestHost.Pump
+			// forces a SizeAllocate: pumping the event queue does not run them. QueueDraw - which
+			// is all Controls.BoxView.UpdateColor does, correctly - only marks the region dirty and
+			// leaves the actual expose to the frame clock, which does not tick on demand headlessly.
+			// Without this the screenshot returns the PREVIOUS frame, so a repaint assertion reads
+			// the colour it was meant to prove had changed.
+			window.Window.ProcessUpdates(true);
+
 			var shot = new Gdk.Pixbuf(window.Window, 0, 0, window.AllocatedWidth, window.AllocatedHeight);
 
 			Assert.True(x >= 0 && y >= 0 && x < shot.Width && y < shot.Height,

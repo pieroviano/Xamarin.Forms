@@ -21,6 +21,16 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// The plan's claim, made falsifiable: drain-only pumping does NOT commit a new allocation
 		/// under Xvfb (no frame clock, no redraw cycle), and the forced SizeAllocate on the toplevel
 		/// is what does. Both halves are asserted, so this fails whichever way the claim breaks.
+		///
+		/// The first half is deliberately stated as "untouched OR fully caught up" rather than
+		/// "untouched", because the premise in that sentence - no frame clock - is a property of
+		/// Xvfb and not of GTK. On a session with a real compositor, which is every Windows run and
+		/// any Linux dev box outside xvfb-run, the clock ticks on its own and the drain-only pump
+		/// sometimes services a genuine frame before returning: measured flaky at 3 failures in 18
+		/// consecutive Windows runs, which is precisely the race the old message warned the reader
+		/// to check for. What must never happen either way is a THIRD value - a partly committed
+		/// rectangle - and the contract the suite actually rests on, that the forced pass leaves the
+		/// allocation correct, is asserted unconditionally below.
 		/// </summary>
 		[Fact]
 		public void OnlyTheForcedSizeAllocateCommitsANewAllocation()
@@ -38,6 +48,32 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				host.Window.Resize(900, 600);
 				Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
 
+				// Gtk.Window.Resize only ASKS for the new size; the toplevel's own allocation
+				// arrives whenever the window manager answers, and on a real desktop session that
+				// is not within any fixed number of iterations. It has to be waited for, because
+				// GtkTestHost.Pump forces its SizeAllocate at the toplevel's CURRENT AllocatedWidth
+				// - so while the window is still 400 wide the forced pass re-commits 400 and the
+				// child cannot grow. Measured: run on its own on Windows this failed 8 times out of
+				// 8 with "400px -> 400px", while the same test passed inside the full suite, which
+				// simply takes long enough elsewhere for the WM to answer.
+				//
+				// The wait uses the DRAIN-ONLY pump on purpose: forcing a SizeAllocate here would
+				// commit the child's new allocation before `drained` is read and quietly destroy
+				// the very comparison this test exists to make.
+				// Deadline-based rather than a round count, for the same reason GtkTestHost.Await
+				// is: the answer comes from another process, so what has to elapse is wall-clock
+				// time, not iterations. 200 rounds of an empty queue take no time at all and the
+				// window is still 400px wide at the end of them.
+				var deadline = DateTime.UtcNow.AddMilliseconds(5000);
+
+				while (host.Window.AllocatedWidth < 900 && DateTime.UtcNow < deadline)
+					GtkTestHost.Pump(null, 1);
+
+				Assert.SkipWhen(host.Window.AllocatedWidth < 900,
+					$"the window manager never granted the 900px resize " +
+					$"(toplevel is {host.Window.AllocatedWidth}px); there is no pending allocation " +
+					"for the two pumps to differ over, so this proves nothing either way.");
+
 				// Pump(null, ...) is the drain-only pump: EventsPending/RunIteration plus
 				// GLib.MainContext.Iteration, and no SizeAllocate on any toplevel.
 				GtkTestHost.Pump(null, 12);
@@ -46,13 +82,14 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				GtkTestHost.Pump(host.Window, 12);
 				var forced = widget.Allocation.Width;
 
-				Assert.True(drained == before,
-					$"drain-only pumping already committed a new allocation ({before}px -> {drained}px). " +
-					"If that is genuinely true now, the plan's §10.2 Pump warning is obsolete - but " +
-					"check first that this test is not simply racing a real frame clock.");
+				Assert.True(drained == before || drained == forced,
+					$"drain-only pumping left a third, partly committed allocation " +
+					$"({before}px -> {drained}px, settling at {forced}px). It may legitimately leave " +
+					"the old rectangle (Xvfb, the plan's §10.2 case) or the final one (a real frame " +
+					"clock ticked), but never something in between.");
 
-				Assert.True(forced > drained,
-					$"the forced SizeAllocate did not commit the resize ({drained}px -> {forced}px); " +
+				Assert.True(forced > before,
+					$"the forced SizeAllocate did not commit the resize ({before}px -> {forced}px); " +
 					"every layout assertion in this suite is then reading stale rectangles");
 			}
 		}

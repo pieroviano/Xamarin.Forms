@@ -76,6 +76,22 @@
     <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)' == ''">1.0.13</NuGetUtilityVersion>
 
     <!--
+      Same tooling, third symptom, and the one that keeps coming back: it rewrites the GtkSharp
+      reference in Xamarin.Forms.Platform.GTK and Xamarin.Forms.Maps.GTK into
+          <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(VersionBuildSuffix)" />
+      (earlier it used $(InputBoxLibraryVersion) for the same slot). GtkSharpVersion is declared in
+      the generated Directory.Nuget.Props, which nothing imports - see the note above - so both
+      halves were empty, the version evaluated to the bare string "." and restore died with
+          NuGet.targets(198,5): error : '.' is not a valid version string.
+      Pinning the two csproj files back has now been undone three times by the tooling, so the
+      defaults live here instead: they make the tooling's own expression evaluate to the version
+      the GTK backend is actually built against, 3.24.24.95, and survive the next rewrite.
+      Both are conditional, so a real restore of Net4x.NuGetUtility still wins.
+    -->
+    <GtkSharpVersion Condition="'$(GtkSharpVersion)' == ''">3.24.24</GtkSharpVersion>
+    <GtkSharpVersionBuildSuffix Condition="'$(GtkSharpVersionBuildSuffix)' == ''">95</GtkSharpVersionBuildSuffix>
+
+    <!--
       Net4x.NuGetUtility is Windows-only: its targets shell out to native-windows\NuGetUtility.exe.
       Every project that uses it therefore guards all three touch points - the two
       NuGet.Utility.props/.targets imports and the PackageReference - with
@@ -84,6 +100,7 @@
       interpolate, and leaving it empty would reintroduce the NU1015 failure described above.
     -->
 
+    <MinimalDirectoryNuGetProps>true</MinimalDirectoryNuGetProps>
   </PropertyGroup>
 
   <PropertyGroup>
