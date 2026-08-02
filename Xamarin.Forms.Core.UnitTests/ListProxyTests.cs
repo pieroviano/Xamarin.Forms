@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -437,23 +438,30 @@ namespace Xamarin.Forms.Core.UnitTests
 		ListProxy _proxyForWeakToWeakTest;
 #pragma warning restore 0414
 
+		// Created in its own frame: the Debug/tier-0 JIT reports the temp holding the newly
+		// constructed proxy live for the whole method, which would keep it rooted even after
+		// the field below is nulled. See GarbageCollectionHelper.
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		void CreateProxyForWeakToWeakTest(WeakCollectionChangedList list)
+		{
+			_proxyForWeakToWeakTest = new ListProxy(list);
+		}
+
 		[Test]
 		public void WeakToWeak()
 		{
 			WeakCollectionChangedList list = new WeakCollectionChangedList();
-			_proxyForWeakToWeakTest = new ListProxy(list);
+			CreateProxyForWeakToWeakTest(list);
 
 			Assert.True(list.AddObject(), "GC hasn't run");
 
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
+			GarbageCollectionHelper.Collect();
 
 			Assert.IsTrue(list.AddObject(), "GC run, but proxy should still hold a reference");
 
 			_proxyForWeakToWeakTest = null;
 
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
+			GarbageCollectionHelper.Collect();
 
 			Assert.IsFalse(list.AddObject(), "Proxy is gone and GC has run");
 		}

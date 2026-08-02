@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
@@ -260,6 +261,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.IsTrue(((TestSubcriber)wr.Target).Successful);  // Since it's still alive, the subscriber should still have received the message and updated the property
 		}
 
+		// Touching wr.Target from the test method itself would spill the subscriber into a temp
+		// that the Debug/tier-0 JIT reports live for the whole method, rooting it past the
+		// collection below; see GarbageCollectionHelper.
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static void AssertSubscriberAliveThenUnsubscribe(WeakReference wr)
+		{
+			Assert.IsNotNull(wr.Target as TestSubcriber);
+
+			MessagingCenter.Unsubscribe<TestPublisher>(wr.Target, "test");
+		}
+
 		[Test]
 		public void SubscriberCollectableAfterUnsubscribeEvenIfHeldByClosure()
 		{
@@ -274,12 +286,9 @@ namespace Xamarin.Forms.Core.UnitTests
 				MessagingCenter.Subscribe<TestPublisher>(subscriber, "test", p => subscriber.SetSuccess());
 			})();
 
-			Assert.IsNotNull(wr.Target as TestSubcriber);
+			AssertSubscriberAliveThenUnsubscribe(wr);
 
-			MessagingCenter.Unsubscribe<TestPublisher>(wr.Target, "test");
-
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
+			GarbageCollectionHelper.Collect();
 
 			Assert.IsFalse(wr.IsAlive); // The Action target and subscriber were the same object, so both could be collected
 		}

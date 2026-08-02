@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,11 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
+
+			// GetStringValue/TrySetValue round-trip through the current culture, and the
+			// DatePicker test case below is written in en-US. BaseTestFixture.TearDown restores
+			// whatever the machine's culture was.
+			System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
 		}
 
 		[TearDown]

@@ -203,7 +203,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Test]
-		public void TestImageSourceToNullCancelsLoading()
+		public async Task TestImageSourceToNullCancelsLoading()
 		{
 			var image = new ImageButton();
 			var mockImageRenderer = new MockImageRenderer(image);
@@ -211,6 +211,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			image.Source = loader;
 			Assert.IsTrue(image.IsLoading);
 			image.Source = null;
+
+			// Cancelling unwinds the load asynchronously, so wait for the renderer to finish
+			// rather than assuming SetIsLoading(false) has already run on this thread.
+			await mockImageRenderer.LoadingCompleted;
+
 			Assert.IsFalse(image.IsLoading);
 			Assert.IsTrue(cancelled);
 		}
@@ -253,15 +258,24 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			public ImageButton Element { get; set; }
 
-			public async void Load()
+			// Load() was async void, which gave the test no way to observe the end of the load.
+			// Handing the task back lets it await instead of racing the continuation.
+			public Task LoadingCompleted { get; private set; } = Task.CompletedTask;
+
+			public void Load()
 			{
 				if (initialLoad && Element.Source != null)
 				{
 					initialLoad = false;
-					Element.SetIsLoading(true);
-					await (Element.Source as UriImageSource).GetStreamAsync();
-					Element.SetIsLoading(false);
+					LoadingCompleted = LoadAsync();
 				}
+			}
+
+			async Task LoadAsync()
+			{
+				Element.SetIsLoading(true);
+				await (Element.Source as UriImageSource).GetStreamAsync();
+				Element.SetIsLoading(false);
 			}
 
 			bool initialLoad = true;

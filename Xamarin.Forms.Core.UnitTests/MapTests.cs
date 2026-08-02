@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Xamarin.Forms.Maps;
 
@@ -355,8 +356,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.IsTrue(IsMapWithItemsSource(itemsSource, map));
 		}
 
-		[Test]
-		public void ElementIsGarbageCollectedAfterItsRemoved()
+		// Built in its own frame so that no local or JIT-spilled temp of the test method keeps
+		// the map rooted; see GarbageCollectionHelper.
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static WeakReference AddThenRemoveMapFromPage()
 		{
 			var map = new Map()
 			{
@@ -370,7 +373,6 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Set ItemsSource
 			var itemsSource = new ObservableCollection<int>(Enumerable.Range(0, 10));
 			Assert.IsTrue(IsMapWithItemsSource(itemsSource, map));
-			itemsSource = null;
 
 			// Remove map from container
 			var pageRoot = new Grid();
@@ -379,10 +381,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var weakReference = new WeakReference(map);
 			pageRoot.Children.Remove(map);
-			map = null;
+			return weakReference;
+		}
 
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
+		[Test]
+		public void ElementIsGarbageCollectedAfterItsRemoved()
+		{
+			var weakReference = AddThenRemoveMapFromPage();
+
+			GarbageCollectionHelper.Collect();
 
 			Assert.IsFalse(weakReference.IsAlive);
 		}

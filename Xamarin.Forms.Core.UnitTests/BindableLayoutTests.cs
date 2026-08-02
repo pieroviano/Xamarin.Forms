@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
@@ -245,8 +246,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.IsTrue(IsLayoutWithItemsSource(itemsSource, layout));
 		}
 
-		[Test]
-		public void LayoutIsGarbageCollectedAfterItsRemoved()
+		// Built in its own frame so that no local or JIT-spilled temp of the test method keeps
+		// the layout rooted; see GarbageCollectionHelper.
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static WeakReference AddThenRemoveLayoutFromPage()
 		{
 			var layout = new StackLayout
 			{
@@ -262,10 +265,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var weakReference = new WeakReference(layout);
 			pageRoot.Children.Remove(layout);
-			layout = null;
+			return weakReference;
+		}
 
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
+		[Test]
+		public void LayoutIsGarbageCollectedAfterItsRemoved()
+		{
+			var weakReference = AddThenRemoveLayoutFromPage();
+
+			GarbageCollectionHelper.Collect();
 
 			Assert.IsFalse(weakReference.IsAlive);
 		}
