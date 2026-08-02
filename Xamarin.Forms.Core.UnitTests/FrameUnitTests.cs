@@ -1,24 +1,23 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class FrameUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			Frame frame = new Frame();
 
 			Assert.Null(frame.Content);
-			Assert.AreEqual(new Thickness(20, 20, 20, 20), frame.Padding);
+			Assert.Equal(new Thickness(20, 20, 20, 20), frame.Padding);
 		}
 
-		[Test]
+		[Fact]
 		public void TestPackWithoutChild()
 		{
 			Frame frame = new Frame();
@@ -38,7 +37,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(thrown);
 		}
 
-		[Test]
+		[Fact]
 		public void TestPackWithChild()
 		{
 			Frame frame = new Frame
@@ -61,7 +60,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(thrown);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSetChild()
 		{
 			Frame frame = new Frame();
@@ -75,7 +74,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			frame.Content = child1;
 
 			Assert.True(added);
-			Assert.AreEqual(child1, frame.Content);
+			Assert.Equal(child1, frame.Content);
 
 			added = false;
 			frame.Content = child1;
@@ -83,7 +82,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(added);
 		}
 
-		[Test]
+		[Fact]
 		public void TestReplaceChild()
 		{
 			Frame frame = new Frame();
@@ -103,10 +102,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			Assert.True(removed);
 			Assert.True(added);
-			Assert.AreEqual(child2, frame.Content);
+			Assert.Equal(child2, frame.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void TestFrameLayout()
 		{
 			View child;
@@ -122,20 +121,20 @@ namespace Xamarin.Forms.Core.UnitTests
 				IsPlatformEnabled = true,
 			};
 
-			Assert.AreEqual(new Size(140, 240), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
+			Assert.Equal(new Size(140, 240), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
 
 			frame.Layout(new Rectangle(0, 0, 300, 300));
 
-			Assert.AreEqual(new Rectangle(20, 20, 260, 260), child.Bounds);
+			Assert.Equal(new Rectangle(20, 20, 260, 260), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDoesNotThrowOnSetNullChild()
 		{
-			Assert.DoesNotThrow(() => new Frame { Content = null });
+			AssertEx.DoesNotThrow(() => new Frame { Content = null });
 		}
 
-		[Test]
+		[Fact]
 		public void WidthRequest()
 		{
 			var frame = new Frame
@@ -150,10 +149,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				WidthRequest = 20
 			};
 
-			Assert.AreEqual(new Size(60, 240), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
+			Assert.Equal(new Size(60, 240), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
 		}
 
-		[Test]
+		[Fact]
 		public void HeightRequest()
 		{
 			var frame = new Frame
@@ -168,10 +167,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				HeightRequest = 20
 			};
 
-			Assert.AreEqual(new Size(140, 60), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
+			Assert.Equal(new Size(140, 60), frame.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutVerticallyCenter()
 		{
 			View child;
@@ -190,10 +189,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(20, 50, 160, 100), child.Bounds);
+			Assert.Equal(new Rectangle(20, 50, 160, 100), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutVerticallyBegin()
 		{
 			View child;
@@ -212,10 +211,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(20, 20, 160, 100), child.Bounds);
+			Assert.Equal(new Rectangle(20, 20, 160, 100), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutVerticallyEnd()
 		{
 			View child;
@@ -234,10 +233,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(20, 80, 160, 100), child.Bounds);
+			Assert.Equal(new Rectangle(20, 80, 160, 100), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutHorizontallyCenter()
 		{
 			View child;
@@ -256,10 +255,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(50, 20, 100, 160), child.Bounds);
+			Assert.Equal(new Rectangle(50, 20, 100, 160), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutHorizontallyBegin()
 		{
 			View child;
@@ -278,10 +277,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(20, 20, 100, 160), child.Bounds);
+			Assert.Equal(new Rectangle(20, 20, 100, 160), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void LayoutHorizontallyEnd()
 		{
 			View child;
@@ -300,10 +299,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			frame.Layout(new Rectangle(0, 0, 200, 200));
 
-			Assert.AreEqual(new Rectangle(80, 20, 100, 160), child.Bounds);
+			Assert.Equal(new Rectangle(80, 20, 100, 160), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void SettingPaddingThroughStyle()
 		{
 			var frame = new Frame
@@ -316,7 +315,7 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual(new Thickness(0), frame.Padding);
+			Assert.Equal(new Thickness(0), frame.Padding);
 
 		}
 	}

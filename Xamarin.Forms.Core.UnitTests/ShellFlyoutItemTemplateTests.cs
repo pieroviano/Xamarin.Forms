@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ShellFlyoutItemTemplateTests : ShellTestBase
 	{
-		[Test]
+		[Fact]
 		public void FlyoutItemDefaultStylesApplied()
 		{
 			Shell shell = new Shell();
@@ -19,11 +18,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var element = GetFlyoutItemDataTemplateElement<Element>(shell, shellItem);
 			var label = element.LogicalChildren.OfType<Label>().First();
-			Assert.AreEqual(TextAlignment.Center, label.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.Center, label.VerticalTextAlignment);
 		}
 
 
-		[Test]
+		[Fact]
 		public void FlyoutItemLabelStyleCustom()
 		{
 			var classStyle = new Style(typeof(Label))
@@ -43,10 +42,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var element = GetFlyoutItemDataTemplateElement<Element>(shell, shellItem);
 			var label = element.LogicalChildren.OfType<Label>().First();
-			Assert.AreEqual(TextAlignment.Start, label.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.Start, label.VerticalTextAlignment);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuItemLabelStyleCustom()
 		{
 			var classStyle = new Style(typeof(Label))
@@ -67,10 +66,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(shellMenuItem);
 
 			var label = GetFlyoutItemDataTemplateElement<Label>(shell, shellMenuItem);
-			Assert.AreEqual(TextAlignment.Start, label.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.Start, label.VerticalTextAlignment);
 		}
 
-		[Test]
+		[Fact]
 		public void FlyoutItemLabelStyleDefault()
 		{
 			var classStyle = new Style(typeof(Label))
@@ -88,10 +87,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(shellItem);
 
 			var label = GetFlyoutItemDataTemplateElement<Label>(shell, shellItem);
-			Assert.AreEqual(TextAlignment.Start, label.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.Start, label.VerticalTextAlignment);
 		}
 
-		[Test]
+		[Fact]
 		public void FlyoutItemDefaultTemplates()
 		{
 			Shell shell = new Shell();
@@ -108,12 +107,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			DataTemplate triggerDefault = shell.ItemTemplate;
 			triggerDefault = shell.MenuItemTemplate;
 
-			Assert.AreEqual("ItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, shellItem).Text);
-			Assert.AreEqual("MenuItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, menuItem).Text);
-			Assert.AreEqual("MenuItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, menuItem.MenuItem).Text);
+			Assert.Equal("ItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, shellItem).Text);
+			Assert.Equal("MenuItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, menuItem).Text);
+			Assert.Equal("MenuItemTemplate", GetFlyoutItemDataTemplateElement<Label>(shell, menuItem.MenuItem).Text);
 		}
 
-		[Test]
+		[Fact]
 		public void FlyoutItemLabelVisualStateManager()
 		{
 			var groups = new VisualStateGroupList();
@@ -161,14 +160,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			var grid = GetFlyoutItemDataTemplateElement<Grid>(shell, shellItem);
 			var label = grid.LogicalChildren.OfType<Label>().First();
 
-			Assert.AreEqual(Color.Red, label.BackgroundColor);
-			Assert.IsTrue(VisualStateManager.GoToState(grid, "Selected"));
-			Assert.AreEqual(Color.Green, label.BackgroundColor);
+			Assert.Equal(Color.Red, label.BackgroundColor);
+			Assert.True(VisualStateManager.GoToState(grid, "Selected"));
+			Assert.Equal(Color.Green, label.BackgroundColor);
 		}
 
 
 
-		[Test]
+		[Fact]
 		public void BindingContextFlyoutItems()
 		{
 			var flyoutItemVM = new TestShellViewModel() { Text = "Dog" };
@@ -187,17 +186,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			var flyoutItemLabel = GetFlyoutItemDataTemplateElement<Label>(shell, shell.Items[0]);
 			var menuItemLabel = GetFlyoutItemDataTemplateElement<Label>(shell, shell.Items[1]);
 
-			Assert.AreEqual("Dog", flyoutItemLabel.Text);
-			Assert.AreEqual("Dog", menuItemLabel.Text);
+			Assert.Equal("Dog", flyoutItemLabel.Text);
+			Assert.Equal("Dog", menuItemLabel.Text);
 
 			flyoutItemVM.Text = "Cat";
 
-			Assert.AreEqual("Cat", flyoutItemLabel.Text);
-			Assert.AreEqual("Cat", menuItemLabel.Text);
+			Assert.Equal("Cat", flyoutItemLabel.Text);
+			Assert.Equal("Cat", menuItemLabel.Text);
 
 		}
 
-		[Test]
+		[Fact]
 		public void BindingContextSetsCorrectlyWhenUsingAsMultipleItemAndImplicitlyGeneratedShellSections()
 		{
 			Shell shell = new Shell();
@@ -232,11 +231,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			var label1 = GetFlyoutItemDataTemplateElement<Label>(shell, flyoutItems[0][0]);
 			var label2 = GetFlyoutItemDataTemplateElement<Label>(shell, flyoutItems[0][1]);
 
-			Assert.AreEqual(label1.BindingContext, shellContent1);
-			Assert.AreEqual(label2.BindingContext, shellContent2);
+			Assert.Equal(label1.BindingContext, shellContent1);
+			Assert.Equal(label2.BindingContext, shellContent2);
 
-			Assert.AreEqual("Item1", label1.Text);
-			Assert.AreEqual("Item2", label2.Text);
+			Assert.Equal("Item1", label1.Text);
+			Assert.Equal("Item2", label2.Text);
 		}
 
 
@@ -294,9 +293,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		//	thing.Parent = shell;
 
 		//	var label = thing.LogicalChildren.OfType<Label>().First();
-		//	Assert.AreEqual(TextAlignment.Center, label.VerticalTextAlignment);
+		//	Assert.Equal(TextAlignment.Center, label.VerticalTextAlignment);
 		//	shellItem.StyleClass = new[] { "fooClass" };
-		//	Assert.AreEqual(TextAlignment.Start, label.VerticalTextAlignment);
+		//	Assert.Equal(TextAlignment.Start, label.VerticalTextAlignment);
 		//}
 
 		//[Test]
@@ -323,9 +322,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		//	thing.Parent = shell;
 
 		//	var label = thing.LogicalChildren.OfType<Label>().First();
-		//	Assert.AreEqual(TextAlignment.Center, label.VerticalTextAlignment);
+		//	Assert.Equal(TextAlignment.Center, label.VerticalTextAlignment);
 		//	menuItem.StyleClass = new[] { "fooClass" };
-		//	Assert.AreEqual(TextAlignment.Start, label.VerticalTextAlignment);
+		//	Assert.Equal(TextAlignment.Start, label.VerticalTextAlignment);
 		//}
 	}
 }

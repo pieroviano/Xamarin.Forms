@@ -1,12 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class SwitchUnitTests : BaseTestFixture
 	{
 		const string CommonStatesName = "CommonStates";
@@ -67,15 +66,15 @@ namespace Xamarin.Forms.Core.UnitTests
 			return stateGroups;
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			Switch sw = new Switch();
 
-			Assert.IsFalse(sw.IsToggled);
+			Assert.False(sw.IsToggled);
 		}
 
-		[Test]
+		[Fact]
 		public void TestOnEvent()
 		{
 			Switch sw = new Switch();
@@ -85,10 +84,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			sw.IsToggled = true;
 
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void TestOnEventNotDoubleFired()
 		{
 			var sw = new Switch();
@@ -99,20 +98,20 @@ namespace Xamarin.Forms.Core.UnitTests
 			sw.Toggled += (sender, args) => fired = true;
 			sw.IsToggled = true;
 
-			Assert.IsFalse(fired);
+			Assert.False(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualStateIsDisabledIfSwitchIsDisabled()
 		{
 			var switch1 = new Switch();
 			switch1.IsEnabled = false;
 			VisualStateManager.SetVisualStateGroups(switch1, CreateTestStateGroups());
 			var groups1 = VisualStateManager.GetVisualStateGroups(switch1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(DisabledStateName));
+			Assert.Equal(DisabledStateName, groups1[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualStateIsOnIfAvailableAndSwitchIsEnabledAndOn()
 		{
 			var switch1 = new Switch();
@@ -120,10 +119,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			switch1.IsToggled = true;
 			VisualStateManager.SetVisualStateGroups(switch1, CreateTestStateGroups());
 			var groups1 = VisualStateManager.GetVisualStateGroups(switch1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(OnStateName));
+			Assert.Equal(OnStateName, groups1[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void VisualStateIsOffIfAvailableAndSwitchIsEnabledAndOff()
 		{
 			var switch1 = new Switch();
@@ -131,19 +130,19 @@ namespace Xamarin.Forms.Core.UnitTests
 			switch1.IsToggled = false;
 			VisualStateManager.SetVisualStateGroups(switch1, CreateTestStateGroups());
 			var groups1 = VisualStateManager.GetVisualStateGroups(switch1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(OffStateName));
+			Assert.Equal(OffStateName, groups1[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void InitialStateIsNormalIfAvailableButOnOffNotAvailable()
 		{
 			var switch1 = new Switch();
 			VisualStateManager.SetVisualStateGroups(switch1, CreateTestStateGroupsWithoutOnOffStates());
 			var groups1 = VisualStateManager.GetVisualStateGroups(switch1);
-			Assert.That(groups1[0].CurrentState.Name, Is.EqualTo(NormalStateName));
+			Assert.Equal(NormalStateName, groups1[0].CurrentState.Name);
 		}
 
-		[Test]
+		[Fact]
 		public void InitialStateIsNullIfNormalOnOffNotAvailable()
 		{
 			var switch1 = new Switch();

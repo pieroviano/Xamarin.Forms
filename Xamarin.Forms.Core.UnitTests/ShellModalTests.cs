@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ShellModalTests : ShellTestBase
 	{
-		[Test]
+		[Fact]
 		public async Task BasicModalBehaviorTest()
 		{
 			Shell shell = new Shell();
@@ -21,12 +20,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var navStack = shell.Items[0].Items[0].Navigation;
 
-			Assert.AreEqual(1, navStack.ModalStack.Count);
-			Assert.AreEqual(typeof(ModalTestPage), navStack.ModalStack[0].GetType());
+			Assert.Equal(1, navStack.ModalStack.Count);
+			Assert.Equal(typeof(ModalTestPage), navStack.ModalStack[0].GetType());
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task ModalPopsWhenSwitchingShellItem()
 		{
 			Shell shell = new Shell();
@@ -40,10 +39,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(0, navStack.ModalStack.Count);
+			Assert.Equal(0, navStack.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task ModalPopsWhenSwitchingShellSection()
 		{
 			Shell shell = new Shell();
@@ -56,10 +55,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			// Navigates to different Shell Item
 			await shell.GoToAsync("///NewRoute");
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(0, navStack.ModalStack.Count);
+			Assert.Equal(0, navStack.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task AbsoluteRoutingToRootPopsModalPages()
 		{
 			Shell shell = new Shell();
@@ -67,14 +66,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			await shell.GoToAsync($"ModalTestPage/ModalTestPage");
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(2, navStack.ModalStack.Count);
+			Assert.Equal(2, navStack.ModalStack.Count);
 
 			await shell.GoToAsync($"///MainContent");
 			navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(0, navStack.ModalStack.Count);
+			Assert.Equal(0, navStack.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task PoppingEntireModalStackDoesntFireAppearingOnMiddlePages()
 		{
 			Shell shell = new Shell();
@@ -84,10 +83,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			bool appearing = false;
 			shell.Items[0].Items[0].Navigation.ModalStack[0].Appearing += (_, __) => appearing = true;
 			await shell.GoToAsync($"///MainContent");
-			Assert.IsFalse(appearing);
+			Assert.False(appearing);
 		}
 
-		[Test]
+		[Fact]
 		public async Task PoppingModalStackFiresAppearingOnRevealedModalPage()
 		{
 			Shell shell = new Shell();
@@ -98,11 +97,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items[0].Items[0].Navigation.ModalStack[0].Appearing += (_, __) => appearing = true;
 
 			await shell.Navigation.PopModalAsync();
-			Assert.IsTrue(true);
+			Assert.True(true);
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task ModalPopsWhenSwitchingShellContent()
 		{
 			Shell shell = new Shell();
@@ -116,10 +115,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(0, navStack.ModalStack.Count);
+			Assert.Equal(0, navStack.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task ModalPopsWhenNavigatingWithoutModalRoute()
 		{
 			Shell shell = new Shell();
@@ -132,11 +131,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(0, navStack.ModalStack.Count);
+			Assert.Equal(0, navStack.ModalStack.Count);
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task ModalPopsWhenNavigatingToNewModalRoute()
 		{
 			Shell shell = new Shell();
@@ -149,11 +148,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("///NewRoute/ModalTestPage2");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(1, navStack.ModalStack.Count);
-			Assert.AreEqual(typeof(ModalTestPage2), navStack.ModalStack[0].GetType());
+			Assert.Equal(1, navStack.ModalStack.Count);
+			Assert.Equal(typeof(ModalTestPage2), navStack.ModalStack[0].GetType());
 		}
 
-		[Test]
+		[Fact]
 		public async Task PagesPushToModalStack()
 		{
 			Routing.RegisterRoute("ContentPage", typeof(ContentPage));
@@ -163,13 +162,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("ModalNavigationTestPage/ContentPage");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(typeof(ModalTestPage), navStack.ModalStack[0].Navigation.NavigationStack[0].GetType());
-			Assert.AreEqual(typeof(ContentPage), navStack.ModalStack[0].Navigation.NavigationStack[1].GetType());
+			Assert.Equal(typeof(ModalTestPage), navStack.ModalStack[0].Navigation.NavigationStack[0].GetType());
+			Assert.Equal(typeof(ContentPage), navStack.ModalStack[0].Navigation.NavigationStack[1].GetType());
 
-			Assert.AreEqual("//NewRoute/Section/Content/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task MultipleModalStacks()
 		{
 			Routing.RegisterRoute("ContentPage", typeof(ContentPage));
@@ -179,14 +178,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("ModalTestPage/ModalNavigationTestPage/ContentPage");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.AreEqual(typeof(ModalTestPage), navStack.ModalStack[0].GetType());
-			Assert.AreEqual(typeof(ModalTestPage), navStack.ModalStack[1].Navigation.NavigationStack[0].GetType());
-			Assert.AreEqual(typeof(ContentPage), navStack.ModalStack[1].Navigation.NavigationStack[1].GetType());
+			Assert.Equal(typeof(ModalTestPage), navStack.ModalStack[0].GetType());
+			Assert.Equal(typeof(ModalTestPage), navStack.ModalStack[1].Navigation.NavigationStack[0].GetType());
+			Assert.Equal(typeof(ContentPage), navStack.ModalStack[1].Navigation.NavigationStack[1].GetType());
 
-			Assert.AreEqual("//NewRoute/Section/Content/ModalTestPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalTestPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task MultipleModalStacksWithContentPageAlreadyPushed()
 		{
 			Routing.RegisterRoute("ContentPage", typeof(ContentPage));
@@ -194,11 +193,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(CreateShellItem(shellItemRoute: "NewRoute", shellSectionRoute: "Section", shellContentRoute: "Content"));
 
 			await shell.GoToAsync("ContentPage/ModalNavigationTestPage/ContentPage/ModalNavigationTestPage/ContentPage");
-			Assert.AreEqual("//NewRoute/Section/Content/ContentPage/ModalNavigationTestPage/ContentPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ContentPage/ModalNavigationTestPage/ContentPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task SwitchingModalStackAbsoluteNavigation()
 		{
 			Shell shell = new Shell();
@@ -207,10 +206,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("ModalNavigationTestPage/ContentPage/ModalNavigationTestPage/ContentPage");
 			await shell.GoToAsync("//NewRoute/ModalNavigationTestPage/ContentPage");
 
-			Assert.AreEqual("//NewRoute/Section/Content/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task SwitchingShellSectionsAndPushingModal()
 		{
 			Shell shell = new Shell();
@@ -218,10 +217,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items[0].Items[0].Items.Add(CreateShellContent(shellContentRoute: "Content2"));
 			await shell.GoToAsync("//Content2/ModalNavigationTestPage");
 
-			Assert.AreEqual("//NewRoute/Section/Content2/ModalNavigationTestPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content2/ModalNavigationTestPage", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task PushingNonNavigationPage()
 		{
 			Shell shell = new Shell();
@@ -230,11 +229,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			await shell.GoToAsync("//NewRoute/SomeCustomPage/ModalNavigationTestPage/ContentPage");
 
-			Assert.AreEqual("//NewRoute/Section/Content/SomeCustomPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/SomeCustomPage/ModalNavigationTestPage/ContentPage", shell.CurrentState.Location.ToString());
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task PushingMultipleVersionsOfTheModalRoute()
 		{
 			Shell shell = new Shell();
@@ -242,13 +241,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(CreateShellItem(shellItemRoute: "NewRoute", shellSectionRoute: "Section", shellContentRoute: "Content"));
 
 			await shell.GoToAsync("ModalTestPage");
-			Assert.AreEqual("//NewRoute/Section/Content/ModalTestPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalTestPage", shell.CurrentState.Location.ToString());
 
 			await shell.GoToAsync("ModalTestPage");
-			Assert.AreEqual("//NewRoute/Section/Content/ModalTestPage/ModalTestPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalTestPage/ModalTestPage", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task PushingContentPageToNonNavigationPageThrowsException()
 		{
 			Shell shell = new Shell();
@@ -268,11 +267,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			});
 
-			Assert.IsTrue(invalidOperationThrown);
+			Assert.True(invalidOperationThrown);
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task AppearingAndDisappearingFiresOnShellWithModal()
 		{
 			Shell shell = new Shell();
@@ -289,7 +288,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[Test]
+		[Fact]
 		public async Task IsAppearingFiredOnLastModalPageOnly()
 		{
 			Shell shell = new Shell();
@@ -300,11 +299,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			var page1 = (ShellLifeCycleTests.LifeCyclePage)shell.Navigation.ModalStack[0];
 			var page2 = (ShellLifeCycleTests.LifeCyclePage)shell.Navigation.ModalStack[1];
 
-			Assert.IsFalse(page1.Appearing);
-			Assert.IsTrue(page2.Appearing);
+			Assert.False(page1.Appearing);
+			Assert.True(page2.Appearing);
 		}
 
-		[Test]
+		[Fact]
 		public async Task BasicQueryStringTest()
 		{
 			var shell = new Shell();
@@ -313,12 +312,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(item);
 			await shell.GoToAsync(new ShellNavigationState($"ModalTestPage?{nameof(ShellTestPage.SomeQueryParameter)}=1234"));
 			var testPage = (shell.CurrentItem.CurrentItem as IShellSectionController).PresentedPage as ModalTestPageBase;
-			Assert.AreEqual("1234", testPage.SomeQueryParameter);
+			Assert.Equal("1234", testPage.SomeQueryParameter);
 		}
 
 
-		[TestCase("..")]
-		[TestCase("../")]
+		[Theory]
+		[InlineData("..")]
+		[InlineData("../")]
 		public async Task PoppingWithQueryString(string input)
 		{
 			Routing.RegisterRoute("details", typeof(ShellTestPage));
@@ -331,10 +331,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.AssertCurrentStateEquals($"//{shell.CurrentItem.CurrentItem.CurrentItem.Route}/details");
 
 			var testPage = shell.CurrentPage as ShellTestPage;
-			Assert.AreEqual("1234", testPage.SomeQueryParameter);
+			Assert.Equal("1234", testPage.SomeQueryParameter);
 		}
 
-		[Test]
+		[Fact]
 		public async Task NavigatingAndNavigatedFiresForShellModal()
 		{
 			Shell shell = new Shell();
@@ -355,15 +355,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			await shell.GoToAsync("ModalTestPage");
 
-			Assert.IsNotNull(shellNavigatingEventArgs, "Shell.Navigating never fired");
-			Assert.IsNotNull(shellNavigatedEventArgs, "Shell.Navigated never fired");
+			Assert.NotNull(shellNavigatingEventArgs);
+			Assert.NotNull(shellNavigatedEventArgs);
 
-			Assert.AreEqual("//NewRoute/Section/Content", shellNavigatingEventArgs.Current.FullLocation.ToString());
-			Assert.AreEqual("//NewRoute/Section/Content/ModalTestPage", shellNavigatedEventArgs.Current.FullLocation.ToString());
+			Assert.Equal("//NewRoute/Section/Content", shellNavigatingEventArgs.Current.FullLocation.ToString());
+			Assert.Equal("//NewRoute/Section/Content/ModalTestPage", shellNavigatedEventArgs.Current.FullLocation.ToString());
 
 		}
 
-		[Test]
+		[Fact]
 		public async Task GetCurrentPageInModalNavigation()
 		{
 			Shell shell = new Shell();
@@ -377,11 +377,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			await shell.GoToAsync("ModalTestPage");
-			Assert.IsNotNull(page);
-			Assert.AreEqual(page.GetType(), typeof(ModalTestPage));
+			Assert.NotNull(page);
+			Assert.Equal(page.GetType(), typeof(ModalTestPage));
 		}
 
-		[Test]
+		[Fact]
 		public async Task PopModalWithDots()
 		{
 			Shell shell = new Shell();
@@ -390,12 +390,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
 			await shell.GoToAsync("..");
-			Assert.AreEqual(1, shell.Navigation.ModalStack.Count);
+			Assert.Equal(1, shell.Navigation.ModalStack.Count);
 			await shell.GoToAsync("..");
-			Assert.AreEqual(0, shell.Navigation.ModalStack.Count);
+			Assert.Equal(0, shell.Navigation.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task CanCancelGoToModalAsync()
 		{
 			TestShell shell = new TestShell();
@@ -410,10 +410,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			await shell.GoToAsync("ModalTestPage");
-			Assert.AreEqual(0, shell.Navigation.ModalStack.Count);
+			Assert.Equal(0, shell.Navigation.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task CanCancelPushModalAsync()
 		{
 			TestShell shell = new TestShell();
@@ -428,10 +428,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
-			Assert.AreEqual(0, shell.Navigation.ModalStack.Count);
+			Assert.Equal(0, shell.Navigation.ModalStack.Count);
 		}
 
-		[Test]
+		[Fact]
 		public async Task PopModalFromShellNavigationProxy()
 		{
 			Routing.RegisterRoute("ModalTestPage", typeof(ModalTestPage));
@@ -441,10 +441,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			await shell.GoToAsync("ModalTestPage");
 			await shell.Navigation.PopModalAsync();
 
-			Assert.AreEqual("//NewRoute", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute", shell.CurrentState.Location.ToString());
 		}
 
-		[Test]
+		[Fact]
 		public async Task PushModalFromShellNavigationProxy()
 		{
 			ModalTestPage modalTestPage = new ModalTestPage();
@@ -455,7 +455,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			shell.Items.Add(CreateShellItem(shellItemRoute: "NewRoute"));
 			await shell.Navigation.PushModalAsync(modalTestPage);
 
-			Assert.AreEqual("//NewRoute/ModalTestPage", shell.CurrentState.Location.ToString());
+			Assert.Equal("//NewRoute/ModalTestPage", shell.CurrentState.Location.ToString());
 		}
 
 
@@ -509,9 +509,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		public override void Setup()
+		public ShellModalTests()
 		{
-			base.Setup();
 			Routing.RegisterRoute("ModalTestPage", typeof(ModalTestPage));
 			Routing.RegisterRoute("ModalTestPage2", typeof(ModalTestPage2));
 			Routing.RegisterRoute("SomeCustomPage", typeof(SomeCustomPage));

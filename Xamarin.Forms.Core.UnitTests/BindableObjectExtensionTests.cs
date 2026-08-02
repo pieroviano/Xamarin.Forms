@@ -1,37 +1,30 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class BindableObjectExtensionTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void SetBindingNull()
 		{
-			Assert.That(() => BindableObjectExtensions.SetBinding(null, MockBindable.TextProperty, "Name"),
-				Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindableObjectExtensions.SetBinding(new MockBindable(), null, "Name"),
-				Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindableObjectExtensions.SetBinding(new MockBindable(), MockBindable.TextProperty, null),
-				Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding(null, MockBindable.TextProperty, "Name"));
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding(new MockBindable(), null, "Name"));
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding(new MockBindable(), MockBindable.TextProperty, null));
 
-			Assert.That(() => BindableObjectExtensions.SetBinding<MockViewModel>(null, MockBindable.TextProperty, vm => vm.Text),
-				Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindableObjectExtensions.SetBinding<MockViewModel>(new MockBindable(), null, vm => vm.Text),
-				Throws.InstanceOf<ArgumentNullException>());
-			Assert.That(() => BindableObjectExtensions.SetBinding<MockViewModel>(new MockBindable(), MockBindable.TextProperty, null),
-				Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding<MockViewModel>(null, MockBindable.TextProperty, vm => vm.Text));
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding<MockViewModel>(new MockBindable(), null, vm => vm.Text));
+			Assert.ThrowsAny<ArgumentNullException>(() => BindableObjectExtensions.SetBinding<MockViewModel>(new MockBindable(), MockBindable.TextProperty, null));
 		}
 
-		[Test]
+		[Fact]
 		public void Issue2643()
 		{
 			Label labelTempoDiStampa = new Label();
 			labelTempoDiStampa.BindingContext = new { Name = "1", Company = "Xamarin" };
 			labelTempoDiStampa.SetBinding(Label.TextProperty, "Name", stringFormat: "Hi: {0}");
 
-			Assert.That(labelTempoDiStampa.Text, Is.EqualTo("Hi: 1"));
+			Assert.Equal("Hi: 1", labelTempoDiStampa.Text);
 		}
 
 		class Bz27229ViewModel
@@ -53,20 +46,20 @@ namespace Xamarin.Forms.Core.UnitTests
 			public TResult Result { get; set; }
 		}
 
-		[Test]
+		[Fact]
 		public void Bz27229()
 		{
 			var totalCheckTime = new TextCell { Text = "Total Check Time" };
 			totalCheckTime.BindingContext = new Bz27229ViewModel();
 			totalCheckTime.SetBinding(TextCell.DetailProperty, "Member.Result.Text");
-			Assert.AreEqual("foo", totalCheckTime.Detail);
+			Assert.Equal("foo", totalCheckTime.Detail);
 
 			totalCheckTime = new TextCell { Text = "Total Check Time" };
 			totalCheckTime.BindingContext = new Bz27229ViewModel();
 			totalCheckTime.SetBinding<Bz27229ViewModel>(TextCell.DetailProperty, vm =>
 				((Generic<Label>)vm.Member).Result.Text);
 
-			Assert.AreEqual("foo", totalCheckTime.Detail);
+			Assert.Equal("foo", totalCheckTime.Detail);
 		}
 	}
 }

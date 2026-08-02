@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
+using Xunit;
 
 [assembly: Dependency(typeof(DependencyTestImpl))]
 
@@ -43,21 +43,18 @@ namespace Xamarin.Forms.Core.UnitTests
 
 	public class DependencyServiceTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public DependencyServiceTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void GetGlobalInstance()
 		{
 			var global = DependencyService.Get<IDependencyTest>();
@@ -69,7 +66,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(ReferenceEquals(global, secondFetch));
 		}
 
-		[Test]
+		[Fact]
 		public void NewInstanceIsNotGlobalInstance()
 		{
 			var global = DependencyService.Get<IDependencyTest>();
@@ -81,7 +78,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(ReferenceEquals(global, secondFetch));
 		}
 
-		[Test]
+		[Fact]
 		public void NewInstanceIsAlwaysNew()
 		{
 			var firstFetch = DependencyService.Get<IDependencyTest>(DependencyFetchTarget.NewInstance);
@@ -93,13 +90,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(ReferenceEquals(firstFetch, secondFetch));
 		}
 
-		[Test]
+		[Fact]
 		public void UnsatisfiedReturnsNull()
 		{
 			Assert.Null(DependencyService.Get<IUnsatisfied>());
 		}
 
-		[Test]
+		[Fact]
 		public void RegisterTypeImplementation()
 		{
 			DependencyService.Register<DependencyTestRegisterImpl>();
@@ -108,30 +105,30 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[Test]
+		[Fact]
 		public void RegisterInterfaceAndImplementations()
 		{
 			DependencyService.Register<IDependencyTestRegister, DependencyTestRegisterImpl2>();
 			var global = DependencyService.Get<IDependencyTestRegister>();
-			Assert.IsInstanceOf<DependencyTestRegisterImpl2>(global);
+			Assert.IsAssignableFrom<DependencyTestRegisterImpl2>(global);
 		}
 
-		[Test]
+		[Fact]
 		public void RegisterInterfaceAndOverrideImplementations()
 		{
 			DependencyService.Register<IDependencyTestRegister, DependencyTestRegisterImpl>();
 			DependencyService.Register<IDependencyTestRegister, DependencyTestRegisterImpl2>();
 			var global = DependencyService.Get<IDependencyTestRegister>();
-			Assert.IsInstanceOf<DependencyTestRegisterImpl2>(global);
+			Assert.IsAssignableFrom<DependencyTestRegisterImpl2>(global);
 		}
 
-		[Test]
+		[Fact]
 		public void RegisterSingletonInterface()
 		{
 			var local = new DependencyTestRegisterImpl();
 			DependencyService.RegisterSingleton<IDependencyTestRegister>(local);
 			var global = DependencyService.Get<IDependencyTestRegister>();
-			Assert.AreEqual(local, global);
+			Assert.Equal(local, global);
 		}
 	}
 }

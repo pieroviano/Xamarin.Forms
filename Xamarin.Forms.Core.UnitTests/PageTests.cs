@@ -1,33 +1,31 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class PageTests : BaseTestFixture
 	{
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			MessagingCenter.ClearSubscribers();
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var child = new Label();
 			Page root = new ContentPage { Content = child };
 
-			Assert.AreEqual(((IElementController)root).LogicalChildren.Count, 1);
-			Assert.AreSame(((IElementController)root).LogicalChildren.First(), child);
+			Assert.Equal(((IElementController)root).LogicalChildren.Count, 1);
+			Assert.Same(((IElementController)root).LogicalChildren.First(), child);
 		}
 
-		[Test]
+		[Fact]
 		public void TestChildFillBehavior()
 		{
 			var child = new Label();
@@ -36,11 +34,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(child.Width, 200);
-			Assert.AreEqual(child.Height, 500);
+			Assert.Equal(child.Width, 200);
+			Assert.Equal(child.Height, 500);
 		}
 
-		[Test]
+		[Fact]
 		public void TestSizedChildBehavior()
 		{
 			var child = new Label { IsPlatformEnabled = true, WidthRequest = 100, HorizontalOptions = LayoutOptions.Center };
@@ -48,9 +46,9 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(50, child.X);
-			Assert.AreEqual(100, child.Width);
-			Assert.AreEqual(500, child.Height);
+			Assert.Equal(50, child.X);
+			Assert.Equal(100, child.Width);
+			Assert.Equal(500, child.Height);
 
 			child = new Label()
 			{
@@ -67,10 +65,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(0, child.X);
-			Assert.AreEqual(200, child.Y);
-			Assert.AreEqual(200, child.Width);
-			Assert.AreEqual(100, child.Height);
+			Assert.Equal(0, child.X);
+			Assert.Equal(200, child.Y);
+			Assert.Equal(200, child.Width);
+			Assert.Equal(100, child.Height);
 
 			child = new Label();
 			child.IsPlatformEnabled = true;
@@ -84,13 +82,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(0, child.X);
-			Assert.AreEqual(0, child.Y);
-			Assert.AreEqual(200, child.Width);
-			Assert.AreEqual(500, child.Height);
+			Assert.Equal(0, child.X);
+			Assert.Equal(0, child.Y);
+			Assert.Equal(200, child.Width);
+			Assert.Equal(500, child.Height);
 		}
 
-		[Test]
+		[Fact]
 		public void NativeSizedChildBehavior()
 		{
 			var child = new Label { IsPlatformEnabled = true, HorizontalOptions = LayoutOptions.Center };
@@ -98,9 +96,9 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(50, child.X);
-			Assert.AreEqual(100, child.Width);
-			Assert.AreEqual(500, child.Height);
+			Assert.Equal(50, child.X);
+			Assert.Equal(100, child.Width);
+			Assert.Equal(500, child.Height);
 
 			child = new Label()
 			{
@@ -116,19 +114,19 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			root.Layout(new Rectangle(0, 0, 200, 500));
 
-			Assert.AreEqual(0, child.X);
-			Assert.AreEqual(240, child.Y);
-			Assert.AreEqual(200, child.Width);
-			Assert.AreEqual(20, child.Height);
+			Assert.Equal(0, child.X);
+			Assert.Equal(240, child.Y);
+			Assert.Equal(200, child.Width);
+			Assert.Equal(20, child.Height);
 		}
 
-		[Test]
+		[Fact]
 		public void TestContentPageSetContent()
 		{
 			View child;
 			var page = new ContentPage { Content = child = new View() };
 
-			Assert.AreEqual(child, page.Content);
+			Assert.Equal(child, page.Content);
 
 			bool fired = false;
 			page.PropertyChanged += (sender, args) =>
@@ -147,7 +145,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(page.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutChildrenFill()
 		{
 			View child;
@@ -164,14 +162,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 800, 800));
 
-			Assert.AreEqual(new Rectangle(0, 0, 800, 800), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 800, 800), child.Bounds);
 
 			page.Layout(new Rectangle(0, 0, 50, 50));
 
-			Assert.AreEqual(new Rectangle(0, 0, 50, 50), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 50, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutChildrenStart()
 		{
 			View child;
@@ -190,14 +188,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 800, 800));
 
-			Assert.AreEqual(new Rectangle(0, 0, 100, 200), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 200), child.Bounds);
 
 			page.Layout(new Rectangle(0, 0, 50, 50));
 
-			Assert.AreEqual(new Rectangle(0, 0, 50, 50), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 50, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutChildrenEnd()
 		{
 			View child;
@@ -216,14 +214,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 800, 800));
 
-			Assert.AreEqual(new Rectangle(700, 600, 100, 200), child.Bounds);
+			Assert.Equal(new Rectangle(700, 600, 100, 200), child.Bounds);
 
 			page.Layout(new Rectangle(0, 0, 50, 50));
 
-			Assert.AreEqual(new Rectangle(0, 0, 50, 50), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 50, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutChildrenCenter()
 		{
 			View child;
@@ -242,14 +240,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 800, 800));
 
-			Assert.AreEqual(new Rectangle(350, 300, 100, 200), child.Bounds);
+			Assert.Equal(new Rectangle(350, 300, 100, 200), child.Bounds);
 
 			page.Layout(new Rectangle(0, 0, 50, 50));
 
-			Assert.AreEqual(new Rectangle(0, 0, 50, 50), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 50, 50), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLayoutWithContainerArea()
 		{
 			View child;
@@ -266,17 +264,17 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			page.Layout(new Rectangle(0, 0, 800, 800));
 
-			Assert.AreEqual(new Rectangle(0, 0, 800, 800), child.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 800, 800), child.Bounds);
 			((IPageController)page).ContainerArea = new Rectangle(10, 10, 30, 30);
 
-			Assert.AreEqual(new Rectangle(10, 10, 30, 30), child.Bounds);
+			Assert.Equal(new Rectangle(10, 10, 30, 30), child.Bounds);
 
 			page.Layout(new Rectangle(0, 0, 50, 50));
 
-			Assert.AreEqual(new Rectangle(10, 10, 30, 30), child.Bounds);
+			Assert.Equal(new Rectangle(10, 10, 30, 30), child.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestThrowOnInvalidAlignment()
 		{
 			bool thrown = false;
@@ -304,7 +302,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(thrown);
 		}
 
-		[Test]
+		[Fact]
 		public void BusyNotSentWhenNotVisible()
 		{
 			var sent = false;
@@ -312,29 +310,29 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			new ContentPage { IsBusy = true };
 
-			Assert.That(sent, Is.False, "Busy message sent while not visible");
+			Assert.False(sent, "Busy message sent while not visible");
 		}
 
-		[Test]
+		[Fact]
 		public void BusySentWhenBusyPageAppears()
 		{
 			var sent = false;
 			MessagingCenter.Subscribe<Page, bool>(this, Page.BusySetSignalName, (p, b) =>
 			{
-				Assert.That(b, Is.True);
+				Assert.True(b);
 				sent = true;
 			});
 
 			var page = new ContentPage { IsBusy = true, IsPlatformEnabled = true };
 
-			Assert.That(sent, Is.False, "Busy message sent while not visible");
+			Assert.False(sent, "Busy message sent while not visible");
 
 			((IPageController)page).SendAppearing();
 
-			Assert.That(sent, Is.True, "Busy message not sent when visible");
+			Assert.True(sent, "Busy message not sent when visible");
 		}
 
-		[Test]
+		[Fact]
 		public void BusySentWhenBusyPageDisappears()
 		{
 			var page = new ContentPage { IsBusy = true };
@@ -343,16 +341,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			var sent = false;
 			MessagingCenter.Subscribe<Page, bool>(this, Page.BusySetSignalName, (p, b) =>
 			{
-				Assert.That(b, Is.False);
+				Assert.False(b);
 				sent = true;
 			});
 
 			((IPageController)page).SendDisappearing();
 
-			Assert.That(sent, Is.True, "Busy message not sent when visible");
+			Assert.True(sent, "Busy message not sent when visible");
 		}
 
-		[Test]
+		[Fact]
 		public void BusySentWhenVisiblePageSetToBusy()
 		{
 			var sent = false;
@@ -361,14 +359,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			var page = new ContentPage();
 			((IPageController)page).SendAppearing();
 
-			Assert.That(sent, Is.False, "Busy message sent appearing while not busy");
+			Assert.False(sent, "Busy message sent appearing while not busy");
 
 			page.IsBusy = true;
 
-			Assert.That(sent, Is.True, "Busy message not sent when visible");
+			Assert.True(sent, "Busy message not sent when visible");
 		}
 
-		[Test]
+		[Fact]
 		public void DisplayAlert()
 		{
 			var page = new ContentPage() { IsPlatformEnabled = true };
@@ -378,10 +376,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var task = page.DisplayAlert("Title", "Message", "Accept", "Cancel");
 
-			Assert.AreEqual("Title", args.Title);
-			Assert.AreEqual("Message", args.Message);
-			Assert.AreEqual("Accept", args.Accept);
-			Assert.AreEqual("Cancel", args.Cancel);
+			Assert.Equal("Title", args.Title);
+			Assert.Equal("Message", args.Message);
+			Assert.Equal("Accept", args.Accept);
+			Assert.Equal("Cancel", args.Cancel);
 
 			bool completed = false;
 			var continueTask = task.ContinueWith(t => completed = true);
@@ -391,7 +389,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(completed);
 		}
 
-		[Test]
+		[Fact]
 		public void DisplayActionSheet()
 		{
 			var page = new ContentPage() { IsPlatformEnabled = true };
@@ -401,11 +399,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var task = page.DisplayActionSheet("Title", "Cancel", "Destruction", "Other 1", "Other 2");
 
-			Assert.AreEqual("Title", args.Title);
-			Assert.AreEqual("Destruction", args.Destruction);
-			Assert.AreEqual("Cancel", args.Cancel);
-			Assert.AreEqual("Other 1", args.Buttons.First());
-			Assert.AreEqual("Other 2", args.Buttons.Skip(1).First());
+			Assert.Equal("Title", args.Title);
+			Assert.Equal("Destruction", args.Destruction);
+			Assert.Equal("Cancel", args.Cancel);
+			Assert.Equal("Other 1", args.Buttons.First());
+			Assert.Equal("Other 2", args.Buttons.Skip(1).First());
 
 			bool completed = false;
 			var continueTask = task.ContinueWith(t => completed = true);
@@ -417,7 +415,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		class PageTestApp : Application { }
 
-		[Test]
+		[Fact]
 		public void SendApplicationPageAppearing()
 		{
 			var app = new PageTestApp();
@@ -429,10 +427,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			((IPageController)page).SendAppearing();
 
-			Assert.AreSame(page, actual);
+			Assert.Same(page, actual);
 		}
 
-		[Test]
+		[Fact]
 		public void SendApplicationPageDisappearing()
 		{
 			var app = new PageTestApp();
@@ -445,10 +443,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			((IPageController)page).SendAppearing();
 			((IPageController)page).SendDisappearing();
 
-			Assert.AreSame(page, actual);
+			Assert.Same(page, actual);
 		}
 
-		[Test]
+		[Fact]
 		public void SendAppearing()
 		{
 			var page = new ContentPage();
@@ -461,7 +459,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(sent);
 		}
 
-		[Test]
+		[Fact]
 		public void SendDisappearing()
 		{
 			var page = new ContentPage();
@@ -476,7 +474,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(sent);
 		}
 
-		[Test]
+		[Fact]
 		public void SendAppearingDoesntGetCalledMultipleTimes()
 		{
 			var page = new ContentPage();
@@ -487,10 +485,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			((IPageController)page).SendAppearing();
 			((IPageController)page).SendAppearing();
 
-			Assert.That(countAppearing, Is.EqualTo(1));
+			Assert.Equal(1, countAppearing);
 		}
 
-		[Test]
+		[Fact]
 		public void IsVisibleWorks()
 		{
 			var page = new ContentPage();
@@ -498,7 +496,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(page.IsVisible);
 		}
 
-		[Test]
+		[Fact]
 		public void SendAppearingToChildrenAfter()
 		{
 			var page = new ContentPage();
@@ -521,7 +519,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		}
 
-		[Test]
+		[Fact]
 		public void SendDisappearingToChildrenPageFirst()
 		{
 			var page = new ContentPage();

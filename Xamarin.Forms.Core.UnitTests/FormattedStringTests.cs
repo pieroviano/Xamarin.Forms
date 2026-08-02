@@ -1,42 +1,38 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class FormattedStringTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public FormattedStringTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.Setup();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void NullSpansNotAllowed()
 		{
 			var fs = new FormattedString();
-			Assert.That(() => fs.Spans.Add(null), Throws.InstanceOf<ArgumentNullException>());
+			Assert.ThrowsAny<ArgumentNullException>(() => fs.Spans.Add(null));
 
 			fs = new FormattedString();
 			fs.Spans.Add(new Span());
 
-			Assert.That(() =>
+			Assert.ThrowsAny<ArgumentNullException>(() =>
 			{
 				fs.Spans[0] = null;
-			}, Throws.InstanceOf<ArgumentNullException>());
+			});
 		}
 
-		[Test]
+		[Fact]
 		public void SpanChangeTriggersSpansPropertyChange()
 		{
 			var span = new Span();
@@ -52,10 +48,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			span.Text = "New text";
 
-			Assert.That(spansChanged, Is.True);
+			Assert.True(spansChanged);
 		}
 
-		[Test]
+		[Fact]
 		public void SpanChangesUnsubscribes()
 		{
 			var span = new Span();
@@ -72,10 +68,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			span.Text = "New text";
 
-			Assert.That(spansChanged, Is.False);
+			Assert.False(spansChanged);
 		}
 
-		[Test]
+		[Fact]
 		public void AddingSpanTriggersSpansPropertyChange()
 		{
 			var span = new Span();
@@ -90,29 +86,29 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			fs.Spans.Add(span);
 
-			Assert.That(spansChanged, Is.True);
+			Assert.True(spansChanged);
 		}
 
-		[Test]
+		[Fact]
 		public void ImplicitStringConversion()
 		{
 			string original = "fubar";
 			FormattedString fs = original;
-			Assert.That(fs, Is.Not.Null);
-			Assert.That(fs.Spans.Count, Is.EqualTo(1));
-			Assert.That(fs.Spans[0], Is.Not.Null);
-			Assert.That(fs.Spans[0].Text, Is.EqualTo(original));
+			Assert.NotNull(fs);
+			Assert.Equal(1, fs.Spans.Count);
+			Assert.NotNull(fs.Spans[0]);
+			Assert.Equal(original, fs.Spans[0].Text);
 		}
 
-		[Test]
+		[Fact]
 		public void ImplicitStringConversionNull()
 		{
 			string original = null;
 			FormattedString fs = original;
-			Assert.That(fs, Is.Not.Null);
-			Assert.That(fs.Spans.Count, Is.EqualTo(1));
-			Assert.That(fs.Spans[0], Is.Not.Null);
-			Assert.That(fs.Spans[0].Text, Is.EqualTo(original));
+			Assert.NotNull(fs);
+			Assert.Equal(1, fs.Spans.Count);
+			Assert.NotNull(fs.Spans[0]);
+			Assert.Equal(original, fs.Spans[0].Text);
 		}
 	}
 }

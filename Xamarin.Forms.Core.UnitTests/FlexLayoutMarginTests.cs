@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public class FlexLayoutMarginTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestMarginLeft()
 		{
 			var view0 = new View { IsPlatformEnabled = true, WidthRequest = 10, Margin = new Thickness(10, 0, 0, 0), };
@@ -23,11 +23,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(10, 0, 10, 100)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(10, 0, 10, 100), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginTop()
 		{
 			var view0 = new View { IsPlatformEnabled = true, HeightRequest = 10, Margin = new Thickness(0, 10, 0, 0), };
@@ -42,11 +42,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 10, 100, 10)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 10, 100, 10), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginRight()
 		{
 			var view0 = new View { IsPlatformEnabled = true, WidthRequest = 10, Margin = new Thickness(0, 0, 10, 0), };
@@ -62,11 +62,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(80, 0, 10, 100)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(80, 0, 10, 100), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginBottom()
 		{
 			var view0 = new View { IsPlatformEnabled = true, HeightRequest = 10, Margin = new Thickness(0, 0, 0, 10), };
@@ -82,11 +82,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 80, 100, 10)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 80, 100, 10), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginAndFlexRow()
 		{
 			var view0 = new View { IsPlatformEnabled = true, Margin = new Thickness(10, 0, 10, 0), };
@@ -101,11 +101,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				Direction = FlexDirection.Row,
 			};
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(10, 0, 80, 100)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(10, 0, 80, 100), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginAndFlexColumn()
 		{
 			var view0 = new View { IsPlatformEnabled = true, Margin = new Thickness(0, 10, 0, 10), };
@@ -120,11 +120,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				Direction = FlexDirection.Column,
 			};
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 10, 100, 80)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 10, 100, 80), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginAndStretchRow()
 		{
 			var view0 = new View { IsPlatformEnabled = true, Margin = new Thickness(0, 10, 0, 10), };
@@ -140,11 +140,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 10, 100, 80)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 10, 100, 80), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginAndStretchColumn()
 		{
 
@@ -160,11 +160,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(10, 0, 80, 100)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(10, 0, 80, 100), view0.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginWithSiblingRow()
 		{
 			Device.PlatformServices = new MockPlatformServices(getNativeSizeFunc: (visual, width, height) => new SizeRequest(new Size(0, 0)));
@@ -185,12 +185,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 0, 45, 100)));
-			Assert.That(view1.Bounds, Is.EqualTo(new Rectangle(55, 0, 45, 100)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 45, 100), view0.Bounds);
+			Assert.Equal(new Rectangle(55, 0, 45, 100), view1.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void TestMarginWithSiblingColumn()
 		{
 			var view0 = new View { IsPlatformEnabled = true, Margin = new Thickness(0, 0, 0, 10) };
@@ -210,9 +210,9 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			layout.Layout(new Rectangle(0, 0, 100, 100));
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 100)));
-			Assert.That(view0.Bounds, Is.EqualTo(new Rectangle(0, 0, 100, 45)));
-			Assert.That(view1.Bounds, Is.EqualTo(new Rectangle(0, 55, 100, 45)));
+			Assert.Equal(new Rectangle(0, 0, 100, 100), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 100, 45), view0.Bounds);
+			Assert.Equal(new Rectangle(0, 55, 100, 45), view1.Bounds);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
@@ -28,10 +28,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		public BindableObject AssociatedObject { get; set; }
 	}
 
-	[TestFixture]
 	public class BehaviorTest : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void AttachAndDetach()
 		{
 			var behavior = new MockBehavior<MockBindable>();
@@ -45,7 +44,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			Assert.True(behavior.attached);
 			Assert.False(behavior.detached);
-			Assert.AreSame(bindable, behavior.AssociatedObject);
+			Assert.Same(bindable, behavior.AssociatedObject);
 
 			((IAttachedObject)behavior).DetachFrom(bindable);
 
@@ -54,7 +53,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(behavior.AssociatedObject);
 		}
 
-		[Test]
+		[Fact]
 		public void AttachToTypeCompatibleWithTargetType()
 		{
 			var behavior = new MockBehavior<MockBindable>();
@@ -63,7 +62,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => ((IAttachedObject)behavior).AttachTo(bindable));
 		}
 
-		[Test]
+		[Fact]
 		public void BehaviorsInCollectionAreAttachedWhenCollectionIsAttached()
 		{
 			var behavior = new MockBehavior<MockBindable>();
@@ -73,13 +72,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(behavior.AssociatedObject);
 
 			((IAttachedObject)collection).AttachTo(bindable);
-			Assert.AreSame(bindable, behavior.AssociatedObject);
+			Assert.Same(bindable, behavior.AssociatedObject);
 
 			((IAttachedObject)collection).DetachFrom(bindable);
 			Assert.Null(behavior.AssociatedObject);
 		}
 
-		[Test]
+		[Fact]
 		public void BehaviorsAddedToAttachedCollectionAreAttached()
 		{
 			var behavior = new MockBehavior<MockBindable>();
@@ -89,13 +88,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(behavior.AssociatedObject);
 
 			collection.Add(behavior);
-			Assert.AreSame(bindable, behavior.AssociatedObject);
+			Assert.Same(bindable, behavior.AssociatedObject);
 
 			collection.Remove(behavior);
 			Assert.Null(behavior.AssociatedObject);
 		}
 
-		[Test]
+		[Fact]
 		public void TestBehaviorsAttachedDP()
 		{
 			var behavior = new MockBehavior<MockBindable>();
@@ -104,7 +103,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(behavior.AssociatedObject);
 
 			collection.Add(behavior);
-			Assert.AreSame(bindable, behavior.AssociatedObject);
+			Assert.Same(bindable, behavior.AssociatedObject);
 
 			collection.Remove(behavior);
 			Assert.Null(behavior.AssociatedObject);

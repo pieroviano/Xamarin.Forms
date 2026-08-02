@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class BindablePropertyUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Create()
 		{
 			const BindingMode mode = BindingMode.OneWayToSource;
@@ -18,32 +17,32 @@ namespace Xamarin.Forms.Core.UnitTests
 			BindableProperty.BindingPropertyChangingDelegate<string> changing = (b, ov, nv) => { };
 
 			var prop = BindableProperty.Create<Button, string>(b => b.Text, dvalue, mode, validate, changed, changing, coerce);
-			Assert.AreEqual("Text", prop.PropertyName);
-			Assert.AreEqual(typeof(Button), prop.DeclaringType);
-			Assert.AreEqual(typeof(string), prop.ReturnType);
-			Assert.AreEqual(dvalue, prop.DefaultValue);
-			Assert.AreEqual(mode, prop.DefaultBindingMode);
+			Assert.Equal("Text", prop.PropertyName);
+			Assert.Equal(typeof(Button), prop.DeclaringType);
+			Assert.Equal(typeof(string), prop.ReturnType);
+			Assert.Equal(dvalue, prop.DefaultValue);
+			Assert.Equal(mode, prop.DefaultBindingMode);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateWithDefaultMode()
 		{
 			const BindingMode mode = BindingMode.Default;
 			var prop = BindableProperty.Create<Button, string>(b => b.Text, null, defaultBindingMode: mode);
-			Assert.AreEqual(BindingMode.OneWay, prop.DefaultBindingMode);
+			Assert.Equal(BindingMode.OneWay, prop.DefaultBindingMode);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateCasted()
 		{
 			var prop = BindableProperty.Create<Cell, bool>(c => c.IsEnabled, true);
 
-			Assert.AreEqual("IsEnabled", prop.PropertyName);
-			Assert.AreEqual(typeof(Cell), prop.DeclaringType);
-			Assert.AreEqual(typeof(bool), prop.ReturnType);
+			Assert.Equal("IsEnabled", prop.PropertyName);
+			Assert.Equal(typeof(Cell), prop.DeclaringType);
+			Assert.Equal(typeof(bool), prop.ReturnType);
 		}
 
-		[Test]
+		[Fact]
 		public void CreateNonGeneric()
 		{
 			const BindingMode mode = BindingMode.OneWayToSource;
@@ -54,11 +53,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			BindableProperty.BindingPropertyChangingDelegate changing = (b, ov, nv) => { };
 
 			var prop = BindableProperty.Create("Text", typeof(string), typeof(Button), dvalue, mode, validate, changed, changing, coerce);
-			Assert.AreEqual("Text", prop.PropertyName);
-			Assert.AreEqual(typeof(Button), prop.DeclaringType);
-			Assert.AreEqual(typeof(string), prop.ReturnType);
-			Assert.AreEqual(dvalue, prop.DefaultValue);
-			Assert.AreEqual(mode, prop.DefaultBindingMode);
+			Assert.Equal("Text", prop.PropertyName);
+			Assert.Equal(typeof(Button), prop.DeclaringType);
+			Assert.Equal(typeof(string), prop.ReturnType);
+			Assert.Equal(dvalue, prop.DefaultValue);
+			Assert.Equal(mode, prop.DefaultBindingMode);
 		}
 
 		class GenericView<T> : View
@@ -70,7 +69,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void CreateForGeneric()
 		{
 			const BindingMode mode = BindingMode.OneWayToSource;
@@ -81,14 +80,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			BindableProperty.BindingPropertyChangingDelegate changing = (b, ov, nv) => { };
 
 			var prop = BindableProperty.Create("Text", typeof(string), typeof(GenericView<>), dvalue, mode, validate, changed, changing, coerce);
-			Assert.AreEqual("Text", prop.PropertyName);
-			Assert.AreEqual(typeof(GenericView<>), prop.DeclaringType);
-			Assert.AreEqual(typeof(string), prop.ReturnType);
-			Assert.AreEqual(dvalue, prop.DefaultValue);
-			Assert.AreEqual(mode, prop.DefaultBindingMode);
+			Assert.Equal("Text", prop.PropertyName);
+			Assert.Equal(typeof(GenericView<>), prop.DeclaringType);
+			Assert.Equal(typeof(string), prop.ReturnType);
+			Assert.Equal(dvalue, prop.DefaultValue);
+			Assert.Equal(mode, prop.DefaultBindingMode);
 		}
 
-		[Test]
+		[Fact]
 		public void ChangingBeforeChanged()
 		{
 			bool changingfired = false;
@@ -117,37 +116,37 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(changedfired);
 		}
 
-		[Test]
+		[Fact]
 		public void NullableProperty()
 		{
 			var prop = BindableProperty.Create("foo", typeof(DateTime?), typeof(MockBindable), null);
-			Assert.AreEqual(typeof(DateTime?), prop.ReturnType);
+			Assert.Equal(typeof(DateTime?), prop.ReturnType);
 
 			var bindable = new MockBindable();
-			Assert.AreEqual(null, bindable.GetValue(prop));
+			Assert.Equal(null, bindable.GetValue(prop));
 
 			var now = DateTime.Now;
 			bindable.SetValue(prop, now);
-			Assert.AreEqual(now, bindable.GetValue(prop));
+			Assert.Equal(now, bindable.GetValue(prop));
 
 			bindable.SetValue(prop, null);
-			Assert.AreEqual(null, bindable.GetValue(prop));
+			Assert.Equal(null, bindable.GetValue(prop));
 		}
 
-		[Test]
+		[Fact]
 		public void ValueTypePropertyDefaultValue()
 		{
 			// Create BindableProperty without explicit default value
 			var prop = BindableProperty.Create("foo", typeof(int), typeof(MockBindable));
-			Assert.AreEqual(typeof(int), prop.ReturnType);
+			Assert.Equal(typeof(int), prop.ReturnType);
 
-			Assert.AreEqual(prop.DefaultValue, 0);
+			Assert.Equal(prop.DefaultValue, 0);
 
 			var bindable = new MockBindable();
-			Assert.AreEqual(0, bindable.GetValue(prop));
+			Assert.Equal(0, bindable.GetValue(prop));
 
 			bindable.SetValue(prop, 1);
-			Assert.AreEqual(1, bindable.GetValue(prop));
+			Assert.Equal(1, bindable.GetValue(prop));
 		}
 
 		enum TestEnum
@@ -155,20 +154,20 @@ namespace Xamarin.Forms.Core.UnitTests
 			One, Two, Three
 		}
 
-		[Test]
+		[Fact]
 		public void EnumPropertyDefaultValue()
 		{
 			// Create BindableProperty without explicit default value
 			var prop = BindableProperty.Create("foo", typeof(TestEnum), typeof(MockBindable));
-			Assert.AreEqual(typeof(TestEnum), prop.ReturnType);
+			Assert.Equal(typeof(TestEnum), prop.ReturnType);
 
-			Assert.AreEqual(prop.DefaultValue, default(TestEnum));
+			Assert.Equal(prop.DefaultValue, default(TestEnum));
 
 			var bindable = new MockBindable();
-			Assert.AreEqual(default(TestEnum), bindable.GetValue(prop));
+			Assert.Equal(default(TestEnum), bindable.GetValue(prop));
 
 			bindable.SetValue(prop, TestEnum.Two);
-			Assert.AreEqual(TestEnum.Two, bindable.GetValue(prop));
+			Assert.Equal(TestEnum.Two, bindable.GetValue(prop));
 		}
 
 		struct TestStruct
@@ -176,22 +175,22 @@ namespace Xamarin.Forms.Core.UnitTests
 			public int IntValue;
 		}
 
-		[Test]
+		[Fact]
 		public void StructPropertyDefaultValue()
 		{
 			// Create BindableProperty without explicit default value
 			var prop = BindableProperty.Create("foo", typeof(TestStruct), typeof(MockBindable));
-			Assert.AreEqual(typeof(TestStruct), prop.ReturnType);
+			Assert.Equal(typeof(TestStruct), prop.ReturnType);
 
-			Assert.AreEqual(((TestStruct)prop.DefaultValue).IntValue, default(int));
+			Assert.Equal(((TestStruct)prop.DefaultValue).IntValue, default(int));
 
 			var bindable = new MockBindable();
-			Assert.AreEqual(default(int), ((TestStruct)bindable.GetValue(prop)).IntValue);
+			Assert.Equal(default(int), ((TestStruct)bindable.GetValue(prop)).IntValue);
 
 			var propStruct = new TestStruct { IntValue = 1 };
 
 			bindable.SetValue(prop, propStruct);
-			Assert.AreEqual(1, ((TestStruct)bindable.GetValue(prop)).IntValue);
+			Assert.Equal(1, ((TestStruct)bindable.GetValue(prop)).IntValue);
 		}
 
 	}

@@ -1,23 +1,22 @@
-using System.Linq;
+﻿using System.Linq;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TableViewUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var table = new TableView();
 
 			Assert.False(table.Root.Any());
-			Assert.AreEqual(LayoutOptions.FillAndExpand, table.HorizontalOptions);
-			Assert.AreEqual(LayoutOptions.FillAndExpand, table.VerticalOptions);
+			Assert.Equal(LayoutOptions.FillAndExpand, table.HorizontalOptions);
+			Assert.Equal(LayoutOptions.FillAndExpand, table.VerticalOptions);
 		}
 
-		[Test]
+		[Fact]
 		public void TestModelChanged()
 		{
 			var table = new TableView();
@@ -31,20 +30,20 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(changed);
 		}
 
-		[Test]
+		[Fact]
 		public void BindingsContextChainsToModel()
 		{
 			const string context = "Context";
 			var table = new TableView { BindingContext = context, Root = new TableRoot() };
 
-			Assert.AreEqual(context, table.Root.BindingContext);
+			Assert.Equal(context, table.Root.BindingContext);
 
 			// reverse assignment order
 			table = new TableView { Root = new TableRoot(), BindingContext = context };
-			Assert.AreEqual(context, table.Root.BindingContext);
+			Assert.Equal(context, table.Root.BindingContext);
 		}
 
-		[Test]
+		[Fact]
 		public void ParentsViewCells()
 		{
 			ViewCell viewCell = new ViewCell { View = new Label() };
@@ -57,11 +56,11 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual(table, viewCell.Parent);
-			Assert.AreEqual(viewCell, viewCell.View.Parent);
+			Assert.Equal(table, viewCell.Parent);
+			Assert.Equal(viewCell, viewCell.View.Parent);
 		}
 
-		[Test]
+		[Fact]
 		public void ParentsAddedViewCells()
 		{
 			var viewCell = new ViewCell { View = new Label() };
@@ -75,8 +74,8 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			section.Add(viewCell);
 
-			Assert.AreEqual(table, viewCell.Parent);
-			Assert.AreEqual(viewCell, viewCell.View.Parent);
+			Assert.Equal(table, viewCell.Parent);
+			Assert.Equal(viewCell, viewCell.View.Parent);
 		}
 	}
 }

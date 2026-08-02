@@ -4,14 +4,13 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class BindingExpressionTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Ctor()
 		{
 			string path = "Foo.Bar";
@@ -19,38 +18,37 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var be = new BindingExpression(binding, path);
 
-			Assert.AreSame(binding, be.Binding);
-			Assert.AreEqual(path, be.Path);
+			Assert.Same(binding, be.Binding);
+			Assert.Equal(path, be.Path);
 		}
 
-		[Test]
+		[Fact]
 		public void CtorInvalid()
 		{
 			string path = "Foo.Bar";
 			var binding = new Binding(path);
 
-			Assert.Throws<ArgumentNullException>(() => new BindingExpression(binding, null),
-				"Allowed the path to eb null");
+			Assert.Throws<ArgumentNullException>(() => new BindingExpression(binding, null));
 
-			Assert.Throws<ArgumentNullException>(() => new BindingExpression(null, path),
-				"Allowed the binding to be null");
+			Assert.Throws<ArgumentNullException>(() => new BindingExpression(null, path));
 		}
 
-		[Test]
+		[Fact]
 		public void ApplyNull()
 		{
 			const string path = "Foo.Bar";
 			var binding = new Binding(path);
 			var be = new BindingExpression(binding, path);
-			Assert.DoesNotThrow(() => be.Apply(null, new MockBindable(), TextCell.TextProperty));
+			AssertEx.DoesNotThrow(() => be.Apply(null, new MockBindable(), TextCell.TextProperty));
 		}
 
 		// We only throw on invalid path features, if they give an invalid property
 		// name, it won't have compiled in the first place or they misstyped.
-		[TestCase("Foo.")]
-		[TestCase("Foo[]")]
-		[TestCase("Foo.Bar[]")]
-		[TestCase("Foo[1")]
+		[Theory]
+		[InlineData("Foo.")]
+		[InlineData("Foo[]")]
+		[InlineData("Foo.Bar[]")]
+		[InlineData("Foo[1")]
 		public void InvalidPaths(string path)
 		{
 			var fex = Assert.Throws<FormatException>(() =>
@@ -59,19 +57,35 @@ namespace Xamarin.Forms.Core.UnitTests
 				new BindingExpression(binding, path);
 			});
 
-			Assert.IsFalse(String.IsNullOrWhiteSpace(fex.Message),
-				"FormatException did not contain an explanation");
+			Assert.False(String.IsNullOrWhiteSpace(fex.Message), "FormatException did not contain an explanation");
 		}
 
-		[Test]
-		public void ValidPaths(
-			[Values (
-				".", "[1]", "[1 ]", ".[1]", ". [1]",
-				"Foo", "Foo.Bar", "Foo. Bar", "Foo.Bar[1]",
-				"Foo.Bar [1]")]
-			string path,
-			[Values(true, false)] bool spaceBefore,
-			[Values(true, false)] bool spaceAfter)
+		[Theory]
+		[InlineData(".", true, true)]
+		[InlineData(".", true, false)]
+		[InlineData(".", false, true)]
+		[InlineData(".", false, false)]
+		[InlineData("[1]", true, true)]
+		[InlineData("[1]", true, false)]
+		[InlineData("[1]", false, true)]
+		[InlineData("[1]", false, false)]
+		[InlineData(".[1]", true, true)]
+		[InlineData(".[1]", true, false)]
+		[InlineData(".[1]", false, true)]
+		[InlineData(".[1]", false, false)]
+		[InlineData("Foo", true, true)]
+		[InlineData("Foo", true, false)]
+		[InlineData("Foo", false, true)]
+		[InlineData("Foo", false, false)]
+		[InlineData("Foo.Bar", true, true)]
+		[InlineData("Foo.Bar", true, false)]
+		[InlineData("Foo.Bar", false, true)]
+		[InlineData("Foo.Bar", false, false)]
+		[InlineData("Foo.Bar[1]", true, true)]
+		[InlineData("Foo.Bar[1]", true, false)]
+		[InlineData("Foo.Bar[1]", false, true)]
+		[InlineData("Foo.Bar[1]", false, false)]
+		public void ValidPaths(string path, bool spaceBefore, bool spaceAfter)
 		{
 			if (spaceBefore)
 				path = " " + path;
@@ -79,10 +93,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				path = path + " ";
 
 			var binding = new Binding(path);
-			Assert.DoesNotThrow(() => new BindingExpression(binding, path));
+			AssertEx.DoesNotThrow(() => new BindingExpression(binding, path));
 		}
 
-		static object[] TryConvertWithNumbersAndCulturesCases => new object[]
+		public static IEnumerable<object[]> TryConvertWithNumbersAndCulturesCases => new[]
 		{
 			new object[]{ "4.2", new CultureInfo("en"), 4.2m },
 			new object[]{ "4,2", new CultureInfo("de"), 4.2m },
@@ -120,13 +134,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			new object[]{ "-0", new CultureInfo("de"), "-0" },
 		};
 
-		[TestCaseSource(nameof(TryConvertWithNumbersAndCulturesCases))]
+		[Theory]
+		[MemberData(nameof(TryConvertWithNumbersAndCulturesCases))]
 		public void TryConvertWithNumbersAndCultures(object inputString, CultureInfo culture, object expected)
 		{
 			CultureInfo.CurrentCulture = culture;
 			BindingExpression.TryConvert(ref inputString, Entry.TextProperty, expected.GetType(), false);
 
-			Assert.AreEqual(expected, inputString);
+			Assert.Equal(expected, inputString);
 		}
 	}
 }

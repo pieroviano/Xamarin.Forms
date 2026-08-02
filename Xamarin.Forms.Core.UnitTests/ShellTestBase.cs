@@ -5,25 +5,21 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ShellTestBase : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public ShellTestBase()
 		{
-			base.Setup();
 
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Routing.Clear();
 
 		}
@@ -343,7 +339,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			public void AssertCurrentStateEquals(string expectedState)
 			{
-				Assert.AreEqual(expectedState, CurrentState.Location.ToString());
+				Assert.Equal(expectedState, CurrentState.Location.ToString());
 			}
 
 			public class ConcretePageFactory : RouteFactory
@@ -382,27 +378,27 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			public void TestNavigatedArgs(ShellNavigationSource source, string from, string to)
 			{
-				Assert.AreEqual(source, this.LastShellNavigatedEventArgs.Source);
+				Assert.Equal(source, this.LastShellNavigatedEventArgs.Source);
 
 				if (from == null)
-					Assert.AreEqual(LastShellNavigatedEventArgs.Previous, null);
+					Assert.Equal(LastShellNavigatedEventArgs.Previous, null);
 				else
-					Assert.AreEqual(from, this.LastShellNavigatedEventArgs.Previous.Location.ToString());
+					Assert.Equal(from, this.LastShellNavigatedEventArgs.Previous.Location.ToString());
 
-				Assert.AreEqual(to, this.LastShellNavigatedEventArgs.Current.Location.ToString());
-				Assert.AreEqual(to, this.CurrentState.Location.ToString());
+				Assert.Equal(to, this.LastShellNavigatedEventArgs.Current.Location.ToString());
+				Assert.Equal(to, this.CurrentState.Location.ToString());
 			}
 
 			public void TestNavigatingArgs(ShellNavigationSource source, string from, string to)
 			{
-				Assert.AreEqual(source, this.LastShellNavigatingEventArgs.Source);
+				Assert.Equal(source, this.LastShellNavigatingEventArgs.Source);
 
 				if (from == null)
-					Assert.AreEqual(LastShellNavigatingEventArgs.Current, null);
+					Assert.Equal(LastShellNavigatingEventArgs.Current, null);
 				else
-					Assert.AreEqual(from, this.LastShellNavigatingEventArgs.Current.Location.ToString());
+					Assert.Equal(from, this.LastShellNavigatingEventArgs.Current.Location.ToString());
 
-				Assert.AreEqual(to, this.LastShellNavigatingEventArgs.Target.Location.ToString());
+				Assert.Equal(to, this.LastShellNavigatingEventArgs.Target.Location.ToString());
 			}
 
 			public Func<bool> OnBackButtonPressedFunc;
@@ -429,10 +425,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			public void TestCount(int count, string message = null)
 			{
-				Assert.AreEqual(count, OnNavigatedCount, $"OnNavigatedCount: {message}");
-				Assert.AreEqual(count, NavigatingCount, $"NavigatingCount: {message}");
-				Assert.AreEqual(count, OnNavigatingCount, $"OnNavigatingCount: {message}");
-				Assert.AreEqual(count, NavigatedCount, $"NavigatedCount: {message}");
+				Assert.Equal(count, OnNavigatedCount);
+				Assert.Equal(count, NavigatingCount);
+				Assert.Equal(count, OnNavigatingCount);
+				Assert.Equal(count, NavigatedCount);
 			}
 
 

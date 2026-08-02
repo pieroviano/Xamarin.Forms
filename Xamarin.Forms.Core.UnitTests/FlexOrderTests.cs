@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class FlexOrderTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestOrderingElements()
 		{
 			var label0 = new Label { IsPlatformEnabled = true };
@@ -35,11 +34,11 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			layout.Layout(new Rectangle(0, 0, 912, 912));
 
-			Assert.That(layout.Bounds, Is.EqualTo(new Rectangle(0, 0, 912, 912)));
-			Assert.That(label3.Bounds, Is.EqualTo(new Rectangle(0, 0, 912, 20)));
-			Assert.That(label2.Bounds, Is.EqualTo(new Rectangle(0, 20, 912, 20)));
-			Assert.That(label1.Bounds, Is.EqualTo(new Rectangle(0, 40, 912, 20)));
-			Assert.That(label0.Bounds, Is.EqualTo(new Rectangle(0, 60, 912, 20)));
+			Assert.Equal(new Rectangle(0, 0, 912, 912), layout.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 912, 20), label3.Bounds);
+			Assert.Equal(new Rectangle(0, 20, 912, 20), label2.Bounds);
+			Assert.Equal(new Rectangle(0, 40, 912, 20), label1.Bounds);
+			Assert.Equal(new Rectangle(0, 60, 912, 20), label0.Bounds);
 		}
 	}
 }

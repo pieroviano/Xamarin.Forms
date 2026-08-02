@@ -1,21 +1,18 @@
-using NUnit.Framework;
+﻿using Xunit;
+
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class MultiTriggerTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public MultiTriggerTests()
 		{
 			Device.PlatformServices = new MockPlatformServices();
-			base.Setup();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
@@ -23,7 +20,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 		}
 
-		[Test]
+		[Fact]
 		public void SettersAppliedOnAttachIfConditionIsTrue()
 		{
 			var conditionbp = BindableProperty.Create("foo", typeof(string), typeof(BindableObject), null);
@@ -43,12 +40,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			element.SetValue(setterbp, "default");
 			element.SetValue(conditionbp, "foobar");
 			element.BindingContext = new { baz = "foobaz" };
-			Assert.AreEqual("default", element.GetValue(setterbp));
+			Assert.Equal("default", element.GetValue(setterbp));
 			element.Triggers.Add(multiTrigger);
-			Assert.AreEqual("qux", element.GetValue(setterbp));
+			Assert.Equal("qux", element.GetValue(setterbp));
 		}
 
-		[Test]
+		[Fact]
 		public void SettersNotAppliedOnAttachIfOneConditionIsFalse()
 		{
 			var conditionbp = BindableProperty.Create("foo", typeof(string), typeof(BindableObject), null);
@@ -68,12 +65,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			element.SetValue(setterbp, "default");
 			element.SetValue(conditionbp, "foobar");
 			element.BindingContext = new { baz = "foobazXX" };
-			Assert.AreEqual("default", element.GetValue(setterbp));
+			Assert.Equal("default", element.GetValue(setterbp));
 			element.Triggers.Add(multiTrigger);
-			Assert.AreEqual("default", element.GetValue(setterbp));
+			Assert.Equal("default", element.GetValue(setterbp));
 		}
 
-		[Test]
+		[Fact]
 		public void SettersUnappliedOnDetach()
 		{
 			var conditionbp = BindableProperty.Create("foo", typeof(string), typeof(BindableObject), null);
@@ -93,18 +90,18 @@ namespace Xamarin.Forms.Core.UnitTests
 			element.SetValue(setterbp, "default");
 			element.BindingContext = new { baz = "" };
 			element.Triggers.Add(multiTrigger);
-			Assert.AreEqual("default", element.GetValue(setterbp)); //both conditions false
+			Assert.Equal("default", element.GetValue(setterbp)); //both conditions false
 
 			element.SetValue(conditionbp, "foobar");
-			Assert.AreEqual("default", element.GetValue(setterbp)); //one condition false
+			Assert.Equal("default", element.GetValue(setterbp)); //one condition false
 
 			element.BindingContext = new { baz = "foobaz" };
-			Assert.AreEqual("qux", element.GetValue(setterbp)); //both condition true
+			Assert.Equal("qux", element.GetValue(setterbp)); //both condition true
 			element.Triggers.Remove(multiTrigger);
-			Assert.AreEqual("default", element.GetValue(setterbp));
+			Assert.Equal("default", element.GetValue(setterbp));
 		}
 
-		[Test]
+		[Fact]
 		public void SettersAppliedAndUnappliedOnConditionsChange()
 		{
 			var conditionbp = BindableProperty.Create("foo", typeof(string), typeof(BindableObject), null);
@@ -124,29 +121,29 @@ namespace Xamarin.Forms.Core.UnitTests
 			element.SetValue(setterbp, "default");
 			element.BindingContext = new { baz = "" };
 			element.Triggers.Add(multiTrigger);
-			Assert.AreEqual("default", element.GetValue(setterbp)); //both conditions false
+			Assert.Equal("default", element.GetValue(setterbp)); //both conditions false
 
 			element.SetValue(conditionbp, "foobar");
-			Assert.AreEqual("default", element.GetValue(setterbp)); //one condition false
+			Assert.Equal("default", element.GetValue(setterbp)); //one condition false
 
 			element.BindingContext = new { baz = "foobaz" };
-			Assert.AreEqual("qux", element.GetValue(setterbp)); //both condition true
+			Assert.Equal("qux", element.GetValue(setterbp)); //both condition true
 
 			element.BindingContext = new { baz = "" };
-			Assert.AreEqual("default", element.GetValue(setterbp)); //one condition false
+			Assert.Equal("default", element.GetValue(setterbp)); //one condition false
 
 			element.BindingContext = new { baz = "foobaz" };
-			Assert.AreEqual("qux", element.GetValue(setterbp)); //both condition true
+			Assert.Equal("qux", element.GetValue(setterbp)); //both condition true
 
 			element.SetValue(conditionbp, "");
-			Assert.AreEqual("default", element.GetValue(setterbp)); //one condition false
+			Assert.Equal("default", element.GetValue(setterbp)); //one condition false
 
 			element.SetValue(conditionbp, "foobar");
-			Assert.AreEqual("qux", element.GetValue(setterbp)); //both condition true
+			Assert.Equal("qux", element.GetValue(setterbp)); //both condition true
 
 			element.SetValue(conditionbp, "");
 			element.BindingContext = new { baz = "foobaz" };
-			Assert.AreEqual("default", element.GetValue(setterbp)); //both conditions false
+			Assert.Equal("default", element.GetValue(setterbp)); //both conditions false
 		}
 	}
 }

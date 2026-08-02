@@ -1,28 +1,24 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TitleViewUnitTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public TitleViewUnitTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void BindingContextPropagatesFromParent()
 		{
 			NavigationPage navigationPage = new NavigationPage();
@@ -51,13 +47,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var model = new Model();
 			navigationPage.BindingContext = new Model();
-			Assert.AreEqual(model.Title, title.Text);
+			Assert.Equal(model.Title, title.Text);
 
 			string success = "Success";
 			page.BindingContext = new Model() { Title = success };
-			Assert.AreEqual(success, title.Text);
+			Assert.Equal(success, title.Text);
 			navigationPage.BindingContext = new Model() { Title = "Failed" };
-			Assert.AreEqual(success, title.Text);
+			Assert.Equal(success, title.Text);
 		}
 
 		public class Model

@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 
 namespace Xamarin.Forms.Core.UnitTests
@@ -22,10 +22,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 	}
 
-	[TestFixture]
 	public class LayoutUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestRaiseChild()
 		{
 			var view = new NaiveLayout();
@@ -43,14 +42,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			view.RaiseChild(child1);
 
-			Assert.AreEqual(child1, ((IElementController)view).LogicalChildren[2]);
+			Assert.Equal(child1, ((IElementController)view).LogicalChildren[2]);
 			Assert.True(reordered);
 
 			view.RaiseChild(child2);
-			Assert.AreEqual(child2, ((IElementController)view).LogicalChildren[2]);
+			Assert.Equal(child2, ((IElementController)view).LogicalChildren[2]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestRaiseUnownedChild()
 		{
 			var view = new NaiveLayout();
@@ -70,7 +69,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(reordered);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLowerChild()
 		{
 			var view = new NaiveLayout();
@@ -88,14 +87,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			view.LowerChild(child3);
 
-			Assert.AreEqual(child3, ((IElementController)view).LogicalChildren[0]);
+			Assert.Equal(child3, ((IElementController)view).LogicalChildren[0]);
 			Assert.True(reordered);
 
 			view.LowerChild(child2);
-			Assert.AreEqual(child2, ((IElementController)view).LogicalChildren[0]);
+			Assert.Equal(child2, ((IElementController)view).LogicalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestLowerUnownedChild()
 		{
 			var view = new NaiveLayout();
@@ -115,7 +114,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(reordered);
 		}
 
-		[Test]
+		[Fact]
 		public void TestAdd()
 		{
 			var view = new NaiveLayout();
@@ -127,10 +126,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			view.Children.Add(child1);
 
 			Assert.True(added);
-			Assert.AreEqual(child1, ((IElementController)view).LogicalChildren[0]);
+			Assert.Equal(child1, ((IElementController)view).LogicalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDoubleAdd()
 		{
 			var view = new NaiveLayout();
@@ -143,10 +142,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			view.Children.Add(child1);
 
 			Assert.False(added);
-			Assert.AreEqual(child1, ((IElementController)view).LogicalChildren[0]);
+			Assert.Equal(child1, ((IElementController)view).LogicalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestRemove()
 		{
 			var view = new NaiveLayout();
@@ -163,7 +162,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(((IElementController)view).LogicalChildren.Any());
 		}
 
-		[Test]
+		[Fact]
 		public void TestGenericEnumerator()
 		{
 			var view = new NaiveLayout();
@@ -180,12 +179,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			int i = 0;
 			foreach (var child in ((IElementController)view).LogicalChildren)
 			{
-				Assert.AreEqual(children[i], child);
+				Assert.Equal(children[i], child);
 				i++;
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void TestEnumerator()
 		{
 			var view = new NaiveLayout();
@@ -203,12 +202,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			var enumerator = (((IElementController)view).LogicalChildren as IEnumerable).GetEnumerator();
 			while (enumerator.MoveNext())
 			{
-				Assert.AreEqual(children[i], enumerator.Current as View);
+				Assert.Equal(children[i], enumerator.Current as View);
 				i++;
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void TestInitializerSyntax()
 		{
 			View view1, view2;
@@ -220,13 +219,13 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual(2, ((IElementController)group).LogicalChildren.Count);
-			Assert.IsTrue(((IElementController)group).LogicalChildren.Contains(view1));
-			Assert.IsTrue(((IElementController)group).LogicalChildren.Contains(view2));
-			Assert.AreEqual(view1, ((IElementController)group).LogicalChildren[0]);
+			Assert.Equal(2, ((IElementController)group).LogicalChildren.Count);
+			Assert.True(((IElementController)group).LogicalChildren.Contains(view1));
+			Assert.True(((IElementController)group).LogicalChildren.Contains(view2));
+			Assert.Equal(view1, ((IElementController)group).LogicalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestChildren()
 		{
 			View view1, view2;
@@ -238,13 +237,13 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual(2, group.Children.Count);
-			Assert.IsTrue(group.Children.Contains(view1));
-			Assert.IsTrue(group.Children.Contains(view2));
-			Assert.AreEqual(view1, group.Children[0]);
+			Assert.Equal(2, group.Children.Count);
+			Assert.True(group.Children.Contains(view1));
+			Assert.True(group.Children.Contains(view2));
+			Assert.Equal(view1, group.Children[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void TestDefaultLayout()
 		{
 			View view;
@@ -262,17 +261,17 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			group.Layout(new Rectangle(0, 0, 400, 400));
 
-			Assert.AreEqual(new Rectangle(0, 0, 50, 20), view.Bounds);
+			Assert.Equal(new Rectangle(0, 0, 50, 20), view.Bounds);
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsInvalidOperationOnSelfAdd()
 		{
 			var group = new NaiveLayout();
 			Assert.Throws<InvalidOperationException>(() => group.Children.Add(group));
 		}
 
-		[Test]
+		[Fact]
 		public void ReorderChildrenDoesNotRaiseChildAddedOrRemoved()
 		{
 			var child1 = new BoxView();
@@ -294,7 +293,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(removed);
 		}
 
-		[Test]
+		[Fact]
 		public void AddToSecondLayoutRemovesFromOriginal()
 		{
 			var child = new BoxView();

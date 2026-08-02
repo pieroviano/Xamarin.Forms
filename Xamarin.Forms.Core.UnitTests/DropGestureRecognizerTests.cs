@@ -4,17 +4,14 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DropGestureRecognizerTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public DropGestureRecognizerTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 
 			// GetStringValue/TrySetValue round-trip through the current culture, and the
@@ -23,14 +20,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void PropertySetters()
 		{
 			var dropRec = new DropGestureRecognizer() { AllowDrop = true };
@@ -43,14 +39,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			dropRec.DropCommand = cmd;
 			dropRec.DropCommandParameter = parameter;
 
-			Assert.AreEqual(true, dropRec.AllowDrop);
-			Assert.AreEqual(cmd, dropRec.DragOverCommand);
-			Assert.AreEqual(parameter, dropRec.DragOverCommandParameter);
-			Assert.AreEqual(cmd, dropRec.DropCommand);
-			Assert.AreEqual(parameter, dropRec.DropCommandParameter);
+			Assert.Equal(true, dropRec.AllowDrop);
+			Assert.Equal(cmd, dropRec.DragOverCommand);
+			Assert.Equal(parameter, dropRec.DragOverCommandParameter);
+			Assert.Equal(cmd, dropRec.DropCommand);
+			Assert.Equal(parameter, dropRec.DropCommandParameter);
 		}
 
-		[Test]
+		[Fact]
 		public void DragOverCommandFires()
 		{
 			var dropRec = new DropGestureRecognizer() { AllowDrop = true };
@@ -62,10 +58,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			dropRec.DragOverCommandParameter = parameter;
 			dropRec.SendDragOver(new DragEventArgs(new DataPackage()));
 
-			Assert.AreEqual(parameter, commandExecuted);
+			Assert.Equal(parameter, commandExecuted);
 		}
 
-		[Test]
+		[Fact]
 		public async Task DropCommandFires()
 		{
 			var dropRec = new DropGestureRecognizer() { AllowDrop = true };
@@ -77,17 +73,18 @@ namespace Xamarin.Forms.Core.UnitTests
 			dropRec.DropCommandParameter = parameter;
 			await dropRec.SendDrop(new DropEventArgs(new DataPackageView(new DataPackage())));
 
-			Assert.AreEqual(commandExecuted, parameter);
+			Assert.Equal(commandExecuted, parameter);
 		}
 
-		[TestCase(typeof(Entry), "EntryTest")]
-		[TestCase(typeof(Label), "LabelTest")]
-		[TestCase(typeof(Editor), "EditorTest")]
-		[TestCase(typeof(TimePicker), "01:00:00")]
-		[TestCase(typeof(DatePicker), "12/12/2020 12:00:00 AM")]
-		[TestCase(typeof(CheckBox), "True")]
-		[TestCase(typeof(Switch), "True")]
-		[TestCase(typeof(RadioButton), "True")]
+		[Theory]
+		[InlineData(typeof(Entry), "EntryTest")]
+		[InlineData(typeof(Label), "LabelTest")]
+		[InlineData(typeof(Editor), "EditorTest")]
+		[InlineData(typeof(TimePicker), "01:00:00")]
+		[InlineData(typeof(DatePicker), "12/12/2020 12:00:00 AM")]
+		[InlineData(typeof(CheckBox), "True")]
+		[InlineData(typeof(Switch), "True")]
+		[InlineData(typeof(RadioButton), "True")]
 		public async Task TextPackageCorrectlySetsOnCompatibleTarget(Type fieldType, string result)
 		{
 			var dropRec = new DropGestureRecognizer() { AllowDrop = true };
@@ -95,10 +92,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			element.GestureRecognizers.Add(dropRec);
 			var args = new DropEventArgs(new DataPackageView(new DataPackage() { Text = result }));
 			await dropRec.SendDrop(args);
-			Assert.AreEqual(element.GetStringValue(), result);
+			Assert.Equal(element.GetStringValue(), result);
 		}
 
-		[Test]
+		[Fact]
 		public async Task HandledTest()
 		{
 			string testString = "test String";
@@ -108,7 +105,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			var args = new DropEventArgs(new DataPackageView(new DataPackage() { Text = testString }));
 			args.Handled = true;
 			await dropTec.SendDrop(args);
-			Assert.AreNotEqual(element.Text, testString);
+			Assert.NotEqual(element.Text, testString);
 		}
 	}
 }

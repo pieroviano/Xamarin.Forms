@@ -1,9 +1,8 @@
-using System.Linq;
-using NUnit.Framework;
+﻿using System.Linq;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TabbedPageTests : MultiPageTests<Page>
 	{
 		protected override MultiPage<Page> CreateMultiPage()
@@ -21,12 +20,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			return TabbedPage.GetIndex(page);
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			TabbedPage page = new TabbedPage();
 
-			Assert.That(page.Children, Is.Empty);
+			Assert.Empty(page.Children);
 		}
 	}
 }

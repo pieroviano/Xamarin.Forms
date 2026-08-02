@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using NUnit.Framework;
 using Xamarin.Forms;
 using Xamarin.Forms.Core.UnitTests;
+using Xunit;
 
 [assembly: TestHandler(typeof(Button), typeof(ButtonTarget))]
 [assembly: TestHandler(typeof(Slider), typeof(SliderTarget))]
@@ -63,13 +63,10 @@ namespace Xamarin.Forms.Core.UnitTests
 	internal class ButtonLowerPriorityTarget : IRegisterable { }
 	internal class ButtonHigherPriorityTarget : IRegisterable { }
 
-	[TestFixture]
 	public class PriorityRegistrarTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public PriorityRegistrarTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 			Internals.Registrar.RegisterAll(new[] {
 				typeof (TestHandlerAttribute),
@@ -78,28 +75,24 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void BasicTest()
 		{
 			IRegisterable renderWithTarget = Internals.Registrar.Registered.GetHandler(typeof(ButtonPriority));
-			Assert.AreEqual(typeof(ButtonHigherPriorityTarget), renderWithTarget.GetType());
+			Assert.Equal(typeof(ButtonHigherPriorityTarget), renderWithTarget.GetType());
 		}
 	}
 
-	[TestFixture]
 	public class VisualRegistrarTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public VisualRegistrarTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 			Internals.Registrar.RegisterAll(new[] {
 				typeof (TestHandlerAttribute)
@@ -107,25 +100,24 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
 
-		[Test]
+		[Fact]
 		public void RegisteringANewDefaultShouldReplaceRenderWithAttributeForFallbackVisual()
 		{
 			Internals.Registrar.Registered.Register(typeof(RenderWith), typeof(RenderWithSetAsNewDefault));
 			var renderWithTarget = Internals.Registrar.Registered.GetHandler(typeof(RenderWith), typeof(VisualMarkerUnitTests));
 
-			Assert.That(renderWithTarget, Is.InstanceOf<RenderWithSetAsNewDefault>());
+			Assert.IsAssignableFrom<RenderWithSetAsNewDefault>(renderWithTarget);
 		}
 
 
-		[Test]
+		[Fact]
 		public void EnsureDefaultChildRendererTrumpsParentRenderWith()
 		{
 			Xamarin.Forms.Internals.Registrar.Registered.Register(typeof(RenderWithChild), typeof(RenderWithChildTarget));
@@ -133,74 +125,71 @@ namespace Xamarin.Forms.Core.UnitTests
 			IRegisterable renderWithTarget;
 
 			renderWithTarget = Internals.Registrar.Registered.GetHandler(typeof(RenderWithChild));
-			Assert.IsNotNull(renderWithTarget);
-			Assert.That(renderWithTarget, Is.InstanceOf<RenderWithChildTarget>());
+			Assert.NotNull(renderWithTarget);
+			Assert.IsAssignableFrom<RenderWithChildTarget>(renderWithTarget);
 
 			renderWithTarget = Internals.Registrar.Registered.GetHandler(typeof(RenderWithChild), typeof(RegisteredWithNobodyMarker));
-			Assert.IsNotNull(renderWithTarget);
-			Assert.That(renderWithTarget, Is.InstanceOf<RenderWithChildTarget>());
+			Assert.NotNull(renderWithTarget);
+			Assert.IsAssignableFrom<RenderWithChildTarget>(renderWithTarget);
 
 			renderWithTarget = Internals.Registrar.Registered.GetHandler(typeof(RenderWithChild), typeof(VisualMarkerUnitTests));
-			Assert.IsNotNull(renderWithTarget);
-			Assert.That(renderWithTarget, Is.InstanceOf<RenderWithChildTarget>());
+			Assert.NotNull(renderWithTarget);
+			Assert.IsAssignableFrom<RenderWithChildTarget>(renderWithTarget);
 		}
 
-		[Test]
+		[Fact]
 		public void GetButtonChildHandler()
 		{
 			var buttonTarget = Internals.Registrar.Registered.GetHandler(typeof(ButtonChild), typeof(RegisteredWithNobodyMarker));
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<ButtonChildTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<ButtonChildTarget>(buttonTarget);
 
 			buttonTarget = Internals.Registrar.Registered.GetHandler(typeof(ButtonChild), typeof(VisualMarkerUnitTests));
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<ButtonChildTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<ButtonChildTarget>(buttonTarget);
 		}
 
-		[Test]
+		[Fact]
 		public void GetButtonHandler()
 		{
 			var buttonTarget = Internals.Registrar.Registered.GetHandler(typeof(Button), typeof(VisualMarkerUnitTests));
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<VisualButtonTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<VisualButtonTarget>(buttonTarget);
 
 			buttonTarget = Internals.Registrar.Registered.GetHandler(typeof(Button));
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<ButtonTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<ButtonTarget>(buttonTarget);
 
 
 			Button button = new Button();
 			object someObject = new object();
 			buttonTarget = Internals.Registrar.Registered.GetHandler(typeof(Button), button, new VisualMarkerUnitTests(), someObject);
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<VisualButtonTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<VisualButtonTarget>(buttonTarget);
 
 			var visualButtonTarget = (VisualButtonTarget)buttonTarget;
-			Assert.AreEqual(visualButtonTarget.Param1, someObject);
-			Assert.AreEqual(visualButtonTarget.Param2, button);
+			Assert.Equal(visualButtonTarget.Param1, someObject);
+			Assert.Equal(visualButtonTarget.Param2, button);
 
 		}
 
-		[Test]
+		[Fact]
 		public void GetSliderHandler()
 		{
 			var sliderTarget = Internals.Registrar.Registered.GetHandler(typeof(Slider), typeof(VisualMarkerUnitTests));
-			Assert.IsNotNull(sliderTarget);
-			Assert.That(sliderTarget, Is.InstanceOf<VisualSliderTarget>());
+			Assert.NotNull(sliderTarget);
+			Assert.IsAssignableFrom<VisualSliderTarget>(sliderTarget);
 
 			sliderTarget = Internals.Registrar.Registered.GetHandler<SliderTarget>(typeof(Slider));
-			Assert.IsNotNull(sliderTarget);
-			Assert.That(sliderTarget, Is.InstanceOf<SliderTarget>());
+			Assert.NotNull(sliderTarget);
+			Assert.IsAssignableFrom<SliderTarget>(sliderTarget);
 		}
 	}
 
-	[TestFixture]
 	public class RegistrarTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public RegistrarTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 			Internals.Registrar.RegisterAll(new[] {
 				typeof (TestHandlerAttribute)
@@ -208,31 +197,29 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void GetButtonHandler()
 		{
 			var buttonTarget = Internals.Registrar.Registered.GetHandler<ButtonTarget>(typeof(Button));
-			Assert.IsNotNull(buttonTarget);
-			Assert.That(buttonTarget, Is.InstanceOf<ButtonTarget>());
+			Assert.NotNull(buttonTarget);
+			Assert.IsAssignableFrom<ButtonTarget>(buttonTarget);
 		}
 
-		[Test]
+		[Fact]
 		public void GetSliderHandler()
 		{
 			var sliderTarget = Internals.Registrar.Registered.GetHandler<SliderTarget>(typeof(Slider));
-			Assert.IsNotNull(sliderTarget);
-			Assert.That(sliderTarget, Is.InstanceOf<SliderTarget>());
+			Assert.NotNull(sliderTarget);
+			Assert.IsAssignableFrom<SliderTarget>(sliderTarget);
 		}
 	}
 
-	[TestFixture]
 	public class SimpleRegistrarUnitTests
 	{
 		class MockRenderer { }
@@ -247,13 +234,12 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 
-		[SetUp]
-		public void Setup()
+		public SimpleRegistrarUnitTests()
 		{
 			VisualElement.SetDefaultVisual(VisualMarker.Default);
 		}
 
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -263,7 +249,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Null(renderer);
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetRendererForKnownClass()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -272,10 +258,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var renderer = registrar.GetHandler(typeof(View));
 
-			Assert.That(renderer, Is.InstanceOf<MockRenderer>());
+			Assert.IsAssignableFrom<MockRenderer>(renderer);
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetRendererForUnknownSubclass()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -284,10 +270,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var renderer = registrar.GetHandler(typeof(Button));
 
-			Assert.That(renderer, Is.InstanceOf<MockRenderer>());
+			Assert.IsAssignableFrom<MockRenderer>(renderer);
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetRendererWithRegisteredSubclass()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -298,12 +284,12 @@ namespace Xamarin.Forms.Core.UnitTests
 			var buttonRenderer = registrar.GetHandler(typeof(Button));
 			var viewRenderer = registrar.GetHandler(typeof(View));
 
-			Assert.That(buttonRenderer, Is.InstanceOf<ButtonMockRenderer>());
-			Assert.That(viewRenderer, Is.Not.InstanceOf<ButtonMockRenderer>());
-			Assert.That(viewRenderer, Is.InstanceOf<MockRenderer>());
+			Assert.IsAssignableFrom<ButtonMockRenderer>(buttonRenderer);
+			Assert.IsNotAssignableFrom<ButtonMockRenderer>(viewRenderer);
+			Assert.IsAssignableFrom<MockRenderer>(viewRenderer);
 		}
 
-		[Test]
+		[Fact]
 		public void TestReplaceRenderer()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -314,29 +300,29 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var buttonRenderer = registrar.GetHandler(typeof(Button));
 
-			Assert.That(buttonRenderer, Is.InstanceOf<ShinyButtonMockRenderer>());
+			Assert.IsAssignableFrom<ShinyButtonMockRenderer>(buttonRenderer);
 		}
 
-		[Test]
+		[Fact]
 		public void GetHandlerType()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
 			registrar.Register(typeof(View), typeof(MockRenderer));
 
-			Assert.AreEqual(typeof(MockRenderer), registrar.GetHandlerType(typeof(View)));
+			Assert.Equal(typeof(MockRenderer), registrar.GetHandlerType(typeof(View)));
 		}
 
-		[Test]
+		[Fact]
 		public void GetHandlerTypeForObject()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
 			registrar.Register(typeof(View), typeof(MockRenderer));
 			registrar.Register(typeof(Button), typeof(ButtonMockRenderer));
 
-			Assert.AreEqual(typeof(ButtonMockRenderer), registrar.GetHandlerTypeForObject(new Button()));
+			Assert.Equal(typeof(ButtonMockRenderer), registrar.GetHandlerTypeForObject(new Button()));
 		}
 
-		[Test]
+		[Fact]
 		public void GetHandlerForObject()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -344,10 +330,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			registrar.Register(typeof(Button), typeof(ButtonMockRenderer));
 
 			var buttonRenderer = registrar.GetHandlerForObject<MockRenderer>(new Button());
-			Assert.That(buttonRenderer, Is.InstanceOf<ButtonMockRenderer>());
+			Assert.IsAssignableFrom<ButtonMockRenderer>(buttonRenderer);
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetRendererNullViewRenderer()
 		{
 			var registrar = new Internals.Registrar<MockRenderer>();
@@ -360,7 +346,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var renderer = registrar.GetHandler(typeof(View));
 
-			Assert.That(renderer, Is.InstanceOf<MockRenderer>());
+			Assert.IsAssignableFrom<MockRenderer>(renderer);
 		}
 
 	}

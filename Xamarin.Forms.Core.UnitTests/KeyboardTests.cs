@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
-	internal class KeyboardTests : BaseTestFixture
+	public class KeyboardTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void KeyboardTypesAreCorrect()
 		{
 			Assert.True(Keyboard.Chat is ChatKeyboard);
@@ -22,10 +21,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 	}
 
-	[TestFixture]
-	internal class KeyboardTypeConverterTests : BaseTestFixture
+	public class KeyboardTypeConverterTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void ConversionConvert()
 		{
 
@@ -39,10 +37,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				{"Keyboard.Telephone", Keyboard.Telephone},
 				{"Keyboard.Chat", Keyboard.Chat},
 			})
-				Assert.AreSame(kvp.Value, converter.ConvertFromInvariantString(kvp.Key));
+				Assert.Same(kvp.Value, converter.ConvertFromInvariantString(kvp.Key));
 		}
 
-		[Test]
+		[Fact]
 		public void ConversionFail()
 		{
 			var converter = new KeyboardTypeConverter();

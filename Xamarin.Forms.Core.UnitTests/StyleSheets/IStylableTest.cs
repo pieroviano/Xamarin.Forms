@@ -1,54 +1,52 @@
-using System;
+﻿using System;
 
-using NUnit.Framework;
 
 using Xamarin.Forms.Core.UnitTests;
+using Xunit;
 
 namespace Xamarin.Forms.StyleSheets.UnitTests
 {
-	[TestFixture]
 	public class IStylableTest
 	{
-		[SetUp]
-		public void SetUp()
+		public IStylableTest()
 		{
 			Device.PlatformServices = new MockPlatformServices();
 			Internals.Registrar.RegisterAll(new Type[0]);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetPropertyDefinedOnParent()
 		{
 			var label = new Label();
 			var bp = ((IStylable)label).GetProperty("background-color", false);
-			Assert.AreSame(VisualElement.BackgroundColorProperty, bp);
+			Assert.Same(VisualElement.BackgroundColorProperty, bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetPropertyDefinedOnType()
 		{
 			var label = new Label();
 			var bp = ((IStylable)label).GetProperty("color", false);
-			Assert.AreSame(Label.TextColorProperty, bp);
+			Assert.Same(Label.TextColorProperty, bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetPropertyDefinedOnType2()
 		{
 			var entry = new Entry();
 			var bp = ((IStylable)entry).GetProperty("color", false);
-			Assert.AreSame(Entry.TextColorProperty, bp);
+			Assert.Same(Entry.TextColorProperty, bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetPropertyDefinedOnType3()
 		{
 			var indicator = new ActivityIndicator();
 			var bp = ((IStylable)indicator).GetProperty("color", false);
-			Assert.AreSame(ActivityIndicator.ColorProperty, bp);
+			Assert.Same(ActivityIndicator.ColorProperty, bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetInvalidPropertyForType()
 		{
 			var grid = new Grid();
@@ -56,20 +54,20 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 			Assert.Null(bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetPropertyDefinedOnPropertyOwnerType()
 		{
 			var frame = new Frame();
 			var bp = ((IStylable)frame).GetProperty("padding-left", false);
-			Assert.That(bp, Is.SameAs(PaddingElement.PaddingLeftProperty));
+			Assert.Same(PaddingElement.PaddingLeftProperty, bp);
 		}
 
-		[TestCase]
+		[Fact]
 		public void GetNonPublicProperty()
 		{
 			var label = new Label();
 			var bp = ((IStylable)label).GetProperty("margin-right", false);
-			Assert.That(bp, Is.SameAs(View.MarginRightProperty));
+			Assert.Same(View.MarginRightProperty, bp);
 		}
 	}
 }

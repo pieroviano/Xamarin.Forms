@@ -1,25 +1,21 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
 using Xamarin.Forms;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ControlTemplateTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public ControlTemplateTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
@@ -60,7 +56,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void ResettingControlTemplateNullsPresenterContent()
 		{
 			var testView = new TestView
@@ -76,14 +72,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var originalPresenter = (ContentPresenter)child2;
 
-			Assert.AreEqual(label, originalPresenter.Content);
+			Assert.Equal(label, originalPresenter.Content);
 
 			testView.ControlTemplate = new ControlTemplate(typeof(PresenterWrapper));
 
-			Assert.IsNull(originalPresenter.Content);
+			Assert.Null(originalPresenter.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void NestedTemplateBindings()
 		{
 			var testView = new TestView();
@@ -93,13 +89,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var label = (Label)child2;
 
-			Assert.IsNull(label.Text);
+			Assert.Null(label.Text);
 
 			testView.Name = "Bar";
-			Assert.AreEqual("Bar", label.Text);
+			Assert.Equal("Bar", label.Text);
 		}
 
-		[Test]
+		[Fact]
 		public void ParentControlTemplateDoesNotClearChildTemplate()
 		{
 			var parentView = new TestView();
@@ -114,10 +110,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var childPresenter = (ContentPresenter)child2;
 
 			parentView.ControlTemplate = new ControlTemplate(typeof(ContentControl));
-			Assert.IsNotNull(childPresenter.Content);
+			Assert.NotNull(childPresenter.Content);
 		}
 
-		[Test]
+		[Fact]
 		public void NullConstructor()
 		{
 			Func<object> func = null;
@@ -169,7 +165,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void DoubleTwoWayBindingWorks()
 		{
 			var page = new TestPage();
@@ -186,7 +182,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			((IElementController)entry).SetValueFromRenderer(Entry.TextProperty, "Bar");
 			viewModel.Name = "Raz";
 
-			Assert.AreEqual("Raz", entry.Text);
+			Assert.Equal("Raz", entry.Text);
 		}
 	}
 }

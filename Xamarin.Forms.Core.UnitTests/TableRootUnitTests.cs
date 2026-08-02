@@ -1,29 +1,28 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TableRootUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Ctor()
 		{
 			const string title = "FooBar";
 			var model = new TableRoot(title);
-			Assert.AreEqual(title, model.Title);
+			Assert.Equal(title, model.Title);
 		}
 
-		[Test]
+		[Fact]
 		public void CtorInvalid()
 		{
 			Assert.Throws<ArgumentNullException>(() => new TableRoot(null));
 		}
 
-		[Test]
+		[Fact]
 		public void TestGetSections()
 		{
 			var model = new TableRoot("Name") {
@@ -39,10 +38,10 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual(2, model.Count);
+			Assert.Equal(2, model.Count);
 		}
 
-		[Test]
+		[Fact]
 		public void TestCollectionChanged()
 		{
 			var model = new TableRoot();
@@ -62,7 +61,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(changed);
 		}
 
-		[Test]
+		[Fact]
 		public void TestTree()
 		{
 			var model = new TableRoot("Name") {
@@ -78,12 +77,12 @@ namespace Xamarin.Forms.Core.UnitTests
 				}
 			};
 
-			Assert.AreEqual("Item 1.1", (model[0][0] as TextCell).Text);
-			Assert.AreEqual("Item 1.2", (model[0][1] as TextCell).Text);
-			Assert.AreEqual("Item 1.3", (model[0][2] as TextCell).Text);
-			Assert.AreEqual("Item 2.1", (model[1][0] as TextCell).Text);
-			Assert.AreEqual("Item 2.2", (model[1][1] as TextCell).Text);
-			Assert.AreEqual("Item 2.3", (model[1][2] as TextCell).Text);
+			Assert.Equal("Item 1.1", (model[0][0] as TextCell).Text);
+			Assert.Equal("Item 1.2", (model[0][1] as TextCell).Text);
+			Assert.Equal("Item 1.3", (model[0][2] as TextCell).Text);
+			Assert.Equal("Item 2.1", (model[1][0] as TextCell).Text);
+			Assert.Equal("Item 2.2", (model[1][1] as TextCell).Text);
+			Assert.Equal("Item 2.3", (model[1][2] as TextCell).Text);
 		}
 
 		//[Test]
@@ -96,8 +95,8 @@ namespace Xamarin.Forms.Core.UnitTests
 		//		second = new TableSection ()
 		//	});
 
-		//	Assert.AreEqual (first, model[0]);
-		//	Assert.AreEqual (second, model[1]);
+		//	Assert.Equal(first, model[0]);
+		//	Assert.Equal(second, model[1]);
 		//}
 	}
 }

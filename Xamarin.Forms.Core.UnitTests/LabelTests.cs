@@ -2,50 +2,45 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class LabelTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public LabelTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
-			base.TearDown();
+			base.Dispose();
 			Device.PlatformServices = null;
 		}
 
-		[Test]
+		[Fact]
 		public void TextAndAttributedTextMutuallyExclusive()
 		{
 			var label = new Label();
-			Assert.IsNull(label.Text);
-			Assert.IsNull(label.FormattedText);
+			Assert.Null(label.Text);
+			Assert.Null(label.FormattedText);
 
 			label.Text = "Foo";
-			Assert.AreEqual("Foo", label.Text);
-			Assert.IsNull(label.FormattedText);
+			Assert.Equal("Foo", label.Text);
+			Assert.Null(label.FormattedText);
 
 			var fs = new FormattedString();
 			label.FormattedText = fs;
-			Assert.IsNull(label.Text);
-			Assert.AreSame(fs, label.FormattedText);
+			Assert.Null(label.Text);
+			Assert.Same(fs, label.FormattedText);
 
 			label.Text = "Foo";
-			Assert.AreEqual("Foo", label.Text);
-			Assert.IsNull(label.FormattedText);
+			Assert.Equal("Foo", label.Text);
+			Assert.Null(label.FormattedText);
 		}
 
-		[Test]
+		[Fact]
 		public void InvalidateMeasureWhenTextChanges()
 		{
 			var label = new Label();
@@ -58,35 +53,53 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			fired = false;
 			label.Text = "Foo";
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 
 			fired = false;
 			label.TextTransform = TextTransform.Lowercase;
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 
 			fired = false;
 			label.TextTransform = TextTransform.Uppercase;
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 
 			fired = false;
 			label.TextTransform = TextTransform.None;
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 
 			var fs = new FormattedString();
 
 			fired = false;
 			label.FormattedText = fs;
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 
 			fired = false;
 			fs.Spans.Add(new Span { Text = "bar" });
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 		}
 
-		[Test]
-		public void AssignToFontStructUpdatesFontFamily(
-			[Values(NamedSize.Default, NamedSize.Large, NamedSize.Medium, NamedSize.Small, NamedSize.Micro)] NamedSize size,
-			[Values(FontAttributes.None, FontAttributes.Bold, FontAttributes.Italic, FontAttributes.Bold | FontAttributes.Italic)] FontAttributes attributes)
+		[Theory]
+		[InlineData(NamedSize.Default, FontAttributes.None)]
+		[InlineData(NamedSize.Default, FontAttributes.Bold)]
+		[InlineData(NamedSize.Default, FontAttributes.Italic)]
+		[InlineData(NamedSize.Default, FontAttributes.Bold | FontAttributes.Italic)]
+		[InlineData(NamedSize.Large, FontAttributes.None)]
+		[InlineData(NamedSize.Large, FontAttributes.Bold)]
+		[InlineData(NamedSize.Large, FontAttributes.Italic)]
+		[InlineData(NamedSize.Large, FontAttributes.Bold | FontAttributes.Italic)]
+		[InlineData(NamedSize.Medium, FontAttributes.None)]
+		[InlineData(NamedSize.Medium, FontAttributes.Bold)]
+		[InlineData(NamedSize.Medium, FontAttributes.Italic)]
+		[InlineData(NamedSize.Medium, FontAttributes.Bold | FontAttributes.Italic)]
+		[InlineData(NamedSize.Small, FontAttributes.None)]
+		[InlineData(NamedSize.Small, FontAttributes.Bold)]
+		[InlineData(NamedSize.Small, FontAttributes.Italic)]
+		[InlineData(NamedSize.Small, FontAttributes.Bold | FontAttributes.Italic)]
+		[InlineData(NamedSize.Micro, FontAttributes.None)]
+		[InlineData(NamedSize.Micro, FontAttributes.Bold)]
+		[InlineData(NamedSize.Micro, FontAttributes.Italic)]
+		[InlineData(NamedSize.Micro, FontAttributes.Bold | FontAttributes.Italic)]
+		public void AssignToFontStructUpdatesFontFamily(NamedSize size, FontAttributes attributes)
 		{
 			var label = new Label();
 			double startSize = label.FontSize;
@@ -104,59 +117,59 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			label.Font = Font.OfSize("Testing123", size).WithAttributes(attributes);
 
-			Assert.AreEqual(Device.GetNamedSize(size, typeof(Label), true), label.FontSize);
-			Assert.AreEqual(attributes, label.FontAttributes);
-			Assert.AreEqual(startSize != label.FontSize, firedSizeChanged);
-			Assert.AreEqual(startAttributes != label.FontAttributes, firedAttributesChanged);
+			Assert.Equal(Device.GetNamedSize(size, typeof(Label), true), label.FontSize);
+			Assert.Equal(attributes, label.FontAttributes);
+			Assert.Equal(startSize != label.FontSize, firedSizeChanged);
+			Assert.Equal(startAttributes != label.FontAttributes, firedAttributesChanged);
 		}
 
-		[Test]
+		[Fact]
 		public void AssignToFontFamilyUpdatesFont()
 		{
 			var label = new Label();
 
 			label.FontFamily = "CrazyFont";
-			Assert.AreEqual(label.Font, Font.OfSize("CrazyFont", label.FontSize));
+			Assert.Equal(label.Font, Font.OfSize("CrazyFont", label.FontSize));
 		}
 
-		[Test]
+		[Fact]
 		public void AssignToFontSizeUpdatesFont()
 		{
 			var label = new Label();
 
 			label.FontSize = 1000;
-			Assert.AreEqual(label.Font, Font.SystemFontOfSize(1000));
+			Assert.Equal(label.Font, Font.SystemFontOfSize(1000));
 		}
 
-		[Test]
+		[Fact]
 		public void AssignedToFontSizeUpdatesFontDouble()
 		{
 			var label = new Label();
 
 			label.FontSize = 10.7;
-			Assert.AreEqual(label.Font, Font.SystemFontOfSize(10.7));
+			Assert.Equal(label.Font, Font.SystemFontOfSize(10.7));
 		}
 
-		[Test]
+		[Fact]
 		public void AssignedToFontSizeDouble()
 		{
 			var label = new Label();
 
 			label.FontSize = 10.7;
-			Assert.AreEqual(label.FontSize, 10.7);
+			Assert.Equal(label.FontSize, 10.7);
 		}
 
 
-		[Test]
+		[Fact]
 		public void AssignToFontAttributesUpdatesFont()
 		{
 			var label = new Label();
 
 			label.FontAttributes = FontAttributes.Italic | FontAttributes.Bold;
-			Assert.AreEqual(label.Font, Font.SystemFontOfSize(label.FontSize, FontAttributes.Bold | FontAttributes.Italic));
+			Assert.Equal(label.Font, Font.SystemFontOfSize(label.FontSize, FontAttributes.Bold | FontAttributes.Italic));
 		}
 
-		[Test]
+		[Fact]
 		public void LabelResizesWhenFontChanges()
 		{
 			Device.PlatformServices = new MockPlatformServices(getNativeSizeFunc: (ve, w, h) =>
@@ -167,13 +180,13 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var label = new Label { IsPlatformEnabled = true };
 
-			Assert.AreEqual(label.Font.FontSize, label.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request.Width);
+			Assert.Equal(label.Font.FontSize, label.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request.Width);
 
 			bool fired = false;
 
 			label.MeasureInvalidated += (sender, args) =>
 			{
-				Assert.AreEqual(25, label.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request.Width);
+				Assert.Equal(25, label.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request.Width);
 				fired = true;
 			};
 
@@ -183,52 +196,52 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void FontSizeConverterTests()
 		{
 			var converter = new FontSizeConverter();
-			Assert.AreEqual(12, converter.ConvertFromInvariantString("12"));
-			Assert.AreEqual(10.7, converter.ConvertFromInvariantString("10.7"));
+			Assert.Equal(12, converter.ConvertFromInvariantString("12"));
+			Assert.Equal(10.7, converter.ConvertFromInvariantString("10.7"));
 		}
 
-		[Test]
+		[Fact]
 		public void FontSizeCanBeSetFromStyle()
 		{
 			var label = new Label();
 
-			Assert.AreEqual(10.0, label.FontSize);
+			Assert.Equal(10.0, label.FontSize);
 
 			label.SetValue(Label.FontSizeProperty, 1.0, true);
-			Assert.AreEqual(1.0, label.FontSize);
+			Assert.Equal(1.0, label.FontSize);
 		}
 
-		[Test]
+		[Fact]
 		public void ManuallySetFontSizeNotOverridenByStyle()
 		{
 			var label = new Label();
-			Assume.That(label.FontSize, Is.EqualTo(10.0));
+			Assert.Equal(10.0, label.FontSize);
 
 			label.SetValue(Label.FontSizeProperty, 2.0, false);
-			Assert.AreEqual(2.0, label.FontSize);
+			Assert.Equal(2.0, label.FontSize);
 
 			label.SetValue(Label.FontSizeProperty, 1.0, true);
-			Assert.AreEqual(2.0, label.FontSize);
+			Assert.Equal(2.0, label.FontSize);
 		}
 
-		[Test]
+		[Fact]
 		public void ManuallySetFontSizeNotOverridenByFontSetInStyle()
 		{
 			var label = new Label();
-			Assume.That(label.FontSize, Is.EqualTo(10.0));
+			Assert.Equal(10.0, label.FontSize);
 
 			label.SetValue(Label.FontSizeProperty, 2.0);
-			Assert.AreEqual(2.0, label.FontSize);
+			Assert.Equal(2.0, label.FontSize);
 
 			label.SetValue(Label.FontProperty, Font.SystemFontOfSize(1.0), fromStyle: true);
-			Assert.AreEqual(2.0, label.FontSize);
+			Assert.Equal(2.0, label.FontSize);
 		}
 
-		[Test]
+		[Fact]
 		public void ChangingHorizontalTextAlignmentFiresXAlignChanged()
 		{
 			var label = new Label() { HorizontalTextAlignment = TextAlignment.Center };
@@ -254,7 +267,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(horizontalTextAlignmentFired);
 		}
 
-		[Test]
+		[Fact]
 		public void ChangingVerticalTextAlignmentFiresYAlignChanged()
 		{
 			var label = new Label() { VerticalTextAlignment = TextAlignment.Center };
@@ -280,7 +293,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(verticalTextAlignmentFired);
 		}
 
-		[Test]
+		[Fact]
 		public void EntryCellXAlignBindingMatchesHorizontalTextAlignmentBinding()
 		{
 			var vm = new ViewModel();
@@ -292,16 +305,16 @@ namespace Xamarin.Forms.Core.UnitTests
 			var labelHorizontalTextAlignment = new Label() { BindingContext = vm };
 			labelHorizontalTextAlignment.SetBinding(Label.HorizontalTextAlignmentProperty, new Binding("HorizontalAlignment"));
 
-			Assert.AreEqual(TextAlignment.Center, labelXAlign.XAlign);
-			Assert.AreEqual(TextAlignment.Center, labelHorizontalTextAlignment.HorizontalTextAlignment);
+			Assert.Equal(TextAlignment.Center, labelXAlign.XAlign);
+			Assert.Equal(TextAlignment.Center, labelHorizontalTextAlignment.HorizontalTextAlignment);
 
 			vm.HorizontalAlignment = TextAlignment.End;
 
-			Assert.AreEqual(TextAlignment.End, labelXAlign.XAlign);
-			Assert.AreEqual(TextAlignment.End, labelHorizontalTextAlignment.HorizontalTextAlignment);
+			Assert.Equal(TextAlignment.End, labelXAlign.XAlign);
+			Assert.Equal(TextAlignment.End, labelHorizontalTextAlignment.HorizontalTextAlignment);
 		}
 
-		[Test]
+		[Fact]
 		public void EntryCellYAlignBindingMatchesVerticalTextAlignmentBinding()
 		{
 			var vm = new ViewModel();
@@ -313,13 +326,13 @@ namespace Xamarin.Forms.Core.UnitTests
 			var labelVerticalTextAlignment = new Label() { BindingContext = vm };
 			labelVerticalTextAlignment.SetBinding(Label.VerticalTextAlignmentProperty, new Binding("VerticalAlignment"));
 
-			Assert.AreEqual(TextAlignment.Center, labelYAlign.YAlign);
-			Assert.AreEqual(TextAlignment.Center, labelVerticalTextAlignment.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.Center, labelYAlign.YAlign);
+			Assert.Equal(TextAlignment.Center, labelVerticalTextAlignment.VerticalTextAlignment);
 
 			vm.VerticalAlignment = TextAlignment.End;
 
-			Assert.AreEqual(TextAlignment.End, labelYAlign.YAlign);
-			Assert.AreEqual(TextAlignment.End, labelVerticalTextAlignment.VerticalTextAlignment);
+			Assert.Equal(TextAlignment.End, labelYAlign.YAlign);
+			Assert.Equal(TextAlignment.End, labelVerticalTextAlignment.VerticalTextAlignment);
 		}
 
 		sealed class ViewModel : INotifyPropertyChanged

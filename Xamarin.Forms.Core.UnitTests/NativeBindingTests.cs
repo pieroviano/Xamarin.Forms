@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
@@ -187,11 +187,9 @@ namespace Xamarin.Forms.Core.UnitTests
 		public event PropertyChangedEventHandler PropertyChanged;
 	}
 
-	[TestFixture]
 	public class NativeBindingTests
 	{
-		[SetUp]
-		public void SetUp()
+		public NativeBindingTests()
 		{
 			Device.PlatformServices = new MockPlatformServices();
 
@@ -199,24 +197,24 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.Collect();
 		}
 
-		[Test]
+		[Fact]
 		public void SetOneWayBinding()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 
 			nativeView.SetBinding("Foo", new Binding("FFoo", mode: BindingMode.OneWay));
 			nativeView.SetBinding("Bar", new Binding("BBar", mode: BindingMode.OneWay));
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 
 			nativeView.SetBindingContext(new { FFoo = "Foo", BBar = 42 });
-			Assert.AreEqual("Foo", nativeView.Foo);
-			Assert.AreEqual(42, nativeView.Bar);
+			Assert.Equal("Foo", nativeView.Foo);
+			Assert.Equal(42, nativeView.Bar);
 		}
 
-		[Test]
+		[Fact]
 		public void AttachedPropertiesAreTransferredFromTheBackpack()
 		{
 			var nativeView = new MockNativeView();
@@ -225,91 +223,91 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var view = nativeView.ToView();
 			view.BindingContext = new { foo = 42 };
-			Assert.AreEqual(3, view.GetValue(Grid.ColumnProperty));
-			Assert.AreEqual(42, view.GetValue(Grid.RowProperty));
+			Assert.Equal(3, view.GetValue(Grid.ColumnProperty));
+			Assert.Equal(42, view.GetValue(Grid.RowProperty));
 		}
 
-		[Test]
+		[Fact]
 		public void Set2WayBindings()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 
 			var vm = new MockVMForNativeBinding();
 			nativeView.SetBindingContext(vm);
 			var inpc = new MockINPC();
 			nativeView.SetBinding("Foo", new Binding("FFoo", mode: BindingMode.TwoWay), inpc);
 			nativeView.SetBinding("Bar", new Binding("BBar", mode: BindingMode.TwoWay), inpc);
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
-			Assert.AreEqual(null, vm.FFoo);
-			Assert.AreEqual(0, vm.BBar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
+			Assert.Equal(null, vm.FFoo);
+			Assert.Equal(0, vm.BBar);
 
 			nativeView.Foo = "oof";
 			inpc.FireINPC(nativeView, "Foo");
 			nativeView.Bar = -42;
 			inpc.FireINPC(nativeView, "Bar");
-			Assert.AreEqual("oof", nativeView.Foo);
-			Assert.AreEqual(-42, nativeView.Bar);
-			Assert.AreEqual("oof", vm.FFoo);
-			Assert.AreEqual(-42, vm.BBar);
+			Assert.Equal("oof", nativeView.Foo);
+			Assert.Equal(-42, nativeView.Bar);
+			Assert.Equal("oof", vm.FFoo);
+			Assert.Equal(-42, vm.BBar);
 
 			vm.FFoo = "foo";
 			vm.BBar = 42;
-			Assert.AreEqual("foo", nativeView.Foo);
-			Assert.AreEqual(42, nativeView.Bar);
-			Assert.AreEqual("foo", vm.FFoo);
-			Assert.AreEqual(42, vm.BBar);
+			Assert.Equal("foo", nativeView.Foo);
+			Assert.Equal(42, nativeView.Bar);
+			Assert.Equal("foo", vm.FFoo);
+			Assert.Equal(42, vm.BBar);
 		}
 
-		[Test]
+		[Fact]
 		public void Set2WayBindingsWithUpdateSourceEvent()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Baz);
+			Assert.Equal(null, nativeView.Baz);
 
 			var vm = new MockVMForNativeBinding();
 			nativeView.SetBindingContext(vm);
 
 			nativeView.SetBinding("Baz", new Binding("FFoo", mode: BindingMode.TwoWay), "BazChanged");
-			Assert.AreEqual(null, nativeView.Baz);
-			Assert.AreEqual(null, vm.FFoo);
+			Assert.Equal(null, nativeView.Baz);
+			Assert.Equal(null, vm.FFoo);
 
 			nativeView.Baz = "oof";
 			nativeView.FireBazChanged();
-			Assert.AreEqual("oof", nativeView.Baz);
-			Assert.AreEqual("oof", vm.FFoo);
+			Assert.Equal("oof", nativeView.Baz);
+			Assert.Equal("oof", vm.FFoo);
 
 			vm.FFoo = "foo";
-			Assert.AreEqual("foo", nativeView.Baz);
-			Assert.AreEqual("foo", vm.FFoo);
+			Assert.Equal("foo", nativeView.Baz);
+			Assert.Equal("foo", vm.FFoo);
 		}
 
-		[Test]
+		[Fact]
 		public void Set2WayBindingsWithUpdateSourceEventInBindingObject()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Baz);
+			Assert.Equal(null, nativeView.Baz);
 
 			var vm = new MockVMForNativeBinding();
 			nativeView.SetBindingContext(vm);
 
 			nativeView.SetBinding("Baz", new Binding("FFoo", mode: BindingMode.TwoWay) { UpdateSourceEventName = "BazChanged" });
-			Assert.AreEqual(null, nativeView.Baz);
-			Assert.AreEqual(null, vm.FFoo);
+			Assert.Equal(null, nativeView.Baz);
+			Assert.Equal(null, vm.FFoo);
 
 			nativeView.Baz = "oof";
 			nativeView.FireBazChanged();
-			Assert.AreEqual("oof", nativeView.Baz);
-			Assert.AreEqual("oof", vm.FFoo);
+			Assert.Equal("oof", nativeView.Baz);
+			Assert.Equal("oof", vm.FFoo);
 
 			vm.FFoo = "foo";
-			Assert.AreEqual("foo", nativeView.Baz);
-			Assert.AreEqual("foo", vm.FFoo);
+			Assert.Equal("foo", nativeView.Baz);
+			Assert.Equal("foo", vm.FFoo);
 		}
 
-		[Test]
+		[Fact]
 		public void NativeViewsAreCollected()
 		{
 			WeakReference wr = null;
@@ -342,7 +340,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(wr.IsAlive);
 		}
 
-		[Test]
+		[Fact]
 		public void ProxiesAreCollected()
 		{
 			WeakReference wr = null;
@@ -378,7 +376,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(wr.IsAlive);
 		}
 
-		[Test]
+		[Fact]
 		public void SetBindingContextToSubviews()
 		{
 			var nativeView = new MockNativeView { SubViews = new List<MockNativeView>() };
@@ -392,64 +390,64 @@ namespace Xamarin.Forms.Core.UnitTests
 			var vm = new MockVMForNativeBinding();
 			nativeView.SetBindingContext(vm, v => v.SubViews);
 
-			Assert.AreEqual(null, nativeViewChild.Foo);
-			Assert.AreEqual(0, nativeViewChild.Bar);
+			Assert.Equal(null, nativeViewChild.Foo);
+			Assert.Equal(0, nativeViewChild.Bar);
 
 			nativeView.SetBindingContext(new { FFoo = "Foo", BBar = 42 }, v => v.SubViews);
-			Assert.AreEqual("Foo", nativeViewChild.Foo);
-			Assert.AreEqual(42, nativeViewChild.Bar);
+			Assert.Equal("Foo", nativeViewChild.Foo);
+			Assert.Equal(42, nativeViewChild.Bar);
 		}
 
-		[Test]
+		[Fact]
 		public void TestConverterDoesNotThrow()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 			var vm = new MockVMForNativeBinding();
 			var converter = new MockCustomColorConverter();
 			nativeView.SetBinding("SelectedColor", new Binding("CColor", converter: converter));
-			Assert.DoesNotThrow(() => nativeView.SetBindingContext(vm));
+			AssertEx.DoesNotThrow(() => nativeView.SetBindingContext(vm));
 		}
 
-		[Test]
+		[Fact]
 		public void TestConverterWorks()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 			var vm = new MockVMForNativeBinding();
 			vm.CColor = Color.Red;
 			var converter = new MockCustomColorConverter();
 			nativeView.SetBinding("SelectedColor", new Binding("CColor", converter: converter));
 			nativeView.SetBindingContext(vm);
-			Assert.AreEqual(vm.CColor, nativeView.SelectedColor.FormsColor);
+			Assert.Equal(vm.CColor, nativeView.SelectedColor.FormsColor);
 		}
 
-		[Test]
+		[Fact]
 		public void TestConverter2WayWorks()
 		{
 			var nativeView = new MockNativeView();
-			Assert.AreEqual(null, nativeView.Foo);
-			Assert.AreEqual(0, nativeView.Bar);
+			Assert.Equal(null, nativeView.Foo);
+			Assert.Equal(0, nativeView.Bar);
 			var inpc = new MockINPC();
 			var vm = new MockVMForNativeBinding();
 			vm.CColor = Color.Red;
 			var converter = new MockCustomColorConverter();
 			nativeView.SetBinding("SelectedColor", new Binding("CColor", BindingMode.TwoWay, converter), inpc);
 			nativeView.SetBindingContext(vm);
-			Assert.AreEqual(vm.CColor, nativeView.SelectedColor.FormsColor);
+			Assert.Equal(vm.CColor, nativeView.SelectedColor.FormsColor);
 
 			var newFormsColor = Color.Blue;
 			var newColor = new MockNativeColor(newFormsColor);
 			nativeView.SelectedColor = newColor;
 			inpc.FireINPC(nativeView, nameof(nativeView.SelectedColor));
 
-			Assert.AreEqual(newFormsColor, vm.CColor);
+			Assert.Equal(newFormsColor, vm.CColor);
 
 		}
 
-		[Test]
+		[Fact]
 		public void Binding2WayWithConvertersDoNotLoop()
 		{
 			var nativeView = new MockNativeView();
@@ -466,10 +464,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			nativeView.SetBinding("SelectedColor", new Binding("CColor", BindingMode.TwoWay, new MockCustomColorConverter()), "SelectedColorChanged");
 			nativeView.SetBindingContext(vm);
 
-			Assert.AreEqual(count, 1);
+			Assert.Equal(count, 1);
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsOnMissingProperty()
 		{
 			var nativeView = new MockNativeView();
@@ -477,24 +475,24 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<InvalidOperationException>(() => nativeView.SetBindingContext(new { Foo = 42 }));
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowsOnMissingEvent()
 		{
 			var nativeView = new MockNativeView();
 			Assert.Throws<ArgumentException>(() => nativeView.SetBinding("Foo", new Binding("Foo", BindingMode.TwoWay), "missingEvent"));
 		}
 
-		[Test]
+		[Fact]
 		public void OneWayToSourceAppliedOnSetBC()
 		{
 			var nativeView = new MockNativeView { Foo = "foobar" };
 			nativeView.SetBinding("Foo", new Binding("FFoo", BindingMode.OneWayToSource));
 			var vm = new MockVMForNativeBinding { FFoo = "qux" };
 			nativeView.SetBindingContext(vm);
-			Assert.AreEqual("foobar", vm.FFoo);
+			Assert.Equal("foobar", vm.FFoo);
 		}
 
-		[Test]
+		[Fact]
 		public void DoNotApplyNull()
 		{
 			var native = new MockNativeView();
@@ -502,7 +500,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			native.SetBinding("CantBeNull", new Binding("FFoo", BindingMode.TwoWay));
 			Assert.NotNull(native.CantBeNull);
 			native.SetBindingContext(new { FFoo = "foo" });
-			Assert.AreEqual("foo", native.CantBeNull);
+			Assert.Equal("foo", native.CantBeNull);
 		}
 	}
 }

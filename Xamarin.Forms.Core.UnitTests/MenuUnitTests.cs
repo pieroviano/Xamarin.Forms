@@ -3,38 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class MenuUnitTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public MenuUnitTests()
 		{
-			base.Setup();
 			Device.PlatformServices = new MockPlatformServices();
 			Application.Current = new MockApplication();
 		}
 
-		[TearDown]
-		public override void TearDown()
+		public override void Dispose()
 		{
 			Application.Current = null;
 		}
 
-		[Test]
+		[Fact]
 		public void SetMenuOnMenuItem()
 		{
 			var item = new MenuItem();
 			var menu = new Menu { Text = "Hello" };
 			MenuItem.SetMenu(item, menu);
 
-			Assert.AreEqual(menu, MenuItem.GetMenu(item));
+			Assert.Equal(menu, MenuItem.GetMenu(item));
 		}
 
-		[Test]
+		[Fact]
 		public void AddSubMenuOnMenu()
 		{
 			var item = new MenuItem();
@@ -44,30 +40,30 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MenuItem.SetMenu(item, menu);
 
-			Assert.AreEqual(MenuItem.GetMenu(item), menu);
-			Assert.AreEqual(MenuItem.GetMenu(item)[0], submenu);
-			Assert.AreEqual(MenuItem.GetMenu(item)[0].Text, submenu.Text);
+			Assert.Equal(MenuItem.GetMenu(item), menu);
+			Assert.Equal(MenuItem.GetMenu(item)[0], submenu);
+			Assert.Equal(MenuItem.GetMenu(item)[0].Text, submenu.Text);
 		}
 
-		[Test]
+		[Fact]
 		public void SetMenuOnApplicationMainMenu()
 		{
 			var item = new MenuItem();
 			var menu = new Menu { Text = "Hello" };
 			Element.SetMenu(Application.Current, menu);
-			Assert.GreaterOrEqual(1, Element.GetMenu(Application.Current).Count);
+			Assert.True(1 >= Element.GetMenu(Application.Current).Count);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuText()
 		{
 			string text = "hello";
 			var menu = new Menu { Text = text };
 
-			Assert.AreEqual(text, menu.Text);
+			Assert.Equal(text, menu.Text);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuInvalidateFiresPropertyChanged()
 		{
 			string text = "hello";
@@ -81,10 +77,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			menu.Invalidate();
 
-			Assert.AreEqual(1, count);
+			Assert.Equal(1, count);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuInvalidateWorksOnAdd()
 		{
 			string text = "hello";
@@ -98,10 +94,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			menu.Add(new Menu());
 
-			Assert.AreEqual(1, count);
+			Assert.Equal(1, count);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuInvalidateWorksOnClear()
 		{
 			string text = "hello";
@@ -116,10 +112,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			menu.Add(new Menu());
 			menu.Clear();
 
-			Assert.AreEqual(2, count);
+			Assert.Equal(2, count);
 		}
 
-		[Test]
+		[Fact]
 		public void MenuInvalidateWorksOnInsertAndRemove()
 		{
 			string text = "hello";
@@ -133,15 +129,15 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			menu.Insert(0, new Menu());
 
-			Assert.AreEqual(1, count);
+			Assert.Equal(1, count);
 
 			menu.RemoveAt(0);
 
-			Assert.AreEqual(2, count);
+			Assert.Equal(2, count);
 		}
 
 
-		[Test]
+		[Fact]
 		public void MenuFiresPropertyChangedOnAddItems()
 		{
 			string text = "hello";
@@ -154,7 +150,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			menu.Items.Add(new MenuItem());
-			Assert.AreEqual(1, count);
+			Assert.Equal(1, count);
 		}
 
 	}

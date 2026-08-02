@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
-using NUnit.Framework;
 using Xamarin.Forms.Xaml;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class TemplatedViewUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TemplatedView_should_have_the_InternalChildren_correctly_when_ControlTemplate_changed()
 		{
 			var sut = new TemplatedView();
@@ -18,24 +17,24 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			sut.ControlTemplate = new ControlTemplate(typeof(ExpectedView));
 
-			Assert.AreEqual(1, internalChildren.Count);
-			Assert.IsInstanceOf<ExpectedView>(internalChildren[0]);
+			Assert.Equal(1, internalChildren.Count);
+			Assert.IsAssignableFrom<ExpectedView>(internalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void ShouldHaveTemplatedRootSet()
 		{
 			var tv = new TemplatedView();
 			var ct = (IControlTemplated)tv;
-			Assert.AreEqual(ct.TemplateRoot, null);
+			Assert.Equal(ct.TemplateRoot, null);
 
 			tv.ControlTemplate = new ControlTemplate(typeof(ExpectedView));
 
 			IList<Element> internalChildren = ct.InternalChildren;
-			Assert.AreEqual(ct.TemplateRoot, internalChildren[0]);
+			Assert.Equal(ct.TemplateRoot, internalChildren[0]);
 		}
 
-		[Test]
+		[Fact]
 		public void GetContentViewTemplateChildShouldWork()
 		{
 			var xaml = @"<ContentView
@@ -53,10 +52,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			contentView.LoadFromXaml(xaml);
 
 			IList<Element> internalChildren = contentView.InternalChildren;
-			Assert.AreEqual(internalChildren[0], contentView.TemplateChildObtained);
+			Assert.Equal(internalChildren[0], contentView.TemplateChildObtained);
 		}
 
-		[Test]
+		[Fact]
 		public void GetContentPageTemplateChildShouldWork()
 		{
 			var xaml = @"<ContentPage
@@ -74,10 +73,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			contentPage.LoadFromXaml(xaml);
 
 			IList<Element> internalChildren = contentPage.InternalChildren;
-			Assert.AreEqual(internalChildren[0], contentPage.TemplateChildObtained);
+			Assert.Equal(internalChildren[0], contentPage.TemplateChildObtained);
 		}
 
-		[Test]
+		[Fact]
 		public void OnContentViewApplyTemplateShouldBeCalled()
 		{
 			var xaml = @"<ContentView
@@ -93,10 +92,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var contentView = new MyTestContentView();
 			contentView.LoadFromXaml(xaml);
-			Assert.IsTrue(contentView.WasOnApplyTemplateCalled);
+			Assert.True(contentView.WasOnApplyTemplateCalled);
 		}
 
-		[Test]
+		[Fact]
 		public void OnContentPageApplyTemplateShouldBeCalled()
 		{
 			var xaml = @"<ContentPage
@@ -112,7 +111,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			var contentPage = new MyTestContentPage();
 			contentPage.LoadFromXaml(xaml);
-			Assert.IsTrue(contentPage.WasOnApplyTemplateCalled);
+			Assert.True(contentPage.WasOnApplyTemplateCalled);
 		}
 
 		private class ExpectedView : View
@@ -130,7 +129,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void BindingsShouldBeAppliedOnTemplateChange()
 		{
 			var template0 = new ControlTemplate(typeof(MyTemplate));
@@ -144,9 +143,9 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 			cv.BindingContext = "Foo";
 
-			Assume.That(label.Text, Is.EqualTo("Foo"));
+			Assert.Equal("Foo", label.Text);
 			cv.ControlTemplate = template1;
-			Assert.That(label.Text, Is.EqualTo("Foo"));
+			Assert.Equal("Foo", label.Text);
 		}
 	}
 

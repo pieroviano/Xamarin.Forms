@@ -1,23 +1,22 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
-using NUnit.Framework;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class CheckBoxUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestConstructor()
 		{
 			var checkBox = new CheckBox();
 
-			Assert.IsFalse(checkBox.IsChecked);
+			Assert.False(checkBox.IsChecked);
 		}
 
-		[Test]
+		[Fact]
 		public void TestOnEvent()
 		{
 			var checkBox = new CheckBox();
@@ -27,10 +26,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			checkBox.IsChecked = true;
 
-			Assert.IsTrue(fired);
+			Assert.True(fired);
 		}
 
-		[Test]
+		[Fact]
 		public void TestOnEventNotDoubleFired()
 		{
 			var checkBox = new CheckBox();
@@ -41,7 +40,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			checkBox.CheckedChanged += (sender, args) => fired = true;
 			checkBox.IsChecked = true;
 
-			Assert.IsFalse(fired);
+			Assert.False(fired);
 		}
 	}
 

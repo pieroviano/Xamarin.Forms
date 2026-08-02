@@ -1,12 +1,11 @@
-using NUnit.Framework;
-using Xamarin.Forms.Maps;
+﻿using Xamarin.Forms.Maps;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class PinTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void Constructor()
 		{
 			Pin pin = new Pin
@@ -17,14 +16,14 @@ namespace Xamarin.Forms.Core.UnitTests
 				Address = "123 Hello World Street"
 			};
 
-			Assert.AreEqual(pin.Type, PinType.SavedPin);
-			Assert.AreEqual(pin.Position.Latitude, -90);
-			Assert.AreEqual(pin.Label, "My Desktop");
-			Assert.AreEqual(pin.Address, "123 Hello World Street");
+			Assert.Equal(pin.Type, PinType.SavedPin);
+			Assert.Equal(pin.Position.Latitude, -90);
+			Assert.Equal(pin.Label, "My Desktop");
+			Assert.Equal(pin.Address, "123 Hello World Street");
 		}
 
-		[Test]
-		public void Equals()
+		[Fact]
+		public void EqualsTest()
 		{
 			Pin pin1 = new Pin();
 			Pin pin2 = new Pin();
@@ -49,7 +48,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.False(pin1.Equals(pin3));
 		}
 
-		[Test]
+		[Fact]
 		public void EqualsOp()
 		{
 			var pin1 = new Pin
@@ -71,7 +70,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(pin1 == pin2);
 		}
 
-		[Test]
+		[Fact]
 		public void InEqualsOp()
 		{
 			var pin1 = new Pin
@@ -93,7 +92,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(pin1 != pin2);
 		}
 
-		[Test]
+		[Fact]
 		public void Label()
 		{
 			var pin = new Pin

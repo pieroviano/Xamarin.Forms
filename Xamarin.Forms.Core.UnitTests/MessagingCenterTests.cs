@@ -1,15 +1,14 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class MessagingCenterTests : BaseTestFixture
 	{
 		TestSubcriber _subscriber;
 
-		[Test]
+		[Fact]
 		public void SingleSubscriber()
 		{
 			string sentMessage = null;
@@ -17,12 +16,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest", "My Message");
 
-			Assert.That(sentMessage, Is.EqualTo("My Message"));
+			Assert.Equal("My Message", sentMessage);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests, string>(this, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void Filter()
 		{
 			string sentMessage = null;
@@ -30,16 +29,16 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(new MessagingCenterTests(), "SimpleTest", "My Message");
 
-			Assert.That(sentMessage, Is.Null);
+			Assert.Null(sentMessage);
 
 			MessagingCenter.Send(this, "SimpleTest", "My Message");
 
-			Assert.That(sentMessage, Is.EqualTo("My Message"));
+			Assert.Equal("My Message", sentMessage);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests, string>(this, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void MultiSubscriber()
 		{
 			var sub1 = new object();
@@ -51,14 +50,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest", "My Message");
 
-			Assert.That(sentMessage1, Is.EqualTo("My Message"));
-			Assert.That(sentMessage2, Is.EqualTo("My Message"));
+			Assert.Equal("My Message", sentMessage1);
+			Assert.Equal("My Message", sentMessage2);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests, string>(sub1, "SimpleTest");
 			MessagingCenter.Unsubscribe<MessagingCenterTests, string>(sub2, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void Unsubscribe()
 		{
 			string sentMessage = null;
@@ -67,16 +66,16 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest", "My Message");
 
-			Assert.That(sentMessage, Is.EqualTo(null));
+			Assert.Equal(null, sentMessage);
 		}
 
-		[Test]
+		[Fact]
 		public void SendWithoutSubscribers()
 		{
-			Assert.DoesNotThrow(() => MessagingCenter.Send(this, "SimpleTest", "My Message"));
+			AssertEx.DoesNotThrow(() => MessagingCenter.Send(this, "SimpleTest", "My Message"));
 		}
 
-		[Test]
+		[Fact]
 		public void NoArgSingleSubscriber()
 		{
 			bool sentMessage = false;
@@ -84,12 +83,12 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest");
 
-			Assert.That(sentMessage, Is.True);
+			Assert.True(sentMessage);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests>(this, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void NoArgFilter()
 		{
 			bool sentMessage = false;
@@ -97,16 +96,16 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(new MessagingCenterTests(), "SimpleTest");
 
-			Assert.That(sentMessage, Is.False);
+			Assert.False(sentMessage);
 
 			MessagingCenter.Send(this, "SimpleTest");
 
-			Assert.That(sentMessage, Is.True);
+			Assert.True(sentMessage);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests>(this, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void NoArgMultiSubscriber()
 		{
 			var sub1 = new object();
@@ -118,14 +117,14 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest");
 
-			Assert.That(sentMessage1, Is.True);
-			Assert.That(sentMessage2, Is.True);
+			Assert.True(sentMessage1);
+			Assert.True(sentMessage2);
 
 			MessagingCenter.Unsubscribe<MessagingCenterTests>(sub1, "SimpleTest");
 			MessagingCenter.Unsubscribe<MessagingCenterTests>(sub2, "SimpleTest");
 		}
 
-		[Test]
+		[Fact]
 		public void NoArgUnsubscribe()
 		{
 			bool sentMessage = false;
@@ -134,16 +133,16 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest", "My Message");
 
-			Assert.That(sentMessage, Is.False);
+			Assert.False(sentMessage);
 		}
 
-		[Test]
+		[Fact]
 		public void NoArgSendWithoutSubscribers()
 		{
-			Assert.DoesNotThrow(() => MessagingCenter.Send(this, "SimpleTest"));
+			AssertEx.DoesNotThrow(() => MessagingCenter.Send(this, "SimpleTest"));
 		}
 
-		[Test]
+		[Fact]
 		public void ThrowOnNullArgs()
 		{
 			Assert.Throws<ArgumentNullException>(() => MessagingCenter.Subscribe<MessagingCenterTests, string>(null, "Foo", (sender, args) => { }));
@@ -167,7 +166,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.Throws<ArgumentNullException>(() => MessagingCenter.Unsubscribe<MessagingCenterTests, string>(this, null));
 		}
 
-		[Test]
+		[Fact]
 		public void UnsubscribeInCallback()
 		{
 			int messageCount = 0;
@@ -189,10 +188,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			MessagingCenter.Send(this, "SimpleTest");
 
-			Assert.AreEqual(1, messageCount);
+			Assert.Equal(1, messageCount);
 		}
 
-		[Test]
+		[Fact]
 		public void SubscriberShouldBeCollected()
 		{
 			new Action(() =>
@@ -208,7 +207,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			pub.Test(); // Assert.Fail() shouldn't be called, because the TestSubcriber object should have ben GCed
 		}
 
-		[Test]
+		[Fact]
 		public void ShouldBeCollectedIfCallbackTargetIsSubscriber()
 		{
 			WeakReference wr = null;
@@ -228,10 +227,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var pub = new TestPublisher();
 			pub.Test();
 
-			Assert.IsFalse(wr.IsAlive); // The Action target and subscriber were the same object, so both could be collected
+			Assert.False(wr.IsAlive); // The Action target and subscriber were the same object, so both could be collected
 		}
 
-		[Test]
+		[Fact]
 		public void NotCollectedIfSubscriberIsNotTheCallbackTarget()
 		{
 			WeakReference wr = null;
@@ -250,15 +249,15 @@ namespace Xamarin.Forms.Core.UnitTests
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 
-			Assert.IsTrue(wr.IsAlive); // The closure in Subscribe should be keeping the subscriber alive
-			Assert.IsNotNull(wr.Target as TestSubcriber);
+			Assert.True(wr.IsAlive); // The closure in Subscribe should be keeping the subscriber alive
+			Assert.NotNull(wr.Target as TestSubcriber);
 
-			Assert.IsFalse(((TestSubcriber)wr.Target).Successful);
+			Assert.False(((TestSubcriber)wr.Target).Successful);
 
 			var pub = new TestPublisher();
 			pub.Test();
 
-			Assert.IsTrue(((TestSubcriber)wr.Target).Successful);  // Since it's still alive, the subscriber should still have received the message and updated the property
+			Assert.True(((TestSubcriber)wr.Target).Successful);  // Since it's still alive, the subscriber should still have received the message and updated the property
 		}
 
 		// Touching wr.Target from the test method itself would spill the subscriber into a temp
@@ -267,12 +266,12 @@ namespace Xamarin.Forms.Core.UnitTests
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		static void AssertSubscriberAliveThenUnsubscribe(WeakReference wr)
 		{
-			Assert.IsNotNull(wr.Target as TestSubcriber);
+			Assert.NotNull(wr.Target as TestSubcriber);
 
 			MessagingCenter.Unsubscribe<TestPublisher>(wr.Target, "test");
 		}
 
-		[Test]
+		[Fact]
 		public void SubscriberCollectableAfterUnsubscribeEvenIfHeldByClosure()
 		{
 			WeakReference wr = null;
@@ -290,10 +289,10 @@ namespace Xamarin.Forms.Core.UnitTests
 
 			GarbageCollectionHelper.Collect();
 
-			Assert.IsFalse(wr.IsAlive); // The Action target and subscriber were the same object, so both could be collected
+			Assert.False(wr.IsAlive); // The Action target and subscriber were the same object, so both could be collected
 		}
 
-		[Test]
+		[Fact]
 		public void StaticCallback()
 		{
 			int i = 4;
@@ -308,10 +307,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var pub = new TestPublisher();
 			pub.Test();
 
-			Assert.IsTrue(i == 5, "The static method should have incremented 'i'");
+			Assert.True(i == 5, "The static method should have incremented 'i'");
 		}
 
-		[Test]
+		[Fact]
 		public void NothingShouldBeCollected()
 		{
 			var success = false;
@@ -330,7 +329,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(success); // TestCallbackSource.SuccessCallback() should be invoked to make success == true
 		}
 
-		[Test]
+		[Fact]
 		public void MultipleSubscribersOfTheSameClass()
 		{
 			var sub1 = new object();
@@ -345,7 +344,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			MessagingCenter.Unsubscribe<MessagingCenterTests, string>(sub1, message);
 
 			MessagingCenter.Send(this, message, "Testing");
-			Assert.That(args2, Is.EqualTo("Testing"), "unsubscribing sub1 should not unsubscribe sub2");
+			Assert.Equal("Testing", args2);
 		}
 
 		class TestSubcriber
@@ -384,7 +383,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test(Description = "This is a demonstration of what a test with a fake/mock/substitute IMessagingCenter might look like")]
+		[Fact]
+		[Trait("Description", "This is a demonstration of what a test with a fake/mock/substitute IMessagingCenter might look like")]
 		public void TestMessagingCenterSubstitute()
 		{
 			var mc = new FakeMessagingCenter();
@@ -393,8 +393,8 @@ namespace Xamarin.Forms.Core.UnitTests
 			var component = new ComponentWithMessagingDependency(mc);
 			component.DoAThing();
 
-			Assert.IsTrue(mc.WasSubscribeCalled, "ComponentWithMessagingDependency should have subscribed in its constructor");
-			Assert.IsTrue(mc.WasSendCalled, "The DoAThing method should send a message");
+			Assert.True(mc.WasSubscribeCalled, "ComponentWithMessagingDependency should have subscribed in its constructor");
+			Assert.True(mc.WasSendCalled, "The DoAThing method should send a message");
 		}
 
 		class ComponentWithMessagingDependency

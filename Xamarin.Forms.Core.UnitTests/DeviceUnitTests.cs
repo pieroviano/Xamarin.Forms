@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class DeviceUnitTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void TestBeginInvokeOnMainThread()
 		{
 			bool calledFromMainThread = false;
@@ -21,7 +20,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(calledFromMainThread, "Action not invoked from main thread.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithSyncFunc()
 		{
 			bool calledFromMainThread = false;
@@ -35,7 +34,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(result, "Unexpected result.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithSyncAction()
 		{
 			bool calledFromMainThread = false;
@@ -48,7 +47,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(calledFromMainThread, "Action not invoked from main thread.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithAsyncFunc()
 		{
 			bool calledFromMainThread = false;
@@ -65,7 +64,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(result, "Unexpected result.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithAsyncFuncError()
 		{
 			bool calledFromMainThread = false;
@@ -84,7 +83,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(invoked, "Action not invoked.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithAsyncAction()
 		{
 			bool calledFromMainThread = false;
@@ -100,7 +99,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(invoked, "Action not invoked.");
 		}
 
-		[Test]
+		[Fact]
 		public async Task TestInvokeOnMainThreadWithAsyncActionError()
 		{
 			bool calledFromMainThread = false;
@@ -119,7 +118,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			Assert.True(invoked, "Action not invoked.");
 		}
 
-		[Test]
+		[Fact]
 		public void InvokeOnMainThreadThrowsWhenNull()
 		{
 			Device.PlatformServices = null;

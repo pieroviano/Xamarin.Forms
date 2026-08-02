@@ -1,12 +1,11 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
-using NUnit.Framework;
 using Xamarin.Forms.Internals;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class PreviewerReflectionTests
 	{
 		class FakePlatform : IPlatform
@@ -17,19 +16,19 @@ namespace Xamarin.Forms.Core.UnitTests
 			}
 		}
 
-		[Test]
+		[Fact]
 		public void PageHasPlatformProperty()
 		{
 			var page = new Page();
 
 			var setPlatform = page.GetType().GetProperty("Platform", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-			Assert.That(setPlatform, Is.Not.Null, "Previewer requires that Page have a property called 'Platform'");
+			Assert.NotNull(setPlatform);
 
-			TestDelegate setValue = () => setPlatform.SetValue(page, new FakePlatform(), null);
-			Assert.That(setValue, Throws.Nothing, "'Page.Platform' must have a setter");
+			Action setValue = () => setPlatform.SetValue(page, new FakePlatform(), null);
+			AssertEx.DoesNotThrow(setValue);
 		}
 
-		[Test]
+		[Fact]
 		public void RegisterAllExists()
 		{
 			var type = typeof(Registrar);
@@ -44,8 +43,7 @@ namespace Xamarin.Forms.Core.UnitTests
 						&& parameters[0].ParameterType == typeof(Type[]);
 			});
 
-			Assert.That(method, Is.Not.Null, "Previewer requires that Registrar have a static non-public method "
-											+ "'RegisterAll' which takes a single parameter of Type[]");
+			Assert.NotNull(method);
 		}
 	}
 }

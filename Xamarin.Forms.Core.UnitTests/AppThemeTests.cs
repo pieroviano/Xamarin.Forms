@@ -1,18 +1,16 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Xamarin.Forms.Core.UnitTests
 {
 	public class AppThemeTests : BaseTestFixture
 	{
-		[SetUp]
-		public override void Setup()
+		public AppThemeTests()
 		{
-			base.Setup();
 			Application.Current = new MockApplication();
 		}
 
-		[Test]
+		[Fact]
 		public void ThemeChangeUsingSetAppThemeColor()
 		{
 			var label = new Label
@@ -21,14 +19,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			label.SetAppThemeColor(Label.TextColorProperty, Color.Green, Color.Red);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			SetAppTheme(OSAppTheme.Dark);
 
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void ThemeChangeUsingSetAppTheme()
 		{
 			var label = new Label
@@ -37,14 +35,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			label.SetOnAppTheme(Label.TextColorProperty, Color.Green, Color.Red);
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			SetAppTheme(OSAppTheme.Dark);
 
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
-		[Test]
+		[Fact]
 		public void ThemeChangeUsingSetBinding()
 		{
 			var label = new Label
@@ -53,11 +51,11 @@ namespace Xamarin.Forms.Core.UnitTests
 			};
 
 			label.SetBinding(Label.TextColorProperty, new AppThemeBinding { Light = Color.Green, Dark = Color.Red });
-			Assert.AreEqual(Color.Green, label.TextColor);
+			Assert.Equal(Color.Green, label.TextColor);
 
 			SetAppTheme(OSAppTheme.Dark);
 
-			Assert.AreEqual(Color.Red, label.TextColor);
+			Assert.Equal(Color.Red, label.TextColor);
 		}
 
 		void SetAppTheme(OSAppTheme theme)

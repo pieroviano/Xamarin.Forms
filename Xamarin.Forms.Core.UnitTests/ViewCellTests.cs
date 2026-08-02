@@ -1,13 +1,12 @@
-using System;
-using NUnit.Framework;
+﻿using System;
+using Xunit;
 
 
 namespace Xamarin.Forms.Core.UnitTests
 {
-	[TestFixture]
 	public class ViewCellTests : BaseTestFixture
 	{
-		[Test]
+		[Fact]
 		public void SetParentBeforeView()
 		{
 			var parent = new View();
@@ -15,14 +14,14 @@ namespace Xamarin.Forms.Core.UnitTests
 			var viewCell = new ViewCell();
 
 			Assert.Null(viewCell.View);
-			Assert.DoesNotThrow(() => viewCell.Parent = parent);
+			AssertEx.DoesNotThrow(() => viewCell.Parent = parent);
 
 			viewCell.View = child;
-			Assert.AreSame(parent, viewCell.Parent);
-			Assert.AreSame(viewCell, child.Parent);
+			Assert.Same(parent, viewCell.Parent);
+			Assert.Same(viewCell, child.Parent);
 		}
 
-		[Test]
+		[Fact]
 		//issue 550
 		public void SetBindingContextBeforeParent()
 		{
@@ -36,10 +35,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			cell.BindingContext = itemcontext;
 			cell.Parent = parent;
 
-			Assert.AreSame(itemcontext, cell.View.BindingContext);
+			Assert.Same(itemcontext, cell.View.BindingContext);
 		}
 
-		[Test]
+		[Fact]
 		public void SetBindingContextBeforeView()
 		{
 			var context = new object();
@@ -47,10 +46,10 @@ namespace Xamarin.Forms.Core.UnitTests
 			var cell = new ViewCell();
 			cell.BindingContext = context;
 			cell.View = view;
-			Assert.AreSame(context, view.BindingContext);
+			Assert.Same(context, view.BindingContext);
 		}
 
-		[Test]
+		[Fact]
 		public void SetViewBeforeBindingContext()
 		{
 			var context = new object();
@@ -58,7 +57,7 @@ namespace Xamarin.Forms.Core.UnitTests
 			var cell = new ViewCell();
 			cell.View = view;
 			cell.BindingContext = context;
-			Assert.AreSame(context, view.BindingContext);
+			Assert.Same(context, view.BindingContext);
 		}
 	}
 }
