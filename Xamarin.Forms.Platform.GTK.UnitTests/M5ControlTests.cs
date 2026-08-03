@@ -889,29 +889,14 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 		/// <summary>
 		/// Synthesises the button press CollectionViewRenderer listens for on an item host.
+		/// See <see cref="GtkTestHost.PressButton"/> for why the event is built rather than emitted.
 		/// </summary>
-		/// <remarks>
-		/// The event needs a real, viewable GdkWindow: gtk_widget_event drops a button event whose
-		/// window is null or unmapped (event_window_is_still_viewable) and returns without emitting
-		/// the signal at all, so a bare hand-built event does nothing and the test reads as "the
-		/// renderer never propagated the click".
-		///
-		/// <para>Deliberately not freed: gdk_event_free unrefs event->any.window, and the window
-		/// here is borrowed from a live widget. One leaked event per test is the cheaper half of
-		/// that trade.</para>
-		/// </remarks>
 		static void PressRow(Gtk.Widget row)
 		{
 			Assert.True(row.Window != null,
 				$"the row is not realized, so it has no window to press: {GtkTestHost.Describe(row)}");
 
-			Gdk.Event evnt = Gdk.EventHelper.New(Gdk.EventType.ButtonPress);
-			var press = new Gdk.EventButton(evnt.Handle);
-
-			press.Window = row.Window;
-			press.Button = 1;
-
-			row.ProcessEvent(evnt);
+			GtkTestHost.PressButton(row);
 		}
 
 		/// <summary>

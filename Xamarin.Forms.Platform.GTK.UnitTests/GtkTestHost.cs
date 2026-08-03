@@ -298,6 +298,40 @@ public static class GtkTestHost
 	}
 
 	/// <summary>
+	/// Delivers a synthetic button press to <paramref name="widget"/>, as gtk_widget_event would.
+	/// </summary>
+	/// <remarks>
+	/// <c>GLib.Signal.Emit(w, "clicked")</c> - what this suite uses for Button and ImageButton -
+	/// cannot stand in for this: <c>button-press-event</c> carries a <c>Gdk.EventButton</c>
+	/// argument, and its handlers read the button number and the press type off it. So the event
+	/// has to be built.
+	///
+	/// <para>It needs a real, viewable GdkWindow. gtk_widget_event drops a button event whose
+	/// window is null or unmapped (event_window_is_still_viewable) and returns WITHOUT emitting
+	/// the signal, which a test then reads as "the handler was never attached" - the opposite
+	/// conclusion. The widget's own window is borrowed for that reason; for a windowless widget
+	/// (<see cref="Xamarin.Forms.Platform.GTK.GtkFormsContainer"/> is a no-window
+	/// <c>Gtk.EventBox</c>) that is the parent's, which is exactly what a real press would carry.</para>
+	///
+	/// <para>Deliberately not freed: gdk_event_free unrefs event-&gt;any.window, and that window is
+	/// borrowed from a live widget. One leaked event per press is the cheaper half of the trade.</para>
+	/// </remarks>
+	public static void PressButton(Gtk.Widget widget, uint button = 1)
+	{
+		if (widget == null || widget.Window == null)
+			throw new InvalidOperationException(
+				$"the widget is not realized, so it has no window to press: {Describe(widget)}");
+
+		Gdk.Event evnt = Gdk.EventHelper.New(Gdk.EventType.ButtonPress);
+		var press = new Gdk.EventButton(evnt.Handle);
+
+		press.Window = widget.Window;
+		press.Button = button;
+
+		widget.ProcessEvent(evnt);
+	}
+
+	/// <summary>
 	/// True when GTK never gave the widget a real allocation. GTK3's sentinel for
 	/// "not allocated yet" is (-1, -1, 1, 1), and every M3 layout bug in this backend showed up
 	/// as exactly this while the widget still reported <c>Visible == true</c>.

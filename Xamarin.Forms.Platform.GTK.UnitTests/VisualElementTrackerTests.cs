@@ -110,30 +110,68 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// The behaviour, not the mechanism: an InputTransparent element must stop responding to
+		/// taps, and must start again when it is reverted.
+		/// </summary>
+		/// <remarks>
+		/// What this replaced asserted <c>widget.Window.PassThrough == false</c> before and after
+		/// the toggle. Nothing in this backend ever writes that property - <see
+		/// cref="Xamarin.Forms.Platform.GTK.VisualElementTracker{TElement,TNativeElement}"/>
+		/// implements InputTransparent by attaching or detaching the container's ButtonPressEvent
+		/// handler - so both assertions held whether or not UpdateInputTransparent had a body at
+		/// all. That is precisely the blindness the class remarks above say these tests exist to
+		/// end, reproduced.
+		///
+		/// <para>The baseline press is not ceremony. Without it, an element that never responded to
+		/// taps in the first place would satisfy the "no tap while transparent" half, and the
+		/// revert half is what stops the fix being "detach the handler and never re-attach it".</para>
+		/// </remarks>
 		[Fact]
-		public void TogglingInputTransparentLeavesTheSharedWindowAlone()
+		public void InputTransparentSuppressesTapsAndRevertingRestoresThem()
 		{
-			// SCOPE, stated plainly: this and the test above are REGRESSION GUARDS against the
-			// shared-window implementation, not proof that InputTransparent suppresses input. They
-			// assert PassThrough stays false, which is constant while the code is correct and fails
-			// the moment anyone reintroduces Gdk.Window.PassThrough here - which is what a guard is
-			// for. End-to-end suppression is NOT covered: it would need a synthesized
-			// Gdk.EventButton delivered to the container, and GtkSharp gives no way to construct one
-			// (GLib.Signal.Emit, which this suite uses for "clicked", cannot carry the event
-			// argument button-press-event requires). Treat the behaviour itself as untested.
-			var box = new BoxView { Color = Color.Red };
+			var box = new BoxView { Color = Color.Red, WidthRequest = 100, HeightRequest = 100 };
+
+			var taps = 0;
+			var tap = new TapGestureRecognizer();
+			tap.Tapped += (s, e) => taps++;
+			box.GestureRecognizers.Add(tap);
 
 			using (var host = GtkTestHost.HostView(box))
 			{
 				var widget = (Gtk.Widget)host.Renderer;
 
+				GtkTestHost.PressButton(widget);
+				host.Pump();
+
+				Assert.True(taps == 1,
+					$"a press on an ordinary BoxView with a TapGestureRecognizer raised {taps} taps, " +
+					"so the rest of this test would be measuring nothing");
+
 				box.InputTransparent = true;
 				host.Pump();
-				Assert.False(widget.Window.PassThrough);
+
+				GtkTestHost.PressButton(widget);
+				host.Pump();
+
+				Assert.True(taps == 1,
+					$"the element is InputTransparent and still took the tap (total {taps}) - an " +
+					"overlay marked input-transparent goes on swallowing every press underneath it");
 
 				box.InputTransparent = false;
 				host.Pump();
-				Assert.False(widget.Window.PassThrough);
+
+				GtkTestHost.PressButton(widget);
+				host.Pump();
+
+				Assert.True(taps == 2,
+					$"reverting InputTransparent left the element deaf (total {taps}) - the handler " +
+					"was detached and never re-attached");
+
+				// And none of that went through the shared GdkWindow: see the test above for why
+				// that would take the whole page down with it.
+				Assert.False(widget.Window.PassThrough,
+					"pass-through must never be set on the window shared with the rest of the page");
 			}
 		}
 	}

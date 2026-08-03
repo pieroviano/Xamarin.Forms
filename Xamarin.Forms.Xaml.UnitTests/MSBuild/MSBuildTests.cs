@@ -526,6 +526,105 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			AssertExists(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
 		}
 
+		const string BuildTasksPackageId = "Net4x.Xamarin.Forms.Build.Tasks";
+
+		/// <summary>
+		/// The one thing every other test in this class cannot see: whether the PACKAGE works.
+		/// </summary>
+		/// <remarks>
+		/// Every case above points <c>_XFBuildTasksLocation</c> at this test assembly's own output
+		/// directory, which holds the whole of <c>$(TargetDir)</c> - so the tasks always find
+		/// Xamarin.Forms.Core.dll and Xamarin.Forms.Xaml.dll next to themselves, whatever the nupkg
+		/// contains. XamlCTask and XamlGTask genuinely bind both at build time, so a package that
+		/// ships neither them nor a NuGet dependency that could supply them fails with
+		/// FileNotFoundException on the first .xaml file, and nothing in the tree noticed.
+		///
+		/// <para>This restores the produced package the way a consumer does - local feed, plain
+		/// <c>PackageReference</c>, NuGet's own props/targets auto-import - and compiles a XAML file
+		/// with it. The generated project deliberately gets EMPTY Directory.Build.[props|targets]:
+		/// the repository's set <c>_XFBuildTasksLocation</c> to artifacts\build-tasks\ and import
+		/// Xamarin.Forms.targets directly, either of which would hide exactly what is under test
+		/// (and the second would fail XF001 for a double import).</para>
+		///
+		/// <para><c>RestorePackagesPath</c> is redirected into the temp directory rather than left
+		/// on ~/.nuget/packages. PackageVersion is static at 5.0.0 here, so a globally cached
+		/// extraction of an EARLIER build of the same version would be reused and this test would
+		/// grade a stale package.</para>
+		/// </remarks>
+		[Fact]
+		public void PackagedBuildTasksCompileXaml()
+		{
+			var packagesDirectory = IOPath.Combine(repoRoot, "Packages");
+			var nupkg = Directory.Exists(packagesDirectory)
+				? new DirectoryInfo(packagesDirectory)
+					.GetFiles(BuildTasksPackageId + ".*.nupkg")
+					.OrderByDescending(f => f.LastWriteTimeUtc)
+					.FirstOrDefault()
+				: null;
+
+			if (nupkg == null)
+				Assert.Fail($"No {BuildTasksPackageId}.*.nupkg in {packagesDirectory}. It is produced by " +
+					"Xamarin.Forms.Build.Tasks (GeneratePackageOnBuild=True), so build the solution before " +
+					"running this test.");
+
+			var version = IOPath.GetFileNameWithoutExtension(nupkg.Name).Substring(BuildTasksPackageId.Length + 1);
+			var restorePackagesPath = IOPath.Combine(tempDirectory, "packages");
+
+			// The repository's Directory.Build.props/targets were copied in by the constructor for
+			// every other test here; this one has to be a stranger to the tree.
+			File.WriteAllText(IOPath.Combine(tempDirectory, "Directory.Build.props"), "<Project />");
+			File.WriteAllText(IOPath.Combine(tempDirectory, "Directory.Build.targets"), "<Project />");
+
+			// <clear /> so the local drop is the only place this package can come from, and
+			// nuget.org for the implicit NETStandard.Library reference.
+			File.WriteAllText(IOPath.Combine(tempDirectory, "NuGet.config"), $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key=""xf-local"" value=""{packagesDirectory}"" />
+    <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" protocolVersion=""3"" />
+  </packageSources>
+</configuration>");
+
+			var project = NewProject(sdkStyle: true);
+
+			// NewProject hands every project the in-tree task drop. Removing it is the whole point:
+			// the package's own build\Xamarin.Forms.targets defaults it to build\netstandard2.0\.
+			project.Descendants()
+				.Where(e => e.Name.LocalName == "_XFBuildTasksLocation")
+				.Remove();
+
+			var propertyGroup = NewElement("PropertyGroup");
+			propertyGroup.Add(NewElement("RestorePackagesPath").WithValue(restorePackagesPath));
+			project.Add(propertyGroup);
+
+			var itemGroup = NewElement("ItemGroup");
+			itemGroup.Add(NewElement("PackageReference")
+				.WithAttribute("Include", BuildTasksPackageId)
+				.WithAttribute("Version", version));
+			project.Add(itemGroup);
+
+			project.Add(AddFile("MainPage.xaml", "EmbeddedResource", Xaml.MainPage));
+
+			var projectFile = IOPath.Combine(tempDirectory, "test.csproj");
+			project.Save(projectFile);
+			Build(projectFile, "Restore");
+
+			// Asserted before the build so a missing assembly is named outright, rather than
+			// arriving as an MSB4062/FileNotFoundException buried in the log.
+			var packagedTasks = IOPath.Combine(restorePackagesPath, BuildTasksPackageId.ToLowerInvariant(),
+				version, "build", "netstandard2.0");
+			AssertExists(IOPath.Combine(packagedTasks, "Xamarin.Forms.Build.Tasks.dll"), nonEmpty: true);
+			AssertExists(IOPath.Combine(packagedTasks, "Xamarin.Forms.Core.dll"), nonEmpty: true);
+			AssertExists(IOPath.Combine(packagedTasks, "Xamarin.Forms.Xaml.dll"), nonEmpty: true);
+
+			Build(projectFile);
+
+			AssertExists(IOPath.Combine(intermediateDirectory, "test.dll"), nonEmpty: true);
+			AssertExists(IOPath.Combine(intermediateDirectory, "MainPage.xaml.g.cs"), nonEmpty: true);
+			AssertExists(IOPath.Combine(intermediateDirectory, "XamlC.stamp"));
+		}
+
 		//https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md
 		//https://daveaglick.com/posts/running-a-design-time-build-with-msbuild-apis
 		[Theory]
