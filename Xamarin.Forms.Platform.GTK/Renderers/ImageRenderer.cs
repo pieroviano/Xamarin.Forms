@@ -76,12 +76,24 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				SetRotation();
 		}
 
-		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
-		{
-			base.OnSizeAllocated(allocation);
-
-			Control.SetSizeRequest(allocation.Width, allocation.Height);
-		}
+		// There is deliberately no OnSizeAllocated override here. It used to call
+		// Control.SetSizeRequest(allocation.Width, allocation.Height) inline, and that was both
+		// pointless and harmful.
+		//
+		// Pointless because this renderer IS the container - a VisibleWindow = false Gtk.EventBox -
+		// and the ImageControl is its only child, so GTK already allocates the control the whole of
+		// that allocation. The request asked for exactly what the widget was being given anyway,
+		// and ImageControl rescales its pixbuf from its OWN size-allocate (ImageControl.cs:129).
+		//
+		// Harmful twice over. SetSizeRequest calls gtk_widget_queue_resize, and queueing a resize
+		// from inside size-allocate is invalid in GTK3: the resize is discarded while alloc-needed
+		// is left standing on the ancestors, so every later queue_resize raised anywhere in this
+		// subtree is swallowed too - see VisualElementRenderer.OnSizeAllocated, which is why every
+		// other renderer in this backend defers geometry to GLib.Idle. And a size request is a
+		// MINIMUM that propagates all the way up to the toplevel's minimum size, so stamping the
+		// image with the largest allocation it had ever had meant the window grew and could never
+		// be dragged back smaller - the same ratchet measured on NavigationPageRenderer
+		// (800x600 -> 800x672, NavigationPageRenderer.cs:168).
 
 		async void SetImage(Image oldElement = null)
 		{

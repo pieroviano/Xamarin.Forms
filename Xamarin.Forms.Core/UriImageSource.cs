@@ -144,11 +144,16 @@ namespace Xamarin.Forms
 			Stream stream = null;
 
 			// else, NOT "if (stream == null)". The cache path already performs the download itself
-			// (GetStreamAsyncUnchecked calls Device.GetStreamAsync when there is no locally cached
-			// copy), so falling through on a null result issued a SECOND identical request for
-			// every failed retrieval - two network round-trips for one missing image. The direct
-			// fetch is only the right thing to do when caching is switched off and the branch
-			// above was therefore skipped entirely.
+			// (GetStreamAsyncUnchecked calls Device.GetStreamAsync when it has no usable locally
+			// cached copy), so falling through on a null result issued a SECOND identical request
+			// for every failed retrieval - two network round-trips for one missing image. The
+			// direct fetch is only the right thing to do when caching is switched off and the
+			// branch above was therefore skipped entirely.
+			//
+			// This is only safe because GetStreamAsyncUnchecked never gives up before trying the
+			// network: an unusable cache entry falls through to the download instead of returning
+			// null. Do not reintroduce an early null return there without restoring a fallback
+			// here, or one broken cache file blanks the image for the whole CacheValidity window.
 			//
 			// Covered by UriImageSourceTests.DoNotKeepFailedRetrieveInCache, which asserts exactly
 			// one network call per attempt and was disabled - as [Ignore("DoNotKeepFailedRetrieve
@@ -175,38 +180,28 @@ namespace Xamarin.Forms
 
 		async Task<Stream> GetStreamAsyncUnchecked(string key, Uri uri, CancellationToken cancellationToken)
 		{
+			string path = IOPath.Combine(CacheName, key);
+
+			// A USABLE cached copy returns here; every other outcome falls through to the download
+			// below. That is what lets GetStreamAsync skip its direct-fetch fallback (see the
+			// comment there), and it has to stay true. An entry that is still inside CacheValidity
+			// but cannot be read - a zero-byte or truncated file left behind when the copy below
+			// was interrupted (app killed, disk full), or one every open attempt lost the race for
+			// - must NOT short-circuit to null: its timestamp keeps it "valid", so the image would
+			// come back blank on every attempt for the rest of the validity window, a day by
+			// default. Falling through re-downloads and rewrites the entry in place, so a broken
+			// cache heals itself on the first retry, exactly as it did before the fallback moved.
 			if (await GetHasLocallyCachedCopyAsync(key).ConfigureAwait(false))
 			{
-				var retry = 5;
-				while (retry >= 0)
-				{
-					int backoff;
-					try
-					{
-						Stream result = await Store.OpenFileAsync(IOPath.Combine(CacheName, key), FileMode.Open, FileAccess.Read).ConfigureAwait(false);
-						return result;
-					}
-					catch (IOException)
-					{
-						// iOS seems to not like 2 readers opening the file at the exact same time, back off for random amount of time
-						backoff = new Random().Next(1, 5);
-						retry--;
-					}
-
-					if (backoff > 0)
-					{
-						await Task.Delay(backoff);
-					}
-				}
-				return null;
+				Stream cached = await OpenLocallyCachedCopyAsync(path).ConfigureAwait(false);
+				if (cached != null)
+					return cached;
 			}
 
 			Stream stream;
 			try
 			{
 				stream = await Device.GetStreamAsync(uri, cancellationToken).ConfigureAwait(false);
-				if (stream == null)
-					return null;
 			}
 			catch (Exception ex)
 			{
@@ -222,19 +217,94 @@ namespace Xamarin.Forms
 
 			try
 			{
-				Stream writeStream = await Store.OpenFileAsync(IOPath.Combine(CacheName, key), FileMode.Create, FileAccess.Write).ConfigureAwait(false);
-				await stream.CopyToAsync(writeStream, 16384, cancellationToken).ConfigureAwait(false);
-				if (writeStream != null)
-					writeStream.Dispose();
+				using (stream)
+				using (Stream writeStream = await Store.OpenFileAsync(
+					path, FileMode.Create, FileAccess.Write).ConfigureAwait(false))
+				{
+					await stream.CopyToAsync(writeStream, 16384, cancellationToken).ConfigureAwait(false);
+				}
 
-				stream.Dispose();
-
-				return await Store.OpenFileAsync(IOPath.Combine(CacheName, key), FileMode.Open, FileAccess.Read).ConfigureAwait(false);
+				return await Store.OpenFileAsync(path, FileMode.Open, FileAccess.Read).ConfigureAwait(false);
 			}
 			catch (Exception ex)
 			{
 				Log.Warning("Image Loading", $"Error getting stream for {Uri}: {ex}");
+
+				// The entry may now hold a truncated copy of the download, which the read path
+				// cannot tell from a complete one. Blank it so it is rejected as a miss rather
+				// than served as half an image until it expires.
+				await InvalidateCacheEntryAsync(path).ConfigureAwait(false);
 				return null;
+			}
+		}
+
+		/// <summary>
+		/// Opens the locally cached copy, or returns null when there is no usable one - in which
+		/// case the caller must fall through to the network.
+		/// </summary>
+		static async Task<Stream> OpenLocallyCachedCopyAsync(string path)
+		{
+			var retry = 5;
+			while (retry >= 0)
+			{
+				int backoff;
+				try
+				{
+					Stream result = await Store.OpenFileAsync(path, FileMode.Open, FileAccess.Read).ConfigureAwait(false);
+
+					// Zero-length or unreadable means the entry is broken, not that the image is
+					// empty: the download writes the cache file in place, so an interrupted write
+					// leaves precisely this behind. Report a miss and let the caller re-download
+					// over it. (GetStreamFromCacheAsync repeats the length check for the freshly
+					// downloaded copy, where a zero-length result is a genuinely empty response.)
+					if (result == null || !result.CanRead || (result.CanSeek && result.Length == 0))
+					{
+						result?.Dispose();
+						return null;
+					}
+
+					return result;
+				}
+				catch (IOException)
+				{
+					// iOS seems to not like 2 readers opening the file at the exact same time, back off for random amount of time
+					backoff = new Random().Next(1, 5);
+					retry--;
+				}
+
+				if (backoff > 0)
+				{
+					await Task.Delay(backoff);
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Marks a cache entry unusable so the next load re-downloads it.
+		/// </summary>
+		/// <remarks>
+		/// <see cref="Xamarin.Forms.Internals.IIsolatedStorageFile"/> exposes no delete, and there
+		/// is no rename to write the download to a temporary file and swap it in atomically, so
+		/// the entry is truncated to zero bytes instead - the length the read path already treats
+		/// as broken. Best effort: if even that fails the next successful download overwrites the
+		/// entry anyway, since it opens with <see cref="FileMode.Create"/>.
+		/// </remarks>
+		static async Task InvalidateCacheEntryAsync(string path)
+		{
+			try
+			{
+				if (!await Store.GetFileExistsAsync(path).ConfigureAwait(false))
+					return;
+
+				using (await Store.OpenFileAsync(path, FileMode.Create, FileAccess.Write).ConfigureAwait(false))
+				{
+				}
+			}
+			catch (Exception ex)
+			{
+				Log.Warning("Image Loading", $"Error invalidating cached image {path}: {ex}");
 			}
 		}
 
@@ -267,8 +337,13 @@ namespace Xamarin.Forms
 				wrapped.Disposed += (o, e) => sem.Release();
 				return wrapped;
 			}
-			catch (OperationCanceledException)
+			catch (Exception)
 			{
+				// Release on ANY failure, not just cancellation. The success path hands the permit
+				// to the wrapper's Disposed handler, so an exception escaping with the semaphore
+				// still held would hang every later load of this Uri for the life of the process.
+				// Cancellation out of WaitAsync is deliberately included: that waiter is still
+				// queued inside LockingSemaphore, and this Release is what drains it back out.
 				sem.Release();
 				throw;
 			}

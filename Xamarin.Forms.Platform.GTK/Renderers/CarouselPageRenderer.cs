@@ -220,14 +220,21 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (page == null)
 				return;
 
-			if (((CarouselPage)Element).CurrentPage == page)
+			var carouselPage = (CarouselPage)Element;
+
+			if (carouselPage.CurrentPage == page)
 				return;
 
-			ContentPage currentPage = page;
+			// The page being left is the one CurrentPage still points at, so it has to be read
+			// before CurrentPage is moved on. Reading it afterwards - or taking it from the
+			// event args - sends Disappearing to the page just swiped to, immediately followed
+			// by its Appearing, while the page swiped away never hears that it left and keeps
+			// whatever it started in Appearing running.
+			ContentPage previousPage = carouselPage.CurrentPage;
 
-			currentPage?.SendDisappearing();
-			((CarouselPage)Element).CurrentPage = page;
-			page?.SendAppearing();
+			previousPage?.SendDisappearing();
+			carouselPage.CurrentPage = page;
+			page.SendAppearing();
 		}
 	}
 }

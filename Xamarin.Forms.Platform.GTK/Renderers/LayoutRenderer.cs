@@ -50,6 +50,20 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				{
 					Element.LayoutChanged -= LayoutChanged;
 				}
+
+				// The packager holds the only remaining subscription to the element's ChildAdded/
+				// ChildRemoved, and nothing else ever drops it: VisualElementRenderer.Dispose does not
+				// clear Element, so no ElementChanged is raised on teardown. Left attached, the packager
+				// keeps this destroyed renderer (and its whole GTK subtree) alive off the still-live
+				// layout, and a later Children.Clear()/RemoveAt on that layout re-enters
+				// LayoutElementPackager.OnChildRemoved - where Platform.GetRenderer has already been
+				// cleared to null by Platform.DisposeModelAndChildrenRenderers and Control is null.
+				// Dispose it before chaining to base, while Control is still valid.
+				if (_packager != null)
+				{
+					_packager.Dispose();
+					_packager = null;
+				}
 			}
 
 			base.Dispose(disposing);

@@ -33,7 +33,14 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			}
 
 			public void Dispose()
-{
+			{
+				// Application.Current is process-global, and merely constructing the MockApplication
+				// above published it (Application's ctor calls SetCurrentApplication). Leaving it set
+				// leaks this fixture's MergedWith=MyRD - which defines "foo" and "bar" - into every
+				// later test: LoaderTests.MissingStaticResourceShouldThrow asserts that resolving
+				// "foo" throws, so it goes red or green purely on xUnit's ordering, which differs
+				// between platforms. Same failure BaseTestFixture.Dispose records as MEASURED.
+				Application.Current = null;
 				Device.PlatformServices = null;
 			}
 

@@ -21,7 +21,11 @@ namespace Xamarin.Forms.Platform.GTK
 
 		protected VisualElementRenderer()
 		{
-			_propertyChangedHandler = OnElementPropertyChanged;
+			// Subscribed through a guard rather than binding OnElementPropertyChanged straight to
+			// the element: the overrides dereference Control unconditionally (EntryRenderer,
+			// LabelRenderer, SwitchRenderer...) and ViewRenderer.Dispose nulls Control, so a
+			// notification that reaches a disposed renderer is an NRE on the UI thread.
+			_propertyChangedHandler = HandleElementPropertyChanged;
 		}
 
 		protected VisualElementTracker<TElement, TNativeElement> Tracker
@@ -95,20 +99,11 @@ namespace Xamarin.Forms.Platform.GTK
 			var oldElement = Element;
 			Element = element;
 
-			if (oldElement != null)
-			{
-				oldElement.FocusChangeRequested -= OnElementFocusChangeRequested;
-				oldElement.PropertyChanged -= _propertyChangedHandler;
-				oldElement.BatchCommitted -= OnElementBatchCommitted;
-			}
+			DetachElementHandlers(oldElement);
 
 			if (element != null)
 			{
-				element.PropertyChanged += _propertyChangedHandler;
-				element.FocusChangeRequested += OnElementFocusChangeRequested;
-				// Forms raises this once a layout pass has committed new bounds; it is what
-				// gets that geometry onto the GTK widgets. See UpdateElementLayout().
-				element.BatchCommitted += OnElementBatchCommitted;
+				AttachElementHandlers(element);
 
 				if (Tracker == null)
 				{
@@ -120,6 +115,32 @@ namespace Xamarin.Forms.Platform.GTK
 
 			SetAccessibilityLabel();
 			SetAccessibilityHint();
+		}
+
+		void AttachElementHandlers(TElement element)
+		{
+			if (element == null)
+				return;
+
+			element.PropertyChanged += _propertyChangedHandler;
+			element.FocusChangeRequested += OnElementFocusChangeRequested;
+			// Forms raises this once a layout pass has committed new bounds; it is what
+			// gets that geometry onto the GTK widgets. See UpdateElementLayout().
+			element.BatchCommitted += OnElementBatchCommitted;
+		}
+
+		/// <summary>
+		/// Removes every handler <see cref="AttachElementHandlers"/> added. Idempotent, so it is
+		/// safe to run from both <see cref="SetElement"/> and <see cref="Dispose(bool)"/>.
+		/// </summary>
+		void DetachElementHandlers(TElement element)
+		{
+			if (element == null)
+				return;
+
+			element.FocusChangeRequested -= OnElementFocusChangeRequested;
+			element.PropertyChanged -= _propertyChangedHandler;
+			element.BatchCommitted -= OnElementBatchCommitted;
 		}
 
 		public void SetElementSize(Size size)
@@ -324,11 +345,38 @@ namespace Xamarin.Forms.Platform.GTK
 			{
 				_disposed = true;
 
+				// SetElement detaches these only from the OLD element, i.e. only when the same
+				// renderer is handed a different one - and nothing in the teardown path calls
+				// SetElement(null): Platform.DisposeModelAndChildrenRenderers just destroys the
+				// widget and clears RendererProperty. Without this the element keeps the disposed
+				// renderer in its invocation lists, so a later property change (a two-way binding
+				// on a page that has already been popped) dispatches into a renderer whose native
+				// Control ViewRenderer.Dispose has nulled, and the element roots the whole dead
+				// GTK subtree for as long as it lives.
+				//
+				// Element itself is deliberately NOT nulled: derived Dispose overrides read it
+				// after chaining to base (see ListViewRenderer.Dispose, which detaches the
+				// TemplatedItems handlers there), and nulling it would turn those into silent
+				// no-ops. Nothing holds the renderer once the handlers are gone, so keeping the
+				// reference leaks nothing.
+				DetachElementHandlers(Element);
+
 				Tracker?.Dispose();
 				Tracker = null;
 			}
 
 			base.Dispose(disposing);
+		}
+
+		/// <summary>
+		/// Guarded entry point for the element's PropertyChanged; see the constructor.
+		/// </summary>
+		void HandleElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if (_disposed)
+				return;
+
+			OnElementPropertyChanged(sender, e);
 		}
 
 		protected virtual void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)

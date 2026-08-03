@@ -90,8 +90,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 			set
 			{
-				_scaleX = value;
-				_scaleY = value;
+				// Scale, ScaleX and ScaleY are three independent Forms properties (all default 1),
+				// and the factor an axis really gets is Scale * ScaleX (resp. Scale * ScaleY). This
+				// setter used to overwrite _scaleX/_scaleY as well, which threw away whatever the
+				// renderer had pushed in from Element.ScaleX/ScaleY.
 				_scale = value;
 				UpdateScaleAndRotation();
 			}
@@ -201,8 +203,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (newPixBuf != null)
 			{
 				_image.Pixbuf = newPixBuf;
-				newPixBuf.Dispose();    // Important: Image should adapt to window size. To maintain memory consuption, we make Pixbuf dispose (Unref is deprecated).
-				System.GC.Collect();
+
+				// Important: the image adapts to the window size, so this runs on every allocation
+				// change. gtk_image_set_from_pixbuf took its own reference, so disposing the wrapper
+				// here (Unref is deprecated) is what releases the previous scaled copy. There is
+				// deliberately no GC.Collect() alongside it: the Dispose IS the release, and forcing
+				// a blocking gen-2 collection per image per size-allocate stalled the GTK main loop
+				// for the whole of a window resize.
+				newPixBuf.Dispose();
 			}
 		}
 
@@ -235,16 +243,57 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 					rotated = _original;
 				}
 
-				if (_scaleX != 0.0 || _scaleY != 0.0)
-				{
-					_image.Pixbuf = rotated.ScaleSimple((int)(rotated.Width * _scale), (int)(rotated.Height * _scale), InterpType.Bilinear);
-				}
-				else
-				{
-					_image.Pixbuf = rotated;
-				}
+				Pixbuf scaled = ApplyScale(rotated);
+				_image.Pixbuf = scaled;
+
+				// gtk_image_set_from_pixbuf took its own reference, so every pixbuf produced above
+				// can be released right away. _original is the one thing here we do not own.
+				if (!ReferenceEquals(scaled, rotated))
+					scaled.Dispose();
+
+				if (!ReferenceEquals(rotated, _original))
+					rotated.Dispose();
 			}
 			QueueDraw();
+		}
+
+		Pixbuf ApplyScale(Pixbuf source)
+		{
+			// The factor an axis really gets is Scale * ScaleX (resp. Scale * ScaleY) - the three
+			// Forms properties multiply. This used to scale both axes by Scale alone, so ScaleX and
+			// ScaleY looked like no-ops, and it guarded on "_scaleX != 0.0 || _scaleY != 0.0", which
+			// is the inverse of the case that actually needs care.
+			double factorX = _scale * _scaleX;
+			double factorY = _scale * _scaleY;
+
+			// gdk_pixbuf_scale_simple only takes a positive destination extent, so the sign and the
+			// magnitude of a factor have to be applied separately: a negative factor is a mirror
+			// about that axis (Flip), and a zero factor - Scale="0", the "collapse it" value - is
+			// clamped to a single pixel rather than handed over as a 0-wide destination.
+			Pixbuf flipped = null;
+
+			if (factorX < 0.0)
+				flipped = source.Flip(true);
+
+			if (factorY < 0.0)
+			{
+				Pixbuf horizontal = flipped;
+				flipped = (horizontal ?? source).Flip(false);
+				horizontal?.Dispose();
+			}
+
+			Pixbuf current = flipped ?? source;
+
+			int width = Math.Max(1, (int)Math.Round(current.Width * Math.Abs(factorX)));
+			int height = Math.Max(1, (int)Math.Round(current.Height * Math.Abs(factorY)));
+
+			if (width == current.Width && height == current.Height)
+				return current;
+
+			Pixbuf result = current.ScaleSimple(width, height, InterpType.Bilinear);
+			flipped?.Dispose();
+
+			return result;
 		}
 
 		private Pixbuf GetPixbufFromImageSurface(ImageSurface surface, int width, int height)

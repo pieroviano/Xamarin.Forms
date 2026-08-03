@@ -1,9 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
+    <!--
+      The two Net4x.NuGetUtility imports that used to bracket this file (NuGet.Utility.props
+      here, NuGet.Utility.targets at the end) and the PackageReference that pulled the package
+      in are gone. All three were guarded by '$(OS)' == 'Windows_NT', so none of them ever ran
+      on Linux/CI - which is what makes them worth removing rather than configuring: they made
+      the machine that actually ships the packages build something different from the machine
+      that verifies them.
+
+        * NuGet.Utility.targets' PrepareGenerateNuspecPack runs BeforeTargets="GenerateNuspec",
+          i.e. after Version.targets' SetVersions, and overwrote PackageVersion with
+          $(VersionPrefix).$(VersionSuffix). Every nupkg packed on Windows was therefore stamped
+          5.0.0 whatever the commit - see Packages\Net4x.Xamarin.Forms.Platform.GTK.5.0.0.nupkg -
+          while the same commit packed on CI as 5.0.1055+1055-sha.<sha>. Two different commits
+          produced the same package identity, and the GitInfo/Version.targets machinery was dead
+          weight on the only host that publishes.
+        * NuGet.Utility.props added <PackageReference Include="Obfuscar" /> for Release and an
+          Exec of the package's native-windows\NuGetUtility.exe over $(TargetDir) after
+          PostBuildEvent, unless $(DontObfuscate) was set. Nothing in this repository sets it -
+          it was a user-level environment variable on one maintainer's machine, so any other
+          contributor running `dotnet build -c Release` had a third-party obfuscator run over
+          the shipping assemblies (with an $(Obfuscar) path that is missing its '$' and so
+          cannot exist), and neither the repo nor CI could tell the two outputs apart.
+        * The PackageReference is the reason the first two kept coming back. NuGet auto-imports
+          build\Net4x.NuGetUtility.targets from it, and its Prepare_Utility target runs
+          `NuGetUtility.exe -Prepare:true -ProjectPath:<this file>` BeforeTargets="BeforeBuild",
+          i.e. it rewrites this .csproj on every Windows build. Removing the imports while
+          keeping the reference would have been undone by the next build, as it was three times
+          before.
+
+      Everything the package supplied that this project needs - VersionPrefix, VersionSuffix,
+      NuGetUtilityVersion, GtkSharpVersion/GtkSharpVersionBuildSuffix - is defined in
+      Directory.Build.props, and the Linux build, which never imported any of this, is the
+      standing proof that the project builds and packs without it. The two assertion targets at
+      the end of the file fail the build if any of it returns.
+    -->
     <PropertyGroup>
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <!--
+          Keep this. SetVersions overwrites Version at build time, but restore never runs
+          targets, and without an explicit Version the SDK would compose one from the
+          Directory.Build.props fallbacks as $(VersionPrefix)-$(VersionSuffix), i.e. the
+          prerelease "5.0.0-0", and record that as this project's version in project.assets.json.
+        -->
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
         <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
         <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
@@ -25,7 +65,6 @@
         <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" Condition="'$(OS)' == 'Windows_NT'" />
         <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
     </ItemGroup>
     <!--
@@ -73,5 +112,27 @@
         <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
         <Content Include="$(SolutionDir)License.txt" Link="License.txt" Pack="true" PackagePath="\License.txt" Condition="Exists('$(SolutionDir)License.txt')" />
     </ItemGroup>
-    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets')" />
+    <!--
+      Both symptoms described at the top of this file were silent - a Release build simply grew
+      an obfuscation step, a pack simply produced 5.0.0 again - so removing the imports is not
+      enough on its own. These two targets turn a re-import into a build failure.
+
+      The markers are set only by the removed imports and by nothing else in this tree:
+      $(NuGetUtility) by build\Net4x.NuGetUtility.props (auto-imported by the PackageReference),
+      $(DirectoryNuGet) by the Directory.NuGet.props that NuGet.Utility.props pulls in, and
+      $(Obfuscar) by NuGet.Utility.props itself.
+    -->
+    <Target Name="_XFAssertNuGetUtilityNotReintroduced" BeforeTargets="BeforeBuild;Pack">
+        <Error Condition="'$(NuGetUtility)' == 'true' OR '$(DirectoryNuGet)' == 'true' OR '$(Obfuscar)' != ''" Text="Net4x.NuGetUtility has been re-imported into $(MSBuildProjectFile). It overwrites PackageVersion at pack time (every package becomes $(VersionPrefix).$(VersionSuffix) regardless of the commit) and, in Release, obfuscates the shipping assembly on Windows only. Remove the NuGet.Utility.props/.targets imports and the Net4x.NuGetUtility PackageReference again - see the comment at the top of this file - or drop this target deliberately if the tooling is being adopted on purpose." />
+    </Target>
+
+    <!--
+      The version half of the same guard, checked where it actually matters. $(VersionPrefix) and
+      $(VersionSuffix) are the static fallbacks Directory.Build.props supplies to keep the
+      tooling's expressions parseable; a PackageVersion still equal to them at GenerateNuspec
+      time means SetVersions' git-derived value was computed and then thrown away.
+    -->
+    <Target Name="_XFAssertPackageVersionIsGitDerived" BeforeTargets="GenerateNuspec" DependsOnTargets="SetVersions">
+        <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="PackageVersion is '$(PackageVersion)', the static fallback rather than the version Version.targets' SetVersions computed from git. Something overwrote it after SetVersions ran, so this pack would produce a $(PackageId) package that cannot be traced to a commit and collides with every other build of this branch." />
+    </Target>
 </Project>

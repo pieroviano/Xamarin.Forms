@@ -99,11 +99,50 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			TextView?.GrabFocus();
 		}
 
+		Gdk.Rectangle _lastAllocation = Gdk.Rectangle.Zero;
+		bool _textViewResizeQueued;
+
+		/// <summary>
+		/// Keeps the text view filling the wrapper, so the placeholder label stacked on top of it in
+		/// the same grid cell covers exactly the same area.
+		/// </summary>
+		/// <remarks>
+		/// The size request is deferred to idle, never applied inline. SetSizeRequest calls
+		/// gtk_widget_queue_resize, and doing that from inside a size-allocate handler is invalid in
+		/// GTK3: the resize is not merely lost, the alloc-needed flag is left standing on this
+		/// widget's ancestors and gtk_widget_queue_resize_internal bails out at the first ancestor
+		/// that already carries it - so every later resize raised anywhere in that subtree was
+		/// swallowed too. Same treatment as EntryWrapper and Controls.Page.
+		///
+		/// ShowPlaceholderIfNeeded stays inline: it only toggles VisibleWindow, it queues no resize.
+		/// </remarks>
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
 
-			TextView.SetSizeRequest(allocation.Width, allocation.Height);
+			if (_lastAllocation != allocation)
+			{
+				_lastAllocation = allocation;
+
+				if (!_textViewResizeQueued)
+				{
+					_textViewResizeQueued = true;
+
+					GLib.Idle.Add(() =>
+					{
+						// A pending idle can outlive the text view; a destroyed or disposed GtkSharp
+						// wrapper is left holding a null handle, so check that and not only the
+						// reference. _lastAllocation is read here, not captured, so an allocation
+						// that arrived while this was queued still lands.
+						_textViewResizeQueued = false;
+
+						if (TextView != null && TextView.Handle != System.IntPtr.Zero)
+							TextView.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+						return false;
+					});
+				}
+			}
 
 			ShowPlaceholderIfNeeded();
 		}

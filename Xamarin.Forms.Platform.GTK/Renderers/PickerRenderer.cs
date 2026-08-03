@@ -10,6 +10,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 	{
 		private bool _disposed;
 
+		// Set while the renderer is pushing element state into the ComboBox. Gtk emits "changed"
+		// both from gtk_combo_box_set_active and from gtk_combo_box_set_model (which clears the
+		// active row); without this guard OnChanged writes that transient widget state straight
+		// back into the element, overwriting the selection the renderer is in the middle of applying.
+		bool _updatingFromElement;
+
 		protected override void OnElementChanged(ElementChangedEventArgs<Picker> e)
 		{
 			if (e.NewElement != null)
@@ -115,21 +121,59 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void UpdateItemsSource()
 		{
+			if (Control == null || Element == null)
+				return;
+
 			var items = ((LockableObservableListWrapper)Element.Items)._list;
 			ListStore listStore = new ListStore(typeof(string));
-			Control.Model = listStore;
 
-			foreach (var item in items)
+			_updatingFromElement = true;
+
+			try
 			{
-				listStore.AppendValues(item);
+				Control.Model = listStore;
+
+				foreach (var item in items)
+				{
+					listStore.AppendValues(item);
+				}
 			}
+			finally
+			{
+				_updatingFromElement = false;
+			}
+
+			// Replacing the model dropped the active row, so the element's selection has to be
+			// pushed back into the widget.
+			UpdateSelectedIndex();
 		}
 
 		private void UpdateSelectedIndex()
 		{
-			var selectedIndex = Element.SelectedIndex != -1 ? Element.SelectedIndex : 0;
+			if (Control == null || Element == null)
+				return;
 
-			Control.Active = selectedIndex;
+			// -1 is Gtk's documented "no active item" and is also the Picker's own "nothing
+			// selected" value; coercing it to 0 would emit "changed" and silently select the first
+			// item on an element the user has never touched.
+			var selectedIndex = Element.SelectedIndex;
+
+			if (selectedIndex >= Element.Items.Count)
+				selectedIndex = -1;
+
+			if (Control.Active == selectedIndex)
+				return;
+
+			_updatingFromElement = true;
+
+			try
+			{
+				Control.Active = selectedIndex;
+			}
+			finally
+			{
+				_updatingFromElement = false;
+			}
 		}
 
 		private void UpdateTextColor()
@@ -190,7 +234,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void OnChanged(object sender, System.EventArgs e)
 		{
-			ElementController?.SetValueFromRenderer(Picker.SelectedIndexProperty, Control.Active);
+			if (_updatingFromElement || Control == null || Element == null)
+				return;
+
+			var active = Control.Active;
+
+			// Only a genuine user selection gets written back; echoing the value the element
+			// already holds would re-raise SelectedIndexChanged for a choice nobody made.
+			if (Element.SelectedIndex == active)
+				return;
+
+			ElementController?.SetValueFromRenderer(Picker.SelectedIndexProperty, active);
 		}
 
 		private void OnCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

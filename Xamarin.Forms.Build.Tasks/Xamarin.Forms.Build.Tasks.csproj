@@ -43,6 +43,16 @@
         <_DisableStrongNamer>True</_DisableStrongNamer>
         <DisableStrongNamer>True</DisableStrongNamer>
     </PropertyGroup>
+    <!--
+	  SIGNED_ASSEMBLY mirrors the SignAssembly finally resolved above, so that
+	  Properties/AssemblyInfo.cs can key its InternalsVisibleTo on it: a strong-named assembly may
+	  only befriend an assembly whose public key it names (CS1726), and Xamarin.Forms.Xaml.UnitTests
+	  has no key. Must stay AFTER every group that touches SignAssembly - it is read, not evaluated
+	  lazily.
+	-->
+    <PropertyGroup Condition="'$(SignAssembly)' == 'true'">
+        <DefineConstants>$(DefineConstants);SIGNED_ASSEMBLY</DefineConstants>
+    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Mono.Cecil" Version="0.11.5" />
         <PackageReference Include="System.CodeDom" Version="4.4.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
@@ -150,7 +160,31 @@
         <Copy SourceFiles="@(_XFTaskFiles)" DestinationFolder="$(_XFTasksPublishDir)" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" Retries="3" RetryDelayMilliseconds="200">
             <Output TaskParameter="CopiedFiles" ItemName="_XFCopiedTaskFiles" />
         </Copy>
-        <Warning Condition="'@(_XFCopiedTaskFiles)' == '' AND Exists('$(_XFTasksPublishDir)Xamarin.Forms.Build.Tasks.dll')" Text="Could not refresh the XAML build tasks in $(_XFTasksPublishDir) - they are locked, most likely by an open Visual Studio or a running MSBuild node. The build is continuing with the PREVIOUS copy, so XAML compilation may not reflect your Build.Tasks changes. Close the solution (or run 'dotnet build-server shutdown') and rebuild." />
+        <!--
+          The check has to be PER FILE. CopiedFiles lists every file that copied - or was
+          skipped as unchanged - and this batch is every DLL in $(TargetDir), so the old
+          '@(_XFCopiedTaskFiles)' == '' guard could only fire if ALL of them failed. The one
+          file that ever gets locked is precisely the one MSBuild has loaded as a task
+          assembly, Xamarin.Forms.Build.Tasks.dll; its eight siblings copy fine and hid the
+          failure, which is how a stale XamlCTask ended up compiling XAML against
+          freshly-built Core/Xaml assemblies with a green build.
+        -->
+        <ItemGroup>
+            <_XFPublishedTaskFileNames Include="@(_XFCopiedTaskFiles-&gt;'%(Filename)%(Extension)')" />
+            <_XFStaleTaskFiles Include="@(_XFTaskFiles-&gt;'%(Filename)%(Extension)')" Exclude="@(_XFPublishedTaskFileNames)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_XFStaleTasksMessage>Could not refresh the XAML build tasks in $(_XFTasksPublishDir): @(_XFStaleTaskFiles, ', ') could not be copied, so the PREVIOUS copy is still in place and XAML compilation would not reflect what was just built. They are locked, most likely by an open Visual Studio or a running MSBuild node holding them as loaded task assemblies. Close the solution and/or run 'dotnet build-server shutdown', then rebuild. Set XFAllowStaleBuildTasks=true to downgrade this to a warning.</_XFStaleTasksMessage>
+        </PropertyGroup>
+        <!--
+          An error, not a warning: a stale XamlCTask silently emits IL the sources no longer
+          produce, and a warning inside an otherwise green build is exactly what was missed
+          before. SkipUnchangedFiles means this can only fire when the published copy really
+          does differ from what was just built - a locked but identical file is reported as
+          copied - so the error always corresponds to genuine staleness.
+        -->
+        <Error Code="XF006" Condition="'@(_XFStaleTaskFiles)' != '' AND '$(XFAllowStaleBuildTasks)' != 'true'" Text="$(_XFStaleTasksMessage)" />
+        <Warning Code="XF006" Condition="'@(_XFStaleTaskFiles)' != '' AND '$(XFAllowStaleBuildTasks)' == 'true'" Text="$(_XFStaleTasksMessage)" />
     </Target>
     <!--
     Packaged as an MSBuild task package, not a library:
@@ -196,6 +230,36 @@
                 _PublishBuildTasks copies $(TargetDir)*.dll, i.e. everything.
             -->
             <None Include="$(OutputPath)Xamarin.Forms.Build.Tasks.dll;$(OutputPath)Xamarin.Forms.Core.dll;$(OutputPath)Xamarin.Forms.Xaml.dll;$(OutputPath)Mono.Cecil*.dll;$(OutputPath)System.CodeDom.dll" Pack="true" PackagePath="build\$(TargetFramework)\" Visible="false" />
+        </ItemGroup>
+    </Target>
+    <!--
+    NuGet applies a package's build\ folder ONLY to a direct PackageReference. Every entry point
+    above therefore reaches nobody who does what the READMEs tell app authors to do - reference a
+    backend package (Net4x.Xamarin.Forms.Platform.GTK) and let it drag in the rest: XamlGTask never
+    runs and InitializeComponent() is never generated. buildTransitive\ is the folder NuGet also
+    applies to an INDIRECT reference, so shipping the entry points there as well lets a package
+    that depends on this one deliver the XAML targets downstream.
+
+    This is only half of that fix: a consumer still gets nothing until some shipped package it
+    actually references declares a non-private dependency on Net4x.Xamarin.Forms.Build.Tasks.
+
+    The forwarders are generated rather than checked in because they differ from the build\ ones
+    only in where they point - duplicating the task assemblies under buildTransitive\<tfm>\ would
+    double the package for nothing. NuGet selects exactly one of the two folders per package
+    (build\ for a direct reference, buildTransitive\ for a transitive one), which is what keeps
+    Xamarin.Forms.targets from being imported twice and failing with XF001.
+  -->
+    <Target Name="_GenerateTransitiveBuildEntryPoints" BeforeTargets="_GetPackageFiles">
+        <PropertyGroup>
+            <!-- Forward slashes throughout: this runs on the Linux CI leg too. -->
+            <_XFTransitiveBuildDir>$(IntermediateOutputPath)buildTransitive/</_XFTransitiveBuildDir>
+        </PropertyGroup>
+        <MakeDir Directories="$(_XFTransitiveBuildDir)" />
+        <WriteLinesToFile File="$(_XFTransitiveBuildDir)$(PackageId).props" Overwrite="true" WriteOnlyWhenDifferent="true" Lines="&lt;Project&gt;;&lt;!-- Generated. NuGet auto-import entry point for an indirect PackageReference. --&gt;;&lt;Import Project=&quot;%24(MSBuildThisFileDirectory)../build/Xamarin.Forms.props&quot; /&gt;;&lt;/Project&gt;" />
+        <WriteLinesToFile File="$(_XFTransitiveBuildDir)$(PackageId).targets" Overwrite="true" WriteOnlyWhenDifferent="true" Lines="&lt;Project&gt;;&lt;!-- Generated. NuGet auto-import entry point for an indirect PackageReference. --&gt;;&lt;Import Project=&quot;%24(MSBuildThisFileDirectory)../build/Xamarin.Forms.targets&quot; /&gt;;&lt;/Project&gt;" />
+        <ItemGroup>
+            <None Include="$(_XFTransitiveBuildDir)$(PackageId).props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" Visible="false" />
+            <None Include="$(_XFTransitiveBuildDir)$(PackageId).targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" Visible="false" />
         </ItemGroup>
     </Target>
     <PropertyGroup>

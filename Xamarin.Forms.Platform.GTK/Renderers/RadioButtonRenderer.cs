@@ -30,13 +30,19 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					var button = new Controls.RadioButton();
 					button.Clicked += Button_Clicked;
 
+					// The ghost shares the button's group so that a single unchecked RadioButton is
+					// representable: GTK always keeps one member of a group active, so "nothing checked"
+					// means the ghost is the active one. UpdateCheck below decides which of the two it is.
 					_ghost = new Gtk.RadioButton(button);
-					_ghost.Active = true;
 
 					SetNativeControl(button);
 				}
 
 				UpdateContent();
+
+				// IsChecked is normally set (from XAML, a binding or restored state) before the renderer
+				// exists, so no PropertyChanged ever reaches us for it - seed the widget from the element.
+				UpdateCheck();
 			}
 
 			base.OnElementChanged(e);
