@@ -19,6 +19,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		protected override void Draw(Gdk.Rectangle area, Context cr)
 		{
+			// A Path whose Data is a geometry type the renderer cannot convert leaves _geometry
+			// null, and this runs inside the GTK draw handler - an exception there tears down the
+			// whole redraw rather than losing one shape.
+			if (_geometry == null)
+				return;
+
 			cr.FillRule = _geometry.FillRule == Shapes.FillRule.EvenOdd ? Cairo.FillRule.EvenOdd : Cairo.FillRule.Winding;
 
 			foreach (var figure in _geometry.Figures)

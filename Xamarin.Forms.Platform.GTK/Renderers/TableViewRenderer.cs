@@ -20,17 +20,25 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override void Dispose(bool disposing)
 		{
-			base.Dispose(disposing);
-
+			// Detach BEFORE chaining: base.Dispose nulls Control, and OnElementChanged removes
+			// ModelChanged only from e.OldElement. Left attached, a later Root change on the Forms
+			// TableView re-enters OnModelChanged on the disposed renderer.
 			if (disposing && !_disposed)
 			{
 				_disposed = true;
+
+				if (Element != null)
+				{
+					Element.ModelChanged -= OnModelChanged;
+				}
 
 				if (_tableView != null)
 				{
 					_tableView.OnItemTapped -= OnItemTapped;
 				}
 			}
+
+			base.Dispose(disposing);
 		}
 
 		protected override void OnElementChanged(ElementChangedEventArgs<TableView> e)

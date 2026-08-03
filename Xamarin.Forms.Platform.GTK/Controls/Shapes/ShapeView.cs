@@ -88,7 +88,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				cr.FillPreserve();
 			}
 			else if (_fill != null)
-				throw new NotImplementedException("Brushes other than SolidColorBrush are not implemented yet");
+			{
+				// Skipped, not thrown. This runs inside a Cairo draw callback, where an exception
+				// propagates out through native GTK code and takes down the redraw of everything
+				// else on screen; an unsupported brush should cost one unpainted shape.
+				Internals.Log.Warning("ShapeView", "Fill brush {0} is not supported; only SolidColorBrush is.", _fill.GetType().Name);
+			}
 
 			if (_stroke is SolidColorBrush strokeBrush)
 			{
@@ -107,7 +112,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				cr.StrokePreserve();
 			}
 			else if (_stroke != null)
-				throw new NotImplementedException("Brushes other than SolidColorBrush are not implemented yet");
+			{
+				// Skipped, not thrown - see the note on the fill brush above.
+				Internals.Log.Warning("ShapeView", "Stroke brush {0} is not supported; only SolidColorBrush is.", _stroke.GetType().Name);
+			}
 
 		}
 	}

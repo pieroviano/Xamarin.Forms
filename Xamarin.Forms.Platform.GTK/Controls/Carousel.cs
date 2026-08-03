@@ -195,17 +195,49 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				image.Pixbuf = pixbuf;
 		}
 
+		bool _childResizeQueued;
+
+		/// <summary>
+		/// Keeps the background image and the page wrapper the size of this Fixed.
+		/// </summary>
+		/// <remarks>
+		/// Deferred to idle, never applied inline. SetSizeRequest calls gtk_widget_queue_resize,
+		/// and doing that from inside a size-allocate handler is invalid in GTK3: the resize is
+		/// not merely lost, the alloc-needed flag is left standing on this widget's ancestors and
+		/// gtk_widget_queue_resize_internal bails out at the first ancestor that already carries
+		/// it - so every later resize raised anywhere in this subtree was swallowed too. Same
+		/// treatment as Controls.Page.OnContentContainerWrapperSizeAllocated.
+		/// </remarks>
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
 
-			if (!_lastAllocation.Equals(allocation))
-			{
-				_lastAllocation = allocation;
+			if (_lastAllocation.Equals(allocation))
+				return;
 
-				_image.SetSizeRequest(allocation.Width, allocation.Height);
-				_wrapperBox.SetSizeRequest(allocation.Width, allocation.Height);
-			}
+			_lastAllocation = allocation;
+
+			if (_childResizeQueued)
+				return;
+
+			_childResizeQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				// A pending idle can outlive the widgets it resizes; a destroyed or disposed
+				// GtkSharp wrapper is left holding a null handle, so check that too and not
+				// only the field. _lastAllocation is read here, not captured, so a resize that
+				// arrived while this was queued still lands on the latest allocation.
+				_childResizeQueued = false;
+
+				if (_image != null && _image.Handle != IntPtr.Zero)
+					_image.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+				if (_wrapperBox != null && _wrapperBox.Handle != IntPtr.Zero)
+					_wrapperBox.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+				return false;
+			});
 		}
 
 		private void BuildCarousel()

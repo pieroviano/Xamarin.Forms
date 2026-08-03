@@ -62,14 +62,53 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			Assert.True(large > medium, $"large {large} <= medium {medium}");
 		}
 
+		/// <summary>
+		/// The GTK implementation, driven by the two settings it actually reads.
+		/// </summary>
+		/// <remarks>
+		/// What was here before could not fail and never reached GTK at all: it asserted that the
+		/// theme was one of <c>OSAppTheme</c>'s three members, and it read
+		/// <c>Application.Current?.RequestedTheme</c> - no fixture in this assembly creates an
+		/// <c>Application</c>, so it compared the literal <c>OSAppTheme.Unspecified</c> against
+		/// itself. <c>GtkPlatformServices.RequestedTheme</c> (GtkPlatformServices.cs:148) is only
+		/// ever consulted through <c>Application</c>, so it is called directly here.
+		///
+		/// <para>It answers from exactly two GTK settings - the explicit prefer-dark flag, and the
+		/// "-dark" suffix convention on the theme name - because GTK has no OS-theme signal of its
+		/// own. Both are process-global and this suite shares one GTK main loop across every
+		/// fixture, so they go back exactly as they were even when an assertion fails.</para>
+		/// </remarks>
 		[Fact]
-		public void RequestedThemeIsAnswered()
+		public void RequestedThemeFollowsTheGtkSettings()
 		{
-			var theme = Application.Current?.RequestedTheme ?? OSAppTheme.Unspecified;
+			var settings = Gtk.Settings.Default;
 
-			Assert.True(
-				theme == OSAppTheme.Unspecified || theme == OSAppTheme.Light || theme == OSAppTheme.Dark,
-				$"unexpected theme {theme}");
+			Assert.True(settings != null, "GTK is initialized but has no default Gtk.Settings");
+
+			bool preferDark = settings.ApplicationPreferDarkTheme;
+			string themeName = settings.ThemeName;
+
+			try
+			{
+				settings.ApplicationPreferDarkTheme = true;
+
+				Assert.Equal(OSAppTheme.Dark, Device.PlatformServices.RequestedTheme);
+
+				// The flag off but the name carrying the convention: still dark.
+				settings.ApplicationPreferDarkTheme = false;
+				settings.ThemeName = "Adwaita-dark";
+
+				Assert.Equal(OSAppTheme.Dark, Device.PlatformServices.RequestedTheme);
+
+				settings.ThemeName = "Adwaita";
+
+				Assert.Equal(OSAppTheme.Light, Device.PlatformServices.RequestedTheme);
+			}
+			finally
+			{
+				settings.ThemeName = themeName;
+				settings.ApplicationPreferDarkTheme = preferDark;
+			}
 		}
 
 		/// <summary>

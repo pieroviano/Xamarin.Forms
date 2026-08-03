@@ -45,7 +45,6 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				SetImage(e.OldElement);
 				SetAspect();
-				SetOpacity();
 				SetScaleX();
 				SetScaleY();
 				SetRotation();
@@ -58,10 +57,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			base.OnElementPropertyChanged(sender, e);
 
+			// Opacity is not handled here: VisualElementTracker.UpdateOpacity applies it to the
+			// container with gtk_widget_set_opacity. The IsOpaque branch that used to sit here
+			// forwarded Element.Opacity into ImageControl.SetAlpha, which was a colour-key call
+			// (Pixbuf.AddAlpha) and not an alpha blend at all - the default Opacity of 1.0 made
+			// every pure-white pixel transparent instead of leaving the image untouched.
 			if (e.PropertyName == Image.SourceProperty.PropertyName)
 				SetImage();
-			else if (e.PropertyName == Image.IsOpaqueProperty.PropertyName)
-				SetOpacity();
 			else if (e.PropertyName == Image.AspectProperty.PropertyName)
 				SetAspect();
 			else if (e.PropertyName == Image.ScaleProperty.PropertyName)
@@ -129,13 +131,6 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				default:
 					throw new ArgumentOutOfRangeException(nameof(Element.Aspect));
 			}
-		}
-
-		void SetOpacity()
-		{
-			var opacity = Element.Opacity;
-
-			Control.SetAlpha(opacity);
 		}
 
 		void SetScale()

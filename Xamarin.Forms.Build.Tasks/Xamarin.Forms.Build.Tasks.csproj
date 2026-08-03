@@ -187,7 +187,15 @@
     </ItemGroup>
     <Target Name="_PackBuildTaskAssemblies" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
-            <None Include="$(OutputPath)Xamarin.Forms.Build.Tasks.dll;$(OutputPath)Mono.Cecil*.dll;$(OutputPath)System.CodeDom.dll" Pack="true" PackagePath="build\$(TargetFramework)\" Visible="false" />
+            <!--
+                Xamarin.Forms.Core.dll and Xamarin.Forms.Xaml.dll belong here too. XamlCTask and
+                XamlGTask load both at build time, and SuppressDependenciesWhenPacking is on, so
+                the package declared no dependencies either - a consumer restoring
+                Net4x.Xamarin.Forms.Build.Tasks on its own got the tasks with nothing to resolve
+                those references against. The in-tree publish path never showed it because
+                _PublishBuildTasks copies $(TargetDir)*.dll, i.e. everything.
+            -->
+            <None Include="$(OutputPath)Xamarin.Forms.Build.Tasks.dll;$(OutputPath)Xamarin.Forms.Core.dll;$(OutputPath)Xamarin.Forms.Xaml.dll;$(OutputPath)Mono.Cecil*.dll;$(OutputPath)System.CodeDom.dll" Pack="true" PackagePath="build\$(TargetFramework)\" Visible="false" />
         </ItemGroup>
     </Target>
     <PropertyGroup>

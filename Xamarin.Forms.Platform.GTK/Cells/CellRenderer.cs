@@ -10,9 +10,14 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			BindableProperty.CreateAttached("RealCell", typeof(Gtk.Container),
 				typeof(Cell), null);
 
-		protected Cell Cell { get; private set; }
+		// The ForceUpdateSizeRequested handler is a closure over the widget it drives, so it cannot be
+		// re-derived from the widget the way HandlePropertyChanged can. Park it on the Forms Cell, which
+		// outlives every renderer and widget built for it - see WireUpForceUpdateSizeRequested.
+		static readonly BindableProperty ForceUpdateSizeHandlerProperty =
+			BindableProperty.CreateAttached("ForceUpdateSizeHandler", typeof(EventHandler),
+				typeof(Cell), null);
 
-		private EventHandler _onForceUpdateSizeRequested;
+		protected Cell Cell { get; private set; }
 
 		public virtual CellBase GetCell(Cell item, Gtk.Container reusableView, Controls.ListView listView)
 		{
@@ -102,14 +107,27 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 		private void WireUpForceUpdateSizeRequested(Cell cell, Gtk.Container nativeCell)
 		{
-			cell.ForceUpdateSizeRequested -= _onForceUpdateSizeRequested;
+			// Same leak as the PropertyChanged wiring in GetCell, for the same reason: this handler used
+			// to be a field on the renderer, but Registrar/DependencyResolver builds a brand-new
+			// CellRenderer for every GetCell call (ListViewRenderer.GetCell, Controls/TableView), so the
+			// field was always null here and the -= detached nothing. The closure wired by the PREVIOUS
+			// renderer stayed subscribed to the surviving Forms Cell, so after N refreshes a single
+			// ForceUpdateSize() drove N discarded widgets and kept every one of them alive. The handler
+			// now lives on the Cell, which outlives the renderers, so it can always be found and dropped.
+			var previous = (EventHandler)cell.GetValue(ForceUpdateSizeHandlerProperty);
 
-			_onForceUpdateSizeRequested = (sender, e) =>
+			if (previous != null)
+			{
+				cell.ForceUpdateSizeRequested -= previous;
+			}
+
+			EventHandler handler = (sender, e) =>
 			{
 				OnForceUpdateSizeRequest(cell, nativeCell);
 			};
 
-			cell.ForceUpdateSizeRequested += _onForceUpdateSizeRequested;
+			cell.ForceUpdateSizeRequested += handler;
+			cell.SetValue(ForceUpdateSizeHandlerProperty, handler);
 		}
 
 		private static void UpdateIsEnabled(CellBase cell)

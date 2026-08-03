@@ -102,6 +102,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override void Dispose(bool disposing)
 		{
+			// Before base.Dispose, which nulls Control. OnElementChanged detaches this only from
+			// e.OldElement, so without it the Forms ListView keeps the disposed renderer in its
+			// ScrollToRequested invocation list; re-showing the same page instance re-enables the
+			// element and flushes any pending scroll straight into the dead renderer, which
+			// dereferences the nulled Control. Same fix as ScrollViewRenderer.Dispose.
+			if (Element != null)
+			{
+				Element.ScrollToRequested -= OnElementScrollToRequested;
+			}
+
 			base.Dispose(disposing);
 
 			if (disposing && !_disposed)

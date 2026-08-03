@@ -64,12 +64,15 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 
 		protected override void UpdateCell()
 		{
+			// No SendDisappearing/SendAppearing here: CellBase.Cell's setter is the only caller, and it
+			// already queues SendDisappearing on the OUTGOING cell before assigning and SendAppearing on
+			// the incoming one straight after this returns. Repeating the pair here queued them against
+			// the new cell, so ListView.ItemAppearing fired twice per row and ItemDisappearing fired for
+			// a row that had never appeared - paging/infinite-scroll handlers double-loaded.
 			var viewCell = Cell as Xamarin.Forms.ViewCell;
 
-			if (viewCell != null)
-				Device.BeginInvokeOnMainThread(viewCell.SendDisappearing);
-
-			Device.BeginInvokeOnMainThread(viewCell.SendAppearing);
+			if (viewCell == null)
+				return;
 
 			IVisualElementRenderer renderer;
 			if (_rendererRef == null || !_rendererRef.TryGetTarget(out renderer))

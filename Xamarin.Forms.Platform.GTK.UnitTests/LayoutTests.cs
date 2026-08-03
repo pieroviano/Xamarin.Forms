@@ -202,8 +202,27 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 					.Where(l => l.Text != null && l.Text.StartsWith("row "))
 					.ToList();
 
-				Assert.True(labels.Count >= 2,
-					$"fewer than two rows were realized at all ({labels.Count})");
+				// Every row, not a sample of them. The floor here used to be "at least two", which
+				// is the bug this test is named for spelled as an assertion: an idle loader that
+				// stopped after the first two rows satisfied it, and the unallocated check below
+				// only ever inspects the rows that were FOUND, so a partial load was silent.
+				//
+				// Eight is derived, not hopeful. The GTK ListView does not virtualize:
+				// Controls/ListView.LoadItems packs one cell per GLib.Idle round and re-arms itself
+				// until every cell is packed, and a Pump round drains a ready idle source to
+				// exhaustion (EventsPending() reports it), so what gets realized never depends on
+				// the viewport. They all fit on screen as well - Cell.DefaultCellHeight is 40 and
+				// each row is followed by a 1px ListViewSeparator, so 8 x 41 = 328px inside the
+				// 600px page.
+				var texts = labels.Select(l => l.Text).ToList();
+
+				Assert.True(texts.Count == items.Count,
+					$"{texts.Count} of the {items.Count} rows were realized: " +
+					$"[{string.Join(", ", texts)}]");
+
+				// And in source order: a loader that packs the tail out of order is a different
+				// failure from one that stops early, and the count alone cannot tell them apart.
+				Assert.Equal(items, texts);
 
 				var unallocated = labels
 					.Where(GtkTestHost.IsUnallocated)

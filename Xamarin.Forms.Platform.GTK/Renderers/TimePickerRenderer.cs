@@ -117,9 +117,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void OnTimeChanged(object sender, EventArgs e)
 		{
-			var currentTime = (DateTime.Today + Control.CurrentTime);
-
-			ElementController?.SetValueFromRenderer(TimePicker.TimeProperty, currentTime);
+			// The TimeSpan straight through - NOT `DateTime.Today + Control.CurrentTime`.
+			// TimePicker.TimeProperty is typed TimeSpan, and BindableProperty.TryConvert has no
+			// DateTime->TimeSpan route (no SimpleConvertTypes entry, no known converter, no
+			// implicit operator), so SetValueCore logged "Cannot convert ... to type
+			// 'System.TimeSpan'" and returned WITHOUT assigning. Every user time selection was
+			// therefore discarded: the entry showed the new time while Element.Time kept the old
+			// one and two-way bindings never fired. Even had it converted, TimeProperty's
+			// validator (TotalHours < 24) would have rejected a Today-based value.
+			ElementController?.SetValueFromRenderer(TimePicker.TimeProperty, Control.CurrentTime);
 		}
 
 		private bool OpenPicker()

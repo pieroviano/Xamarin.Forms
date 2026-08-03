@@ -111,17 +111,13 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 		}
 
-		public void SetAlpha(double opacity)
-		{
-			if (_image != null && _original != null)
-			{
-				_image.Pixbuf = Pixbuf.AddAlpha(
-					true,
-					((byte)(255 * opacity)),
-					((byte)(255 * opacity)),
-					((byte)(255 * opacity)));
-			}
-		}
+		// There is deliberately no SetAlpha/opacity member here. Opacity is applied to the
+		// container by VisualElementTracker.UpdateOpacity (gtk_widget_set_opacity), which is the
+		// only place it belongs. The member that used to live here called Pixbuf.AddAlpha, whose
+		// (r,g,b) arguments are a COLOUR KEY - gdk_pixbuf_add_alpha makes pixels EQUAL TO that
+		// colour transparent - not a uniform alpha. It therefore did the opposite of what its name
+		// promised, and because it read and wrote the already-scaled _image.Pixbuf every call
+		// compounded the damage.
 
 		public Gdk.Size GetDesiredSize()
 		{

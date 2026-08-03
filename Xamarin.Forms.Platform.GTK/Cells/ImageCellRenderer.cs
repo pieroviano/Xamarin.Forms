@@ -50,6 +50,17 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			{
 				SetImage(imageCell, gtkImageCell);
 			}
+			// ImageCell derives from TextCell, so TextColor/DetailColor are just as bindable here as on a
+			// plain TextCell. GetCellWidgetInstance only reads them once, at construction, so without
+			// these branches a binding or trigger changing either colour at runtime did nothing.
+			else if (args.PropertyName == Xamarin.Forms.TextCell.TextColorProperty.PropertyName)
+			{
+				gtkImageCell.TextColor = imageCell.TextColor.ToGtkColor();
+			}
+			else if (args.PropertyName == Xamarin.Forms.TextCell.DetailColorProperty.PropertyName)
+			{
+				gtkImageCell.DetailColor = imageCell.DetailColor.ToGtkColor();
+			}
 		}
 
 		private static void SetImage(Xamarin.Forms.ImageCell cell, ImageCell target)

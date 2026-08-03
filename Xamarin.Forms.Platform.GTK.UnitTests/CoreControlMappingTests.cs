@@ -200,6 +200,29 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		[Fact]
+		public void TimePickerSelectionReachesTheElement()
+		{
+			// The OTHER direction. TimePickerMapsTimeAndFormat above only covers Time flowing
+			// INTO the native control, which is why this went unnoticed: the renderer pushed
+			// `DateTime.Today + CurrentTime` into TimePicker.TimeProperty, which is typed
+			// TimeSpan. BindableProperty.TryConvert has no DateTime->TimeSpan route, so
+			// SetValueCore logged and returned without assigning and every user selection was
+			// silently discarded while the entry still showed the new time.
+			var picker = new TimePicker { Time = new TimeSpan(9, 0, 0) };
+
+			using (var host = GtkTestHost.HostView(picker))
+			{
+				var native = host.Control<Controls.TimePicker>();
+
+				// What the popup does when the user picks a time.
+				native.CurrentTime = new TimeSpan(14, 30, 0);
+				host.Pump();
+
+				Assert.Equal(new TimeSpan(14, 30, 0), picker.Time);
+			}
+		}
+
 		/// <summary>
 		/// Regression guard for a real defect found while writing this suite:
 		/// <c>TimePickerRenderer.Dispose</c> read

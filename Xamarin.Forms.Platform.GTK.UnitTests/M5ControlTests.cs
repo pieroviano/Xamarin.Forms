@@ -152,6 +152,13 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// The end point has to actually move, and there is nothing to read it back from:
+		/// <see cref="LineView"/> keeps x1/y1/x2/y2 in private fields and only ever spends them in
+		/// <c>Draw</c>. So the primary assertion is on the painted extent - every "nothing else
+		/// broke" assertion here is satisfied by a renderer that ignores X2/Y2 entirely, which is
+		/// exactly the regression that would otherwise land silently.
+		/// </summary>
 		[Fact]
 		public void LineGeometryChangesAreAcceptedAfterAllocation()
 		{
@@ -171,14 +178,29 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			{
 				var widget = (Gtk.Widget)Platform.GetRenderer(line);
 				var before = widget.Allocation;
+				var lineView = GtkTestHost.Find<LineView>(widget).Single();
+
+				// Ground truth, and the check that says whether this widget can be drawn at all
+				// here: the 0,0 -> 10,10 line paints over its own start point and nowhere near the
+				// far corner.
+				Assert.True(PaintedNear(lineView, 5, 5),
+					"the 0,0 -> 10,10 line painted nothing at its own start point, so the native " +
+					$"LineView drew nothing at all: {GtkTestHost.Describe(lineView)}");
+				Assert.False(PaintedNear(lineView, 120, 120),
+					"a line that ends at 10,10 painted over 120,120");
 
 				line.X2 = 140;
 				line.Y2 = 140;
 				host.Pump();
 
-				// The point is that a post-allocation geometry change neither throws nor wedges
-				// the subtree: M3 root cause 2 was that mutating geometry at the wrong moment made
-				// GTK discard the resize and leave the widget stuck.
+				Assert.True(PaintedNear(lineView, 120, 120),
+					"moving X2/Y2 from 10,10 to 140,140 did not move the native LineView's end " +
+					"point: 120,120 sits on the new segment and is still unpainted, i.e. " +
+					"LineRenderer never called UpdateLine");
+
+				// And a post-allocation geometry change neither throws nor wedges the subtree:
+				// M3 root cause 2 was that mutating geometry at the wrong moment made GTK discard
+				// the resize and leave the widget stuck.
 				Assert.False(GtkTestHost.IsUnallocated(widget),
 					$"Line lost its allocation after a geometry change: {GtkTestHost.Describe(widget)}");
 				Assert.True(widget.Allocation.Width == before.Width,
@@ -681,8 +703,21 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 		}
 
+		/// <summary>
+		/// Selection is asserted on the native rows, and both ways round.
+		/// </summary>
+		/// <remarks>
+		/// "SelectedItem comes back out of SelectedItem" and "SelectionChanged fired" are satisfied
+		/// entirely inside Core - SelectableItemsView raises SelectionChanged from its own
+		/// property-changed handler - so the renderer could have no selection code at all and still
+		/// pass them. What the renderer owns is the host <see cref="Gtk.EventBox"/>'s GdkWindow: a
+		/// no-window EventBox paints nothing of its own, so a row without one shows no selection
+		/// however the template is written (the same failure the RefreshView spinner had). And the
+		/// native -> element direction, which is the half a two-way <c>SelectedItem</c> binding
+		/// depends on, has no Core involvement whatsoever.
+		/// </remarks>
 		[Fact]
-		public void CollectionViewSelectionReachesTheElement()
+		public void CollectionViewSelectionReachesTheNativeRowsAndComesBack()
 		{
 			var items = Enumerable.Range(1, 4).Select(i => $"item {i}").ToList();
 
@@ -700,12 +735,29 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			{
 				host.Pump(12);
 
+				var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
+
 				collectionView.SelectedItem = items[2];
 				host.Pump();
 
 				Assert.Equal(items[2], collectionView.SelectedItem);
-				Assert.True(changed >= 1,
-					$"SelectionChanged never fired (raised {changed} times)");
+				Assert.True(changed == 1,
+					$"one SelectedItem change should raise SelectionChanged once, got {changed}");
+
+				AssertOnlySelectedRow(renderer, items, 2, "SelectedItem = \"item 3\"");
+
+				// The other direction: a press on the native row drives the element. Nothing in
+				// Core can make this pass - CollectionViewRenderer.OnItemButtonPress is the only
+				// thing that turns a click into SetValueFromRenderer.
+				PressRow(SelectionHost(renderer, items[0]));
+				host.Pump();
+
+				Assert.Equal(items[0], collectionView.SelectedItem);
+				Assert.True(changed == 2,
+					"the native press should have raised SelectionChanged a second time, " +
+					$"total {changed}");
+
+				AssertOnlySelectedRow(renderer, items, 0, "a native button press on \"item 1\"");
 			}
 		}
 
@@ -794,6 +846,122 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			}
 
 			return current;
+		}
+
+		/// <summary>
+		/// The native host the CollectionView renderer parks one item's selection on: the
+		/// <see cref="Gtk.EventBox"/> it packs into the items box, i.e. <see cref="Root"/> of the
+		/// item's label.
+		/// </summary>
+		static Gtk.EventBox SelectionHost(Gtk.Widget renderer, string text)
+		{
+			var label = LabelWithText(renderer, text);
+
+			Assert.True(label != null,
+				$"no realized row for \"{text}\": {Describe(ItemLabels(renderer))}");
+
+			return Assert.IsAssignableFrom<Gtk.EventBox>(Root(label));
+		}
+
+		/// <summary>
+		/// Asserts that exactly one row carries the native selected state.
+		/// </summary>
+		/// <remarks>
+		/// VisibleWindow is the assertion because it is the whole mechanism: the host owns a
+		/// GdkWindow only while it is selected, and CollectionViewRenderer.ApplySelectionVisual
+		/// paints the selection background into that window. Checking the unselected rows too is
+		/// what makes this fail for a renderer that lights every row up, or that never clears the
+		/// previous one.
+		/// </remarks>
+		static void AssertOnlySelectedRow(Gtk.Widget renderer, IList<string> items, int index, string after)
+		{
+			for (var i = 0; i < items.Count; i++)
+			{
+				Gtk.EventBox row = SelectionHost(renderer, items[i]);
+				bool expected = i == index;
+
+				Assert.True(row.VisibleWindow == expected,
+					$"after {after} the native row for \"{items[i]}\" has VisibleWindow = " +
+					$"{row.VisibleWindow}, expected {expected} - without its own GdkWindow the row " +
+					"cannot paint a selection background at all");
+			}
+		}
+
+		/// <summary>
+		/// Synthesises the button press CollectionViewRenderer listens for on an item host.
+		/// </summary>
+		/// <remarks>
+		/// The event needs a real, viewable GdkWindow: gtk_widget_event drops a button event whose
+		/// window is null or unmapped (event_window_is_still_viewable) and returns without emitting
+		/// the signal at all, so a bare hand-built event does nothing and the test reads as "the
+		/// renderer never propagated the click".
+		///
+		/// <para>Deliberately not freed: gdk_event_free unrefs event->any.window, and the window
+		/// here is borrowed from a live widget. One leaked event per test is the cheaper half of
+		/// that trade.</para>
+		/// </remarks>
+		static void PressRow(Gtk.Widget row)
+		{
+			Assert.True(row.Window != null,
+				$"the row is not realized, so it has no window to press: {GtkTestHost.Describe(row)}");
+
+			Gdk.Event evnt = Gdk.EventHelper.New(Gdk.EventType.ButtonPress);
+			var press = new Gdk.EventButton(evnt.Handle);
+
+			press.Window = row.Window;
+			press.Button = 1;
+
+			row.ProcessEvent(evnt);
+		}
+
+		/// <summary>
+		/// Whether the widget paints anything within a few pixels of (x, y), by re-running its own
+		/// draw handler into an offscreen surface.
+		/// </summary>
+		/// <remarks>
+		/// gtk_widget_draw, not a screen grab. Reading pixels back off the X server is what
+		/// CoreControlMappingTests.BoxViewPaintsItsColourAndRepaintsOnChange does, and it is the one
+		/// assertion in this suite the two platforms disagree about (it reads black under Xvfb).
+		/// Drawing into a surface we own never involves the X server, so it answers the same
+		/// question on both.
+		/// </remarks>
+		static bool PaintedNear(Gtk.Widget widget, int x, int y, int radius = 3)
+		{
+			int width = widget.AllocatedWidth;
+			int height = widget.AllocatedHeight;
+
+			Assert.True(width > x + radius && height > y + radius,
+				$"{GtkTestHost.Describe(widget)} is too small to sample at ({x},{y})");
+
+			// Backed by a managed array so the pixels can be read without marshalling; ARGB32 is
+			// four bytes per pixel and cairo is happy with the tightly packed stride.
+			int stride = 4 * width;
+			var pixels = new byte[stride * height];
+
+			using (var surface = new Cairo.ImageSurface(pixels, Cairo.Format.Argb32, width, height, stride))
+			using (var cr = new Cairo.Context(surface))
+			{
+				widget.Draw(cr);
+				surface.Flush();
+			}
+
+			for (int dy = -radius; dy <= radius; dy++)
+			{
+				for (int dx = -radius; dx <= radius; dx++)
+				{
+					int px = x + dx;
+					int py = y + dy;
+
+					if (px < 0 || py < 0 || px >= width || py >= height)
+						continue;
+
+					// ARGB32 is premultiplied and little-endian, so alpha is the fourth byte.
+					if (pixels[py * stride + px * 4 + 3] != 0)
+						return true;
+				}
+			}
+
+			return false;
 		}
 
 		static T Ancestor<T>(Gtk.Widget widget) where T : Gtk.Widget

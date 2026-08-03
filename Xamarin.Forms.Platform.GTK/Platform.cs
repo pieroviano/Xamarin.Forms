@@ -56,8 +56,16 @@ namespace Xamarin.Forms.Platform.GTK
 		{
 			IVisualElementRenderer renderer;
 
-			foreach (VisualElement child in view.Descendants())
-				DisposeModelAndChildrenRenderers(child);
+			// Filter, do not cast. Element.Descendants() yields Elements, and not every Element is
+			// a VisualElement - a Shell tree contains ShellItem/ShellSection/ShellContent, and menu
+			// items are Elements too - so the implicit cast in `foreach (VisualElement child in
+			// ...)` threw InvalidCastException while tearing a page down. Mirrors
+			// VisualElementExtensions.Cleanup.
+			foreach (Element element in view.Descendants())
+			{
+				if (element is VisualElement child)
+					DisposeModelAndChildrenRenderers(child);
+			}
 
 			renderer = GetRenderer((VisualElement)view);
 

@@ -64,13 +64,17 @@ namespace Xamarin.Forms.Core.UnitTests
 		{
 			var model = new TestModel();
 
-			var longPressedItem = "";
+			string longPressedItem = null;
 			model.ItemLongPressed += (sender, arg) =>
 			{
 				longPressedItem = (string)arg.Data;
 			};
 
+			// RowLongPressed(section, row) forwards GetItem(section, row), which TestModel
+			// answers with "Foo" for every cell. Without this assert the test passed even if
+			// ItemLongPressed was never raised at all.
 			model.RowLongPressed(0, 5);
+			Assert.Equal("Foo", longPressedItem);
 		}
 
 		[Fact]

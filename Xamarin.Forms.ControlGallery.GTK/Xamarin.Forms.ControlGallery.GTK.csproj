@@ -16,7 +16,18 @@
       Xamarin.Forms.Platform.GTK IS netstandard2.0 - that is the reusable half.
     -->
     <TargetFramework>net10.0</TargetFramework>
-    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <!--
+      No <OutputPath> here, deliberately. The line that used to be here, bin\$(Configuration)\,
+      was residue of the pre-SDK csproj (which spelled it once per Configuration) and it defeated
+      the <BaseOutputPath>bin-wsl/</BaseOutputPath> that Directory.Build.props sets for a build
+      driven from Unix off a /mnt mount - see the long note there for why the two sides must not
+      share output. Measured: this was the only project in the tree with obj-wsl\ but no bin-wsl\,
+      i.e. a WSL build kept its own intermediates and then wrote its app over the Windows one in
+      bin\Debug\net10.0 - runtimeconfig.json and the copied GtkSharp/native assets included - for
+      the only runnable app here. It was never a request for flat output either: OutputPath does
+      not suppress the TFM subfolder (that is AppendTargetFrameworkToOutputPath), and the drop on
+      disk is bin\Debug\net10.0 as usual. The SDK default is what we want.
+    -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <!-- Matches Xamarin.Forms.Platform.GTK; see the note on CS0612/CS0618 there. -->

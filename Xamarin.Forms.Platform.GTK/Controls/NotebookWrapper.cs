@@ -157,17 +157,52 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_image.Pixbuf = pixbuf;
 		}
 
+		bool _childResizeQueued;
+
+		/// <summary>
+		/// Keeps the background image and the hosted page the size of this Fixed.
+		/// </summary>
+		/// <remarks>
+		/// Deferred to idle, never applied inline. SetSizeRequest calls gtk_widget_queue_resize,
+		/// and doing that from inside a size-allocate handler is invalid in GTK3: the resize is
+		/// not merely lost, the alloc-needed flag is left standing on this widget's ancestors and
+		/// gtk_widget_queue_resize_internal bails out at the first ancestor that already carries
+		/// it - so every later resize raised anywhere in this tab's subtree was swallowed too.
+		/// Same treatment as Controls.Page.OnContentContainerWrapperSizeAllocated.
+		/// </remarks>
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
 
-			if (_lastAllocation != allocation)
-			{
-				_lastAllocation = allocation;
+			if (_lastAllocation == allocation)
+				return;
 
-				_image.SetSizeRequest(allocation.Width, allocation.Height);
-				_widget.SetSizeRequest(allocation.Width, allocation.Height);
-			}
+			_lastAllocation = allocation;
+
+			if (_childResizeQueued)
+				return;
+
+			_childResizeQueued = true;
+
+			GLib.Idle.Add(() =>
+			{
+				// A pending idle can outlive the page: RemovePage destroys this wrapper, and a
+				// destroyed or disposed GtkSharp wrapper is left holding a null handle, so check
+				// that too and not only the field. _lastAllocation is read here, not captured, so
+				// an allocation that arrived while this was queued still lands.
+				_childResizeQueued = false;
+
+				if (_image != null && _image.Handle != IntPtr.Zero)
+					_image.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+				// The hosted widget is also checked for still being ours: InsertPage unparents it
+				// to move it into another wrapper, and by the time this idle runs it may already
+				// belong to a different tab, whose size is none of our business.
+				if (_widget != null && _widget.Handle != IntPtr.Zero && _widget.Parent?.Handle == Handle)
+					_widget.SetSizeRequest(_lastAllocation.Width, _lastAllocation.Height);
+
+				return false;
+			});
 		}
 
 		private void Build()

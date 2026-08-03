@@ -53,11 +53,20 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 		}
 
 		[Theory]
+		//The rows carrying stray spaces are not padding: they pin Selector.Parse's whitespace
+		//lookahead. Whitespace only introduces a Descendent when the next non-space character is
+		//not one of + > , ~, and each combinator swallows the spaces that follow it. Drop them and
+		//"a >b" silently degrades into "a b" with nothing failing.
 		[InlineData("label", true, true, true, true, true, false)]
+		[InlineData(" label", true, true, true, true, true, false)]
+		[InlineData("label ", true, true, true, true, true, false)]
 		[InlineData(".test", true, false, true, false, false, true)]
 		[InlineData("label.test", true, false, true, false, false, false)]
 		[InlineData("stacklayout>label.test", true, false, false, false, false, false)]
+		[InlineData("stacklayout >label.test", true, false, false, false, false, false)]
+		[InlineData("stacklayout> label.test", true, false, false, false, false, false)]
 		[InlineData("stacklayout label.test", true, false, true, false, false, false)]
+		[InlineData("stacklayout  label.test", true, false, true, false, false, false)]
 		[InlineData("stacklayout .test", true, false, true, false, false, true)]
 		[InlineData("stacklayout.test", false, false, false, false, false, false)]
 		[InlineData("*", true, true, true, true, true, true)]
@@ -65,10 +74,18 @@ namespace Xamarin.Forms.StyleSheets.UnitTests
 		[InlineData("label#foo", false, false, false, true, false, false)]
 		[InlineData("div#foo", false, false, false, false, false, false)]
 		[InlineData(".test,#foo", true, false, true, true, false, true)]
+		[InlineData(".test ,#foo", true, false, true, true, false, true)]
+		[InlineData(".test, #foo", true, false, true, true, false, true)]
 		[InlineData("#foo,.test", true, false, true, true, false, true)]
+		[InlineData("#foo ,.test", true, false, true, true, false, true)]
+		[InlineData("#foo, .test", true, false, true, true, false, true)]
 		[InlineData("contentview+label", false, false, false, true, false, false)]
+		[InlineData("contentview +label", false, false, false, true, false, false)]
+		[InlineData("contentview+ label", false, false, false, true, false, false)]
 		[InlineData("contentview~label", false, false, false, true, true, false)]
+		[InlineData("contentview ~label", false, false, false, true, true, false)]
 		[InlineData("contentview\r\n~label", false, false, false, true, true, false)]
+		[InlineData("contentview~ label", false, false, false, true, true, false)]
 		[InlineData("label~*", false, true, false, true, true, true)]
 		[InlineData("label~.test", false, false, false, false, false, true)]
 		[InlineData("label~#foo", false, false, false, true, false, false)]

@@ -111,9 +111,16 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		}
 
 		[Fact]
-		public void InputTransparentIsAcceptedAndReverted()
+		public void TogglingInputTransparentLeavesTheSharedWindowAlone()
 		{
-			// Toggling it must not throw and must not disturb the shared window in either direction.
+			// SCOPE, stated plainly: this and the test above are REGRESSION GUARDS against the
+			// shared-window implementation, not proof that InputTransparent suppresses input. They
+			// assert PassThrough stays false, which is constant while the code is correct and fails
+			// the moment anyone reintroduces Gdk.Window.PassThrough here - which is what a guard is
+			// for. End-to-end suppression is NOT covered: it would need a synthesized
+			// Gdk.EventButton delivered to the container, and GtkSharp gives no way to construct one
+			// (GLib.Signal.Emit, which this suite uses for "clicked", cannot carry the event
+			// argument button-press-event requires). Treat the behaviour itself as untested.
 			var box = new BoxView { Color = Color.Red };
 
 			using (var host = GtkTestHost.HostView(box))

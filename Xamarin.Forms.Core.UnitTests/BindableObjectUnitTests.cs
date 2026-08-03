@@ -1344,10 +1344,17 @@ namespace Xamarin.Forms.Core.UnitTests
 			var bindable = new MockBindable();
 
 			AssertEx.DoesNotThrow(() => bindable.SetValue(prop, (object)(short)42));
-			Assert.Equal(42, bindable.GetValue(prop));
+			Assert.IsType<int>(bindable.GetValue(prop));
+			Assert.Equal(42, (int)bindable.GetValue(prop));
 
+			// long -> int is a narrowing conversion, so BindableProperty.TryConvert rejects it and
+			// SetValueCore bails out with a warning: the 42 set above survives untouched. Assert that
+			// concrete outcome rather than NotEqual(-42, ...): GetValue returns object, so the old
+			// NotEqual bound to Assert.NotEqual<object> and object.Equals never coerces boxed
+			// numerics, which made it pass even if a raw boxed -42L had been stored.
 			bindable.SetValue(prop, (object)(long)-42);
-			Assert.NotEqual(-42, bindable.GetValue(prop));
+			Assert.IsType<int>(bindable.GetValue(prop));
+			Assert.Equal(42, (int)bindable.GetValue(prop));
 		}
 
 		class CastFromString
