@@ -75,8 +75,8 @@
       -p:VersionPrefix=) still wins. 5.0.0 is the branch version, from GitInfo.txt.
     -->
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">5.0.0</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' == ''">0</VersionSuffix>
-
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">1</VersionSuffix>
+    <NoWarn>$(NoWarn);MSB3073</NoWarn>
     <!--
       Same tooling, second symptom: it also injected
           <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" />
