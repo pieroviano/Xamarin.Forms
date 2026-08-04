@@ -63,125 +63,104 @@
     <ProjectReference Include="..\Xamarin.Forms.Maps.GTK\Xamarin.Forms.Maps.GTK.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
   </ItemGroup>
+  <!--
+    Gallery images, HTML and CSS. These used to be <Content Include="..\Xamarin.Forms.ControlGallery.iOS\...">
+    with <Link> flattening them into the output root; that project was deleted in 4e0ddc615
+    ("Removed unused files and directories") and the links broke with 30 x MSB3030 in any
+    configuration whose output directory was not already populated - which is why only Release
+    failed while a stale bin\Debug\net10.0 kept Debug green. They now live in this project,
+    which is the only one that still uses them. The names are what the gallery pages look up at
+    runtime (ImageSource.FromFile("crimson.jpg") and friends), so they must stay flat.
+  -->
   <ItemGroup>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\bank.png">
-      <Link>bank.png</Link>
+    <Content Include="bank.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\calculator.png">
-      <Link>calculator.png</Link>
+    <Content Include="calculator.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\coffee.png">
-      <Link>coffee.png</Link>
+    <Content Include="coffee.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\cover1.jpg">
-      <Link>cover1.jpg</Link>
+    <Content Include="cover1.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\cover1small.jpg">
-      <Link>cover1small.jpg</Link>
+    <Content Include="cover1small.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\crimson.jpg">
-      <Link>crimson.jpg</Link>
+    <Content Include="crimson.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\crimsonsmall.jpg">
-      <Link>crimsonsmall.jpg</Link>
+    <Content Include="crimsonsmall.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\default.css">
-      <Link>default.css</Link>
+    <Content Include="default.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\local.html">
-      <Link>local.html</Link>
+    <Content Include="local.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\menuIcon.png">
-      <Link>menuIcon.png</Link>
+    <Content Include="menuIcon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\oasis.jpg">
-      <Link>oasis.jpg</Link>
+    <Content Include="oasis.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\oasissmall.jpg">
-      <Link>oasissmall.jpg</Link>
+    <Content Include="oasissmall.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\about.png">
-      <Link>about.png</Link>
+    <Content Include="about.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\blog.png">
-      <Link>blog.png</Link>
+    <Content Include="blog.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\facebook.png">
-      <Link>facebook.png</Link>
+    <Content Include="facebook.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\favorite.png">
-      <Link>favorite.png</Link>
+    <Content Include="favorite.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\googleplus.png">
-      <Link>googleplus.png</Link>
+    <Content Include="googleplus.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\hm.png">
-      <Link>hm.png</Link>
+    <Content Include="hm.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\hm_full.jpg">
-      <Link>hm_full.jpg</Link>
+    <Content Include="hm_full.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\home.png">
-      <Link>home.png</Link>
+    <Content Include="home.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\lists.png">
-      <Link>lists.png</Link>
+    <Content Include="lists.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\notifications.png">
-      <Link>notifications.png</Link>
+    <Content Include="notifications.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\profile.png">
-      <Link>profile.png</Link>
+    <Content Include="profile.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\rui.jpg">
-      <Link>rui.jpg</Link>
+    <Content Include="rui.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\scott.png">
-      <Link>scott.png</Link>
+    <Content Include="scott.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\scott159.png">
-      <Link>scott159.png</Link>
+    <Content Include="scott159.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\search.png">
-      <Link>search.png</Link>
+    <Content Include="search.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\Resources\xamarinlogo.png">
-      <Link>xamarinlogo.png</Link>
+    <Content Include="xamarinlogo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\test.jpg">
-      <Link>test.jpg</Link>
+    <Content Include="test.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\Xamarin.Forms.ControlGallery.iOS\toolbar_close.png">
-      <Link>toolbar_close.png</Link>
+    <Content Include="toolbar_close.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="gtk_back_button.png">

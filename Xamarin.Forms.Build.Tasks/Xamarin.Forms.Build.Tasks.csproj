@@ -6,7 +6,21 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <!--
+	  Strong-naming is OPT-IN, via -p:SignBuildTasks=true. It used to happen automatically in any
+	  non-Debug build under .NET Framework MSBuild, which made a Visual Studio Release build the
+	  one place it applied - and the one place the solution did not build, because signing forces
+	  the InternalsVisibleTo in Properties/AssemblyInfo.cs to be dropped (see SIGNED_ASSEMBLY
+	  below) and Xamarin.Forms.Xaml.UnitTests then fails with CS0122 on XamlCAssemblyResolver,
+	  ILContext and ICompiledTypeConverter.
+
+	  Off by default is also the honest setting: this is the only project in the tree that signs.
+	  Core, Xaml, Maps, Maps.GTK and Platform.GTK are all unsigned, so a strong name here names
+	  nothing consistent - and every `dotnet build` already skipped it (MSBuildRuntimeType Core,
+	  below), which is what CI runs. A signed drop is still one property away, with the documented
+	  cost that such a build cannot also compile the XAML tests.
+	-->
+    <PropertyGroup Condition=" '$(SignBuildTasks)' != 'true' ">
         <SignAssembly>false</SignAssembly>
         <_DisableStrongNamer>True</_DisableStrongNamer>
         <DelaySign>false</DelaySign>
@@ -26,7 +40,7 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <SignAssembly Condition=" '$(_DisableStrongNamer)' != 'True' ">True</SignAssembly>
         <DisableStrongNamer Condition=" '$(_DisableStrongNamer)' == 'True' ">True</DisableStrongNamer>
-        <DelaySign>true</DelaySign>
+        <DelaySign Condition=" '$(_DisableStrongNamer)' != 'True' ">true</DelaySign>
         <AssemblyOriginatorKeyFile>..\xamarin.forms.snk</AssemblyOriginatorKeyFile>
         <StrongNamerKeyFile>..\xamarin.forms.snk</StrongNamerKeyFile>
     </PropertyGroup>

@@ -39,11 +39,12 @@ the XAML MSBuild tasks; `Directory.Build.props` points `_XFBuildTasksLocation` a
 `UseOSSpecificOutputPaths` is set). After a clean or a `bin`/`obj` wipe, build that project first.
 Building the solution handles the ordering for you.
 
-**Release does not build.** `Xamarin.Forms.Xaml.UnitTests` fails in Release with
+**Release builds.** It used to not: `Xamarin.Forms.Xaml.UnitTests` failed with
 `error CS0122: 'XamlCAssemblyResolver' is inaccessible due to its protection level`, because
-`Xamarin.Forms.Build.Tasks/Properties/AssemblyInfo.cs` wraps its
-`[assembly: InternalsVisibleTo("Xamarin.Forms.Xaml.UnitTests")]` in `#if DEBUG`. This is upstream's
-arrangement. CI builds Debug for this reason.
+upstream wrapped `[assembly: InternalsVisibleTo("Xamarin.Forms.Xaml.UnitTests")]` in `#if DEBUG`.
+`Xamarin.Forms.Build.Tasks/Properties/AssemblyInfo.cs` now guards it with `#if !SIGNED_ASSEMBLY`
+instead, so the test assembly keeps its access in every unsigned configuration. CI still builds
+Debug, but Release is no longer expected to fail.
 
 Build-wide settings live in `Directory.Build.props` / `Environment.Build.props`:
 - **`TreatWarningsAsErrors=true` for every project** — a new warning breaks the build.
