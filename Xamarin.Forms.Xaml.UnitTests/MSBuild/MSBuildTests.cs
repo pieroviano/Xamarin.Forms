@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -177,9 +178,41 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			//     error NU1101: Unable to find package Microsoft.SourceLink.GitHub.
 			// Copying the repo config in makes the restore feed list a property of the repository
 			// rather than of the machine, on every OS.
+			//
+			// Copied with its RELATIVE package sources rewritten to absolute ones. NuGet resolves a
+			// relative source against the directory of the config file it appears in, so the repo's
+			// own local feed ("Packages", the Gtk 4 bindings) would resolve here to a folder under
+			// the OS temp directory that does not exist - and a local source that does not exist is
+			// NU1301, a restore ERROR, not a warning. Every sdkStyle:true case then failed in
+			// RestoreIfNeeded with an exit code and no useful message.
 			var nugetConfig = IOPath.Combine(repoRoot, "NuGet.config");
 			if (File.Exists(nugetConfig))
-				File.Copy(nugetConfig, IOPath.Combine(tempDirectory, "NuGet.config"), true);
+				File.WriteAllText(
+					IOPath.Combine(tempDirectory, "NuGet.config"),
+					AbsolutizeSources(File.ReadAllText(nugetConfig), repoRoot));
+		}
+
+		/// <summary>
+		/// Rewrites relative <c>&lt;add key=... value=... /&gt;</c> package sources so they still
+		/// point at the same folders once the config has been copied elsewhere.
+		/// </summary>
+		/// <remarks>
+		/// Only local paths are touched: a value that parses as an absolute URI (nuget.org,
+		/// dotnet-eng) is left exactly as it was.
+		/// </remarks>
+		static string AbsolutizeSources(string config, string repoRoot)
+		{
+			return Regex.Replace(config, @"(<add\s+key=""[^""]*""\s+value="")([^""]+)("")", match =>
+			{
+				var value = match.Groups[2].Value;
+
+				if (Uri.IsWellFormedUriString(value, UriKind.Absolute) || IOPath.IsPathRooted(value))
+					return match.Value;
+
+				return match.Groups[1].Value
+					+ IOPath.GetFullPath(IOPath.Combine(repoRoot, value))
+					+ match.Groups[3].Value;
+			});
 		}
 
 		public void Dispose()

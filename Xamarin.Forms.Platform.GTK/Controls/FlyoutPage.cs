@@ -393,8 +393,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				// dismissed flyout. gtk_widget_show does not consult the flag, so show the wrapper
 				// itself explicitly and ShowAll the contents through the revealer.
 				_flyoutRevealer.ShowAll();
-				_flyoutContainerWrapper.Show();
-				_flyoutContainerWrapper.Window?.Raise();
+				_flyoutContainerWrapper.Visible = true;
+				_flyoutContainerWrapper.Raise();
 			}
 
 			if (slide)
@@ -437,11 +437,19 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_lastAllocation.Height > 1)
 				height = _lastAllocation.Height;
 
-			var x = (int)ChildGetProperty(_flyoutContainerWrapper, "x").Val;
-			var y = (int)ChildGetProperty(_flyoutContainerWrapper, "y").Val;
+			// gtk_fixed_get_child_position, not container child properties - Gtk 4 has none. See
+			// Extensions/WidgetExtensions.GetContainerChildXY.
+			GetChildPosition(_flyoutContainerWrapper, out double childX, out double childY);
+
+			var x = (int)childX;
+			var y = (int)childY;
 
 			_flyoutContainerWrapper.SizeAllocate(new Gdk.Rectangle(
-				Allocation.X + x, Allocation.Y + y, Math.Max(1, width), Math.Max(1, height)));
+				// No Allocation.X/Y: Gtk 4 allocates in the widget's OWN coordinates, so a widget's
+				// origin is always (0, 0) and the child offset from GetChildPosition is already
+				// relative to this Fixed. The Gtk 3 code added the parent's screen-ward origin
+				// because its allocation was in the PARENT's coordinates.
+				x, y, Math.Max(1, width), Math.Max(1, height)));
 		}
 
 		// ~60fps for the length of the transition, plus a little slack so the last frame lands on
@@ -498,7 +506,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_flyoutContainerWrapper == null || _flyoutContainerWrapper.Handle == IntPtr.Zero)
 				return;
 
-			_flyoutContainerWrapper.Hide();
+			_flyoutContainerWrapper.Visible = false;
 			_flyoutContainerWrapper.MoveTo(-DefaultFlyoutWidth, 0);
 		}
 

@@ -1663,13 +1663,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_titleViewHost?.View == null)
 				return;
 
-			var allocation = Widget.TitleViewHost.Allocation;
-			var width = allocation.Width;
+			var width = Widget.TitleViewHost.Width;
 
 			if (width <= 1)
 				return;
 
-			var height = Math.Max(1, Math.Min(allocation.Height, Controls.ShellWidget.NavBarHeight));
+			var height = Math.Max(1, Math.Min(Widget.TitleViewHost.Height, Controls.ShellWidget.NavBarHeight));
 
 			_titleViewHost.View.Layout(new Rectangle(0, 0, width, height));
 			_titleViewHost.Host.SetSizeRequest(-1, height);
@@ -1680,10 +1679,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (!Widget.SuggestionsVisible)
 				return;
 
-			var width = Widget.SuggestionsWrapper.Allocation.Width;
+			var width = Widget.SuggestionsWrapper.Width;
 
 			if (width <= 1)
-				width = Widget.ContentStack.Allocation.Width;
+				width = Widget.ContentStack.Width;
 
 			if (width <= 1)
 				return;

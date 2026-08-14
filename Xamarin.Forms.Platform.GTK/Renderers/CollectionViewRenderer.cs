@@ -297,8 +297,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 					_leadSpacer = new Gtk.Fixed();
 					_trailSpacer = new Gtk.Fixed();
-					_leadSpacer.Show();
-					_trailSpacer.Show();
+					_leadSpacer.Visible = true;
+					_trailSpacer.Visible = true;
 
 					_viewport = new Gtk.Viewport
 					{
@@ -1471,7 +1471,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				_itemsBox.PackStart(box, false, false, 0);
 				_lineBoxes.Add(box);
 
-				box.Show();
+				box.Visible = true;
 			}
 
 			if (_windowLast < _lines.Count - 1 && _trailSpacer != null)
@@ -1840,13 +1840,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			EnsureAdjustmentSubscription();
 
-			var width = _viewport != null && _viewport.AllocatedWidth > 1
-				? _viewport.AllocatedWidth
-				: Control.AllocatedWidth;
+			var width = _viewport != null && _viewport.Width > 1
+				? _viewport.Width
+				: Control.Width;
 
-			var height = _viewport != null && _viewport.AllocatedHeight > 1
-				? _viewport.AllocatedHeight
-				: Control.AllocatedHeight;
+			var height = _viewport != null && _viewport.Height > 1
+				? _viewport.Height
+				: Control.Height;
 
 			var cross = _orientation == ItemsLayoutOrientation.Horizontal ? height : width;
 
@@ -2327,7 +2327,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			var allocated = _viewport == null
 				? 0
-				: (horizontal ? _viewport.AllocatedWidth : _viewport.AllocatedHeight);
+				: (horizontal ? _viewport.Width : _viewport.Height);
 
 			if (allocated > 1)
 				return allocated;
@@ -2335,7 +2335,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (adjustment != null && adjustment.PageSize > 0)
 				return adjustment.PageSize;
 
-			return Control == null ? 0 : (horizontal ? Control.AllocatedWidth : Control.AllocatedHeight);
+			return Control == null ? 0 : (horizontal ? Control.Width : Control.Height);
 		}
 
 		/// <summary>
@@ -2359,8 +2359,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (requested > 0)
 				return requested;
 
-			var allocation = host.Allocation;
-			var allocated = horizontal ? allocation.Width : allocation.Height;
+			var allocated = horizontal ? host.Width : host.Height;
 
 			return allocated > 1 ? allocated : 0;
 		}

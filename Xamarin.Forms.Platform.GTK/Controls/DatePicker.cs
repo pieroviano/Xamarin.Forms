@@ -23,16 +23,26 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		}
 	}
 
-	public partial class DatePickerWindow : Window
+	/// <summary>The calendar drop-down of <see cref="DatePicker"/>.</summary>
+	/// <remarks>
+	/// A <see cref="Gtk.Popover"/>, where Gtk 3 used a borderless WindowType.Popup toplevel that
+	/// positioned itself by hand and took a seat grab. Gtk 4 removed all three of those - there is
+	/// no popup window type, no gtk_window_move, and no application-driven pointer grab - and a
+	/// popover is what replaced them wholesale: Autohide gives it the implicit grab and the
+	/// dismiss-on-outside-click, and PointingTo gives it the placement. That is why this class
+	/// lost roughly half its code rather than gaining a workaround for each.
+	///
+	/// It is no longer a toplevel, so it is reached through the widget that owns it rather than by
+	/// walking Gtk.Window.ListToplevels; see DatePicker.ClosePicker.
+	/// </remarks>
+	public partial class DatePickerWindow : Popover
 	{
 		Box _datebox;
 		RangeCalendar _calendar;
 
 		public DatePickerWindow()
-			: base(WindowType.Popup)
 		{
 			BuildDatePickerWindow();
-			Helpers.GrabHelper.GrabWindow(this);
 			SelectedDate = DateTime.Now;
 		}
 
@@ -40,12 +50,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			get
 			{
-				return _calendar.Date;
+				return _calendar.SelectedDate;
 			}
 
 			set
 			{
-				_calendar.Date = value;
+				_calendar.SelectedDate = value;
 			}
 		}
 
@@ -79,57 +89,25 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public event DateEventHandler OnDateTimeChanged;
 
-		protected override bool OnDrawn(Cairo.Context cr)
-		{
-			base.OnDrawn(cr);
-
-			int winWidth, winHeight;
-			GetSize(out winWidth, out winHeight);
-
-			// GTK3 removed Gdk.GC drawing (Style.ForegroundGC + GdkWindow.DrawRectangle).
-			// Stroke the 1px frame with Cairo instead, using the theme's insensitive
-			// foreground colour. The 0.5 offset keeps the hairline on the pixel grid.
-			var color = StyleContext.GetColor(StateFlags.Insensitive);
-			cr.SetSourceRGBA(color.Red, color.Green, color.Blue, color.Alpha);
-			cr.LineWidth = 1;
-			cr.Rectangle(0.5, 0.5, winWidth - 1, winHeight - 1);
-			cr.Stroke();
-
-			return false;
-		}
-
-		protected virtual void OnButtonPressEvent(object o, ButtonPressEventArgs args)
-		{
-			Close();
-		}
-
-		protected virtual void OnCalendarButtonPressEvent(object o, ButtonPressEventArgs args)
-		{
-			args.RetVal = true;
-		}
+		// The 1px Cairo frame this used to stroke is gone with the window that needed it. A
+		// WindowType.Popup toplevel had no decoration whatsoever, so the border had to be drawn by
+		// hand from the theme's insensitive foreground colour; a Gtk 4 popover is a themed widget
+		// and gets its border, background and shadow from CSS like anything else. Drawing over
+		// that would put a second, differently-coloured line inside the real one.
 
 		protected virtual void OnCalendarDaySelected(object sender, EventArgs e)
 		{
 			OnDateTimeChanged?.Invoke(this, new DateEventArgs(SelectedDate));
 		}
 
-		protected virtual void OnCalendarDaySelectedDoubleClick(object sender, EventArgs e)
-		{
-			OnDateTimeChanged?.Invoke(this, new DateEventArgs(SelectedDate));
-			Close();
-		}
-
 		private void BuildDatePickerWindow()
 		{
-			Title = "DatePicker";
-			TypeHint = Gdk.WindowTypeHint.Desktop;
-			WindowPosition = WindowPosition.Mouse;
-			BorderWidth = 1;
-			Resizable = false;
-			Decorated = false;
-			DestroyWithParent = true;
-			SkipPagerHint = true;
-			SkipTaskbarHint = true;
+			// Autohide is the whole of what GrabHelper used to do: Gtk takes the implicit grab
+			// for the popover and dismisses it when the user clicks outside. The Gtk 3 code
+			// needed an explicit seat grab AND a button-press handler on the popup to close it,
+			// and had to undo both by hand on every exit path.
+			Autohide = true;
+			HasArrow = false;
 
 			_datebox = new Box(Gtk.Orientation.Vertical, 0);
 			_datebox.Spacing = 6;
@@ -137,32 +115,36 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			_calendar = new RangeCalendar();
 			_calendar.CanFocus = true;
-			_calendar.DisplayOptions = CalendarDisplayOptions.ShowHeading;
+			_calendar.ShowHeading = true;
 			_datebox.Add(_calendar);
-			Box.BoxChild dateBoxChild = ((Box.BoxChild)(_datebox[_calendar]));
-			dateBoxChild.Position = 0;
 
-			Add(_datebox);
+			Child = _datebox;
 
-			if ((Child != null))
-			{
-				Child.ShowAll();
-			}
-
-			Show();
-
-			ButtonPressEvent += new ButtonPressEventHandler(OnButtonPressEvent);
-			_calendar.ButtonPressEvent += new ButtonPressEventHandler(OnCalendarButtonPressEvent);
 			_calendar.DaySelected += new EventHandler(OnCalendarDaySelected);
-			_calendar.DaySelectedDoubleClick += new EventHandler(OnCalendarDaySelectedDoubleClick);
+
+			// Double click confirms and dismisses, as GtkCalendar::day-selected-double-click did.
+			// Gtk 4 deleted that signal - a click's repeat count now comes from a GtkGestureClick
+			// - so the gesture is attached explicitly rather than the signal being handled.
+			var confirm = new GestureClick();
+			confirm.Pressed += (o, args) =>
+			{
+				if (args.NPress < 2)
+					return;
+
+				OnDateTimeChanged?.Invoke(this, new DateEventArgs(SelectedDate));
+				Close();
+			};
+			_calendar.AddController(confirm);
 		}
 
-		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
-		// internal so DatePicker.ClosePicker can dismiss it - see the comment there.
-		internal new void Close()
+		/// <summary>Dismisses the drop-down.</summary>
+		/// <remarks>
+		/// Popdown, not Destroy: a popover is owned by the widget it is parented to and is meant
+		/// to be shown again, where the Gtk 3 popup was a throwaway toplevel built per open.
+		/// </remarks>
+		internal void Close()
 		{
-			Helpers.GrabHelper.RemoveGrab(this);
-			Destroy();
+			Popdown();
 		}
 
 		void NotifyDateChanged()
@@ -217,16 +199,32 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				}
 			}
 
+			/// <summary>
+			/// The selected day, as a <see cref="System.DateTime"/>.
+			/// </summary>
+			/// <remarks>
+			/// Gtk 4 exchanges GtkCalendar's date as a GDateTime, where Gtk 3 used separate
+			/// year/month/day integers that the binding surfaced as a System.DateTime. The two
+			/// are converted through their broken-down fields rather than a Unix timestamp - see
+			/// GLib.DateTime.ToSystemDateTime - because a timestamp round trip shifts the date
+			/// across midnight outside UTC, which is precisely what a date picker must not do.
+			/// </remarks>
+			public DateTime SelectedDate
+			{
+				get { return Date.ToSystemDateTime(); }
+				set { Date = GLib.DateTime.FromSystemDateTime(value); }
+			}
+
 			protected override void OnDaySelected()
 			{
-				if (Date < MinimumDate)
+				if (SelectedDate < MinimumDate)
 				{
-					Date = MinimumDate;
+					SelectedDate = MinimumDate;
 				}
 
-				if (Date > MaximumDate)
+				if (SelectedDate > MaximumDate)
 				{
-					Date = MaximumDate;
+					SelectedDate = MaximumDate;
 				}
 			}
 		}
@@ -235,6 +233,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 	public partial class DatePicker : EventBox
 	{
 		CustomComboBox _comboBox;
+		DatePickerWindow _picker;
 		Gdk.Color _color;
 		DateTime _currentDate;
 		DateTime _minDate;
@@ -253,11 +252,15 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			TextColor = _comboBox.Entry.GetDefaultTextColor(Gtk.StateFlags.Normal);
 
-			_comboBox.Entry.CanDefault = false;
+			// CanDefault is gone: Gtk 4 dropped the can-default/has-default pair, so a widget is
+			// the default one by being set as the window's default widget and by nothing else.
 			_comboBox.Entry.CanFocus = false;
 			_comboBox.Entry.IsEditable = false;
 			_comboBox.Entry.SetStateFlags(StateFlags.Normal, true);
-			_comboBox.Entry.FocusGrabbed += new EventHandler(OnEntryFocused);
+			// Focused, not Gtk 3's grab-focus signal: Gtk 4 has no signal for "focus was grabbed",
+			// and a GtkEventControllerFocus reports focus arriving however it arrived - which is
+			// what this wants, since the popup should open when the entry gains focus at all.
+			_comboBox.Entry.Focused += OnEntryFocused;
 			_comboBox.PopupButton.Clicked += new EventHandler(OnBtnShowCalendarClicked);
 		}
 
@@ -352,36 +355,33 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void ClosePicker()
 		{
-			var windows = Gtk.Window.ListToplevels();
-			var window = windows.FirstOrDefault(w => w.GetType() == typeof(DatePickerWindow))
-				as DatePickerWindow;
-
-			// Close(), not Remove(). DatePicker is a Gtk.EventBox, so Remove(window) was
-			// gtk_container_remove against a TOPLEVEL that was never its child: GTK logged a
-			// critical and did nothing, so the popup stayed on screen and kept its grab while
-			// ClosePicker still reported success to Forms' Unfocus(). Close() drops the grab and
-			// destroys the window.
-			if (window != null)
-			{
-				window.Close();
-			}
+			// The popover this control owns, rather than a search of Gtk.Window.ListToplevels for
+			// one of the right type. That search existed because the Gtk 3 popup was a toplevel
+			// built fresh on every open and reachable no other way; it also found the wrong one
+			// when two date pickers were on screen. A popover is a child of the widget it points
+			// at, so the owner simply keeps it.
+			_picker?.Close();
 		}
 
 		void ShowPickerWindow()
 		{
-			int x = 0;
-			int y = 0;
+			if (_picker == null)
+			{
+				_picker = new DatePickerWindow();
+				_picker.OnDateTimeChanged += OnPopupDateChanged;
+				_picker.Closed += OnPickerClosed;
 
-			Window.GetOrigin(out x, out y);
-			y += Allocation.Height;
+				// Parented to this control, which is also what positions it: a popover appears
+				// against its parent, so the Gtk 3 dance of reading the toplevel's screen origin
+				// and calling Move is gone with the API that made it necessary.
+				_picker.Parent = this;
+				_picker.Position = PositionType.Bottom;
+			}
 
-			var picker = new DatePickerWindow();
-			picker.Move(x, y);
-			picker.SelectedDate = CurrentDate;
-			picker.MinimumDate = _minDate;
-			picker.MaximumDate = _maxDate;
-			picker.OnDateTimeChanged += OnPopupDateChanged;
-			picker.Destroyed += OnPickerClosed;
+			_picker.SelectedDate = CurrentDate;
+			_picker.MinimumDate = _minDate;
+			_picker.MaximumDate = _maxDate;
+			_picker.Popup();
 		}
 
 		void OnPopupDateChanged(object sender, DateEventArgs args)
@@ -414,7 +414,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				Child.ShowAll();
 			}
 
-			Show();
+			Visible = true;
 		}
 
 		void UpdateEntryText()
@@ -427,7 +427,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			ShowPickerWindow();
 		}
 
-		void OnEntryFocused(object sender, EventArgs e)
+		void OnEntryFocused(object sender, FocusedArgs e)
 		{
 			ShowPickerWindow();
 			GotFocus?.Invoke(this, EventArgs.Empty);
@@ -435,13 +435,27 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		void OnPickerClosed(object sender, EventArgs e)
 		{
-			var window = sender as DatePickerWindow;
+			// No Remove: the popover is not a child of this container, and the Gtk 3 code's
+			// Remove(window) never did anything either - it was gtk_container_remove against a
+			// toplevel that was never its child, which GTK logged a critical for and ignored.
+			// The popover is kept for the next open and unparented in Dispose.
+			LostFocus?.Invoke(this, EventArgs.Empty);
+		}
 
-			if (window != null)
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && _picker != null)
 			{
-				Remove(window);
-				LostFocus?.Invoke(this, EventArgs.Empty);
+				_picker.OnDateTimeChanged -= OnPopupDateChanged;
+				_picker.Closed -= OnPickerClosed;
+
+				// Gtk 4 warns if a widget is finalized while it still has a child, and a popover
+				// is parented to the widget it points at rather than owned by it.
+				_picker.Unparent();
+				_picker = null;
 			}
+
+			base.Dispose(disposing);
 		}
 	}
 }

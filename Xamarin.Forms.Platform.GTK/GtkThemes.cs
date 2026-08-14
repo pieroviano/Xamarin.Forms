@@ -41,21 +41,24 @@ namespace Xamarin.Forms.Platform.GTK
 			if (!IsInitialized)
 				throw new InvalidOperationException("call GtkThemes.Init() before this");
 
-			var screen = Gdk.Screen.Default;
+			// The display, not Gdk.Screen: Gtk 4 removed GdkScreen entirely. It was the "one X11
+			// screen of a display" abstraction, and since a display has exactly one in practice
+			// Gtk folded the two together - so every ForScreen call became a ForDisplay one.
+			var display = Gdk.Display.Default;
 
-			if (screen == null)
+			if (display == null)
 				return;
 
 			if (s_customThemeProvider != null)
 			{
-				StyleContext.RemoveProviderForScreen(screen, s_customThemeProvider);
+				StyleContext.RemoveProviderForDisplay(display, s_customThemeProvider);
 				s_customThemeProvider = null;
 			}
 
 			var provider = new CssProvider();
 			provider.LoadFromPath(filename);
 
-			StyleContext.AddProviderForScreen(screen, provider, StyleProviderPriority.Application);
+			StyleContext.AddProviderForDisplay(display, provider, StyleProviderPriority.Application);
 			s_customThemeProvider = provider;
 		}
 	}

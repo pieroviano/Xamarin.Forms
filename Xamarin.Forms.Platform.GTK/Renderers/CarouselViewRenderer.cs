@@ -48,8 +48,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				{
 					SetNativeControl(new Gtk.Fixed());
 
-					_dragGesture = new Gtk.GestureDrag(Control);
-					_dragGesture.DragEnd += OnDragEnd;
+					// AddController, not a widget argument to the constructor: Gtk 4 gestures are
+					// constructed unattached and then handed to a widget, which is what lets several
+					// of them watch the same widget in different propagation phases.
+					_dragGesture = new Gtk.GestureDrag();
+					Control.AddController(_dragGesture);
+					_dragGesture.DragEnded += OnDragEnd;
 				}
 
 				SubscribeSource();
@@ -112,7 +116,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				if (_dragGesture != null)
 				{
-					_dragGesture.DragEnd -= OnDragEnd;
+					_dragGesture.DragEnded -= OnDragEnd;
 					_dragGesture.Dispose();
 					_dragGesture = null;
 				}
@@ -207,8 +211,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_currentView == null || Control == null)
 				return;
 
-			var width = Control.AllocatedWidth;
-			var height = Control.AllocatedHeight;
+			var width = Control.Width;
+			var height = Control.Height;
 
 			if (width <= 1 || height <= 1)
 				return;
@@ -273,7 +277,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			ShowCurrent();
 		}
 
-		void OnDragEnd(object o, Gtk.DragEndArgs args)
+		void OnDragEnd(object o, Gtk.DragEndedArgs args)
 		{
 			if (Element == null || !Element.IsSwipeEnabled || _items.Count == 0)
 				return;

@@ -12,8 +12,14 @@ support on May 1, 2024 and was succeeded by .NET MAUI; this repo is a maintenanc
 **This fork has been pruned to the GTK leg only.** Commit `cc8874b9b` removed the Android, iOS,
 UAP, WPF, Tizen, MacOS and DualScreen projects, the Cake build, the Azure pipelines and the
 original `Xamarin.Forms.sln`. What remains is a shared portable UI abstraction
-(`Xamarin.Forms.Core`) mapped onto native GTK 3 widgets by the renderers in
+(`Xamarin.Forms.Core`) mapped onto native **GTK 4** widgets by the renderers in
 `Xamarin.Forms.Platform.GTK`.
+
+**The GTK 4 migration lives on the `gtk4` branch** (`5.0.0` is still GTK 3). It replaced the
+`GtkSharp` 3 package with the `Net4x.*` 4.22.4 bindings, most of which is absorbed by a GTK 3
+compatibility surface in a sibling repository rather than by churn here — see
+`docs/plans/gtk4-migration.md`, which is the reference for the whole migration including the local
+package feed, the three waves of compiler errors, and what is deliberately deferred.
 
 Empty directories such as `Xamarin.Forms.Platform.Android/` may still exist in a working tree as
 local `bin`/`obj` residue from before the prune. They contain no tracked files — ignore them, or
@@ -105,7 +111,7 @@ XAML compiler tests invoke `XamlCTask` in-process through
 
 ### GTK renderer tests
 
-`Xamarin.Forms.Platform.GTK.UnitTests` drives **real GTK 3 widgets** and runs on both OSes:
+`Xamarin.Forms.Platform.GTK.UnitTests` drives **real GTK 4 widgets** and runs on both OSes:
 
 - **Windows** — works directly against the GDK Win32 backend; no `DISPLAY`, no Xvfb.
 - **Linux** — needs an X server: `xvfb-run -a --server-args="-screen 0 1280x1024x24" dotnet test …`
@@ -114,18 +120,49 @@ XAML compiler tests invoke `XamlCTask` in-process through
 `GtkTestHost` is the harness. Read its comments before adding a test — they record measured
 behaviour, not theory. In particular: pump with `GtkTestHost.Pump`/`PumpUntil` rather than
 assuming a relayout happened; never write an `async` test method (a `GtkSynchronizationContext` is
-installed on the test thread and every continuation deadlocks — use `GtkTestHost.Await`); and
+installed on the GTK thread and every continuation deadlocks — use `GtkTestHost.Await`); and
 never `Destroy()` a test window (GtkSharp's finalizer aborts the run — `Retire` hides and holds).
 
-**`Gtk.Window.Resize()` is only a request to the window manager.** Under Xvfb it is serviced
-immediately; on Win32 in a non-interactive session it is never serviced at all. Drive
-`Window.SizeAllocate(...)` directly instead of resizing and measuring.
+**Every test body runs inside `Run(() => { … })`, on a dedicated STA thread.** MEASURED: GTK 4's
+GDK Win32 backend calls `OleInitialize` during `gtk_init`, which requires a single-threaded
+apartment; xUnit's thread-pool threads are MTA, so initialising GTK there killed the process
+outright (`Gdk-ERROR: OleInitialize failed`, exit `0xC0000409`). An apartment cannot be changed
+after a thread starts, so GTK owns a thread of its own — and since GTK may only be used from the
+thread that called `gtk_init`, every body has to be marshalled onto it.
 
-The two OSes do not agree on everything. Known open difference:
-`CoreControlMappingTests.BoxViewPaintsItsColourAndRepaintsOnChange` passes on Windows and fails
-under Xvfb ("a red BoxView painted rgb(0,0,0)"). Verify both sides before calling the suite green.
+**Measure before you allocate.** GTK 4 requires it; allocating without it logs *"Allocating size to
+… without calling gtk_widget_measure()"* and the allocation silently does not propagate, so
+assertions read geometry that was never laid out. `GtkTestHost.Pump` and `Resize` do this for you.
 
-CI is `.github/workflows/linux-gtk.yml` (Ubuntu, Debug). All three suites gate it.
+**`Gtk.Window.Resize()` is gone** — GTK 4 removed it, because on Wayland the compositor owns the
+geometry. Use `GtkTestHost.Resize`, which sets the default size and then drives the allocation.
+That is strictly more reliable than what it replaces: the Gtk 3 call was only a *request* to the
+window manager, serviced immediately under Xvfb and never at all on Win32 in a non-interactive
+session.
+
+**Input cannot be synthesised directly.** GTK 4 has no public `GdkEvent` constructor and no
+`gtk_widget_event`, so `GtkTestHost.PressButton` finds the widget's own `GtkGestureClick` through
+`ObserveControllers()` and emits its signal. Attaching a second gesture and emitting on that proves
+nothing — the compat `ButtonPressEvent` listens to its own.
+
+**Widgets own no pixels.** `GtkTestHost.RenderToBytes`/`PixelAt` render through a
+`GtkWidgetPaintable` into a `GdkTexture`; there is no GdkWindow to photograph and no
+`gtk_widget_draw`.
+
+The two OSes do not agree on everything. Known open difference from the GTK 3 era:
+`CoreControlMappingTests.BoxViewPaintsItsColourAndRepaintsOnChange` passed on Windows and failed
+under Xvfb ("a red BoxView painted rgb(0,0,0)"). Verify both sides before calling the suite green —
+and re-check this one specifically, since the readback now goes through GSK rather than a GdkWindow.
+
+**This suite is not green yet on `gtk4`.** It builds and runs, and the crash is fixed, but a batch
+of renderer tests still fail on genuine GTK 3 → GTK 4 behavioural differences (minimum sizes,
+allocation propagation, paint timing). See `docs/plans/gtk4-migration.md` §2 for the current count
+and §6 for what is left.
+
+CI is `.github/workflows/linux-gtk.yml` (Ubuntu, Debug). All three suites gate it. On `gtk4` it
+also builds the `Net4x.*` bindings from a pinned commit of the GtkSharp repository first, because
+the `Packages/` local feed those come from is a junction on a development machine and cannot be
+committed — see `docs/plans/gtk4-migration.md` §1 and O1.
 
 ## Architecture
 

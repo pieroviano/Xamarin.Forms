@@ -47,7 +47,16 @@
     <DefineConstants>TRACE;__GTK__</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="GtkSharp" Version="3.24.24.95" />
+    <!--
+      Direct, and not only transitively through Xamarin.Forms.Platform.GTK: the package's
+      build/GtkSharp.targets - which downloads and unpacks a gvsbuild GTK 4 runtime into
+      %LOCALAPPDATA%\Gtk on Windows - lives in build/ rather than buildTransitive/, so it runs
+      only for a project that references the package itself. A ProjectReference does not carry it.
+
+      Version comes from the properties in Directory.Build.props rather than being spelled out, so
+      that a repack of the bindings is one edit rather than three.
+    -->
+    <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\ionicons.ttf">

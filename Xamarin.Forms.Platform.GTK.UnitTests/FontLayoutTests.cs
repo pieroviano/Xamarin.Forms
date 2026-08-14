@@ -49,7 +49,7 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		static Gtk.Label ShownLabel(string text = Sample)
 		{
 			var label = new Gtk.Label(text);
-			label.Show();
+			label.Visible = true;
 
 			return label;
 		}
@@ -60,10 +60,22 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			return natural;
 		}
 
+		/// <remarks>
+		/// A layout built from the entry's own Pango context, not gtk_entry_get_layout, which Gtk 4
+		/// removed - an entry delegates its text to an inner GtkText and no longer exposes the
+		/// layout. Same measurement either way: the context carries the resolved font, which is
+		/// what these tests vary.
+		/// </remarks>
 		static int LayoutWidth(Gtk.Entry entry)
 		{
-			entry.Layout.GetPixelSize(out int width, out _);
-			return width;
+			using (var layout = new Pango.Layout(entry.PangoContext))
+			{
+				layout.FontDescription = entry.PangoContext.FontDescription;
+				layout.SetText(entry.Text ?? string.Empty);
+				layout.GetPixelSize(out int width, out _);
+
+				return width;
+			}
 		}
 
 		/// <summary>
@@ -73,22 +85,26 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void LabelFontWeightRoundTripRestoresTheNaturalWidth()
 		{
-			var label = ShownLabel();
+			Run(() =>
+			{
+					var label = ShownLabel();
 
-			label.SetFont(Font(11));
-			int normal = NaturalWidth(label);
+					label.SetFont(Font(11));
+					int normal = NaturalWidth(label);
 
-			label.SetFont(Font(11, Pango.Weight.Bold));
-			int bold = NaturalWidth(label);
+					label.SetFont(Font(11, Pango.Weight.Bold));
+					int bold = NaturalWidth(label);
 
-			label.SetFont(Font(11));
-			int back = NaturalWidth(label);
+					label.SetFont(Font(11));
+					int back = NaturalWidth(label);
 
-			Assert.True(bold > normal,
-				$"bold glyphs must measure wider than normal ones: normal={normal} bold={bold}");
-			Assert.True(back == normal,
-				"a label taken bold and back must return to its normal width - staying at the bold " +
-				$"width is the stale cached layout of plan §8.3.1: {normal} -> {bold} -> {back}");
+					Assert.True(bold > normal,
+						$"bold glyphs must measure wider than normal ones: normal={normal} bold={bold}");
+					Assert.True(back == normal,
+						"a label taken bold and back must return to its normal width - staying at the bold " +
+						$"width is the stale cached layout of plan §8.3.1: {normal} -> {bold} -> {back}");
+		
+			});
 		}
 
 		/// <summary>
@@ -99,40 +115,48 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void LabelFontSizeChangeIsReflectedInTheNaturalWidth()
 		{
-			var label = ShownLabel();
+			Run(() =>
+			{
+					var label = ShownLabel();
 
-			label.SetFont(Font(9));
-			int small = NaturalWidth(label);
+					label.SetFont(Font(9));
+					int small = NaturalWidth(label);
 
-			label.SetFont(Font(22));
-			int large = NaturalWidth(label);
+					label.SetFont(Font(22));
+					int large = NaturalWidth(label);
 
-			label.SetFont(Font(9));
-			int back = NaturalWidth(label);
+					label.SetFont(Font(9));
+					int back = NaturalWidth(label);
 
-			Assert.True(large > small, $"22pt must measure wider than 9pt: {small} vs {large}");
-			Assert.True(back == small,
-				$"shrinking the font must shrink the request back: {small} -> {large} -> {back}");
+					Assert.True(large > small, $"22pt must measure wider than 9pt: {small} vs {large}");
+					Assert.True(back == small,
+						$"shrinking the font must shrink the request back: {small} -> {large} -> {back}");
+		
+			});
 		}
 
 		[Fact]
 		public void EntryFontWeightRoundTripRestoresTheTextLayout()
 		{
-			var entry = new Gtk.Entry { Text = Sample };
+			Run(() =>
+			{
+					var entry = new Gtk.Entry { Text = Sample };
 
-			entry.SetFont(Font(11));
-			int normal = LayoutWidth(entry);
+					entry.SetFont(Font(11));
+					int normal = LayoutWidth(entry);
 
-			entry.SetFont(Font(11, Pango.Weight.Bold));
-			int bold = LayoutWidth(entry);
+					entry.SetFont(Font(11, Pango.Weight.Bold));
+					int bold = LayoutWidth(entry);
 
-			entry.SetFont(Font(11));
-			int back = LayoutWidth(entry);
+					entry.SetFont(Font(11));
+					int back = LayoutWidth(entry);
 
-			Assert.True(bold > normal,
-				$"the entry's own Pango layout must widen under bold: normal={normal} bold={bold}");
-			Assert.True(back == normal,
-				$"and must come back: {normal} -> {bold} -> {back}");
+					Assert.True(bold > normal,
+						$"the entry's own Pango layout must widen under bold: normal={normal} bold={bold}");
+					Assert.True(back == normal,
+						$"and must come back: {normal} -> {bold} -> {back}");
+		
+			});
 		}
 
 		/// <summary>
@@ -142,20 +166,24 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void ClearingTheFontRemovesTheAttributes()
 		{
-			var label = ShownLabel();
-			int themeWidth = NaturalWidth(label);
+			Run(() =>
+			{
+					var label = ShownLabel();
+					int themeWidth = NaturalWidth(label);
 
-			label.SetFont(Font(24, Pango.Weight.Bold));
-			Assert.True(label.Attributes != null, "the font must be applied as a Pango attribute");
-			int styled = NaturalWidth(label);
+					label.SetFont(Font(24, Pango.Weight.Bold));
+					Assert.True(label.Attributes != null, "the font must be applied as a Pango attribute");
+					int styled = NaturalWidth(label);
 
-			label.SetFont(null);
+					label.SetFont(null);
 
-			Assert.True(label.Attributes == null, "a null font must clear the attribute list");
-			Assert.True(styled > themeWidth,
-				$"24pt bold must be wider than the theme font: theme={themeWidth} styled={styled}");
-			Assert.True(NaturalWidth(label) == themeWidth,
-				$"clearing must return the label to the theme font's width: {NaturalWidth(label)} != {themeWidth}");
+					Assert.True(label.Attributes == null, "a null font must clear the attribute list");
+					Assert.True(styled > themeWidth,
+						$"24pt bold must be wider than the theme font: theme={themeWidth} styled={styled}");
+					Assert.True(NaturalWidth(label) == themeWidth,
+						$"clearing must return the label to the theme font's width: {NaturalWidth(label)} != {themeWidth}");
+		
+			});
 		}
 
 		/// <summary>
@@ -167,25 +195,29 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void MarkupAttributesSurviveAFontChange()
 		{
-			var plain = ShownLabel();
-			plain.Markup = "plain text";
+			Run(() =>
+			{
+					var plain = ShownLabel();
+					plain.Markup = "plain text";
 
-			var marked = ShownLabel();
-			marked.Markup = "<b>plain text</b>";
+					var marked = ShownLabel();
+					marked.Markup = "<b>plain text</b>";
 
-			var plainBefore = NaturalWidth(plain);
-			var markedBefore = NaturalWidth(marked);
+					var plainBefore = NaturalWidth(plain);
+					var markedBefore = NaturalWidth(marked);
 
-			Assert.True(markedBefore > plainBefore,
-				"the premise of this test is that bold markup measures wider at all: " +
-				$"plain={plainBefore} bold-markup={markedBefore}");
+					Assert.True(markedBefore > plainBefore,
+						"the premise of this test is that bold markup measures wider at all: " +
+						$"plain={plainBefore} bold-markup={markedBefore}");
 
-			plain.SetFont(Font(11));
-			marked.SetFont(Font(11));
+					plain.SetFont(Font(11));
+					marked.SetFont(Font(11));
 
-			Assert.True(NaturalWidth(marked) > NaturalWidth(plain),
-				"a font applied through SetFont must not flatten the label's own markup: " +
-				$"plain={NaturalWidth(plain)} bold-markup={NaturalWidth(marked)}");
+					Assert.True(NaturalWidth(marked) > NaturalWidth(plain),
+						"a font applied through SetFont must not flatten the label's own markup: " +
+						$"plain={NaturalWidth(plain)} bold-markup={NaturalWidth(marked)}");
+		
+			});
 		}
 
 		/// <summary>
@@ -196,24 +228,28 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void CssAloneDoesNotMoveALabelsMeasurement()
 		{
-			var viaCss = ShownLabel();
-			int cssBefore = NaturalWidth(viaCss);
-			viaCss.SetStyleProperty("font-size", "28pt");
-			int cssAfter = NaturalWidth(viaCss);
+			Run(() =>
+			{
+					var viaCss = ShownLabel();
+					int cssBefore = NaturalWidth(viaCss);
+					viaCss.SetStyleProperty("font-size", "28pt");
+					int cssAfter = NaturalWidth(viaCss);
 
-			var viaSetFont = ShownLabel();
-			int fontBefore = NaturalWidth(viaSetFont);
-			viaSetFont.SetFont(Font(28));
-			int fontAfter = NaturalWidth(viaSetFont);
+					var viaSetFont = ShownLabel();
+					int fontBefore = NaturalWidth(viaSetFont);
+					viaSetFont.SetFont(Font(28));
+					int fontAfter = NaturalWidth(viaSetFont);
 
-			Assert.True(cssAfter == cssBefore,
-				"MEASURED: a CSS font-size change alone leaves the label's cached layout untouched " +
-				$"({cssBefore} -> {cssAfter}). If this ever starts failing, GTK has changed and the " +
-				"attribute path in StyleExtensions.SetFont may no longer be load-bearing.");
+					Assert.True(cssAfter == cssBefore,
+						"MEASURED: a CSS font-size change alone leaves the label's cached layout untouched " +
+						$"({cssBefore} -> {cssAfter}). If this ever starts failing, GTK has changed and the " +
+						"attribute path in StyleExtensions.SetFont may no longer be load-bearing.");
 
-			Assert.True(fontAfter > fontBefore,
-				"and SetFont, which adds the Pango attribute, must move it: " +
-				$"{fontBefore} -> {fontAfter}");
+					Assert.True(fontAfter > fontBefore,
+						"and SetFont, which adds the Pango attribute, must move it: " +
+						$"{fontBefore} -> {fontAfter}");
+		
+			});
 		}
 
 		/// <summary>
@@ -224,27 +260,31 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void FormsEntryFontAttributesChangeAtRuntime()
 		{
-			var entry = new Entry { Text = Sample, FontSize = 14 };
-
-			using (var host = GtkTestHost.HostView(entry))
+			Run(() =>
 			{
-				var native = host.Control<EntryWrapper>();
+					var entry = new Entry { Text = Sample, FontSize = 14 };
 
-				int normal = LayoutWidth(native.Entry);
+					using (var host = GtkTestHost.HostView(entry))
+					{
+						var native = host.Control<EntryWrapper>();
 
-				entry.FontAttributes = FontAttributes.Bold;
-				host.Pump();
-				int bold = LayoutWidth(native.Entry);
+						int normal = LayoutWidth(native.Entry);
 
-				entry.FontAttributes = FontAttributes.None;
-				host.Pump();
-				int back = LayoutWidth(native.Entry);
+						entry.FontAttributes = FontAttributes.Bold;
+						host.Pump();
+						int bold = LayoutWidth(native.Entry);
 
-				Assert.True(bold > normal,
-					$"Entry.FontAttributes=Bold must re-lay out the text: normal={normal} bold={bold}");
-				Assert.True(back == normal,
-					$"and clearing it must undo that: {normal} -> {bold} -> {back}");
-			}
+						entry.FontAttributes = FontAttributes.None;
+						host.Pump();
+						int back = LayoutWidth(native.Entry);
+
+						Assert.True(bold > normal,
+							$"Entry.FontAttributes=Bold must re-lay out the text: normal={normal} bold={bold}");
+						Assert.True(back == normal,
+							$"and clearing it must undo that: {normal} -> {bold} -> {back}");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -256,27 +296,31 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void FormsLabelFontAttributesChangeAtRuntime()
 		{
-			var label = new Label { Text = Sample, FontSize = 14 };
-
-			using (var host = GtkTestHost.HostView(label))
+			Run(() =>
 			{
-				var native = host.Control<Gtk.Label>();
+					var label = new Label { Text = Sample, FontSize = 14 };
 
-				int normal = NaturalWidth(native);
+					using (var host = GtkTestHost.HostView(label))
+					{
+						var native = host.Control<Gtk.Label>();
 
-				label.FontAttributes = FontAttributes.Bold;
-				host.Pump();
-				int bold = NaturalWidth(native);
+						int normal = NaturalWidth(native);
 
-				label.FontAttributes = FontAttributes.None;
-				host.Pump();
-				int back = NaturalWidth(native);
+						label.FontAttributes = FontAttributes.Bold;
+						host.Pump();
+						int bold = NaturalWidth(native);
 
-				Assert.True(bold > normal,
-					$"Label.FontAttributes=Bold must re-lay out the text: normal={normal} bold={bold}");
-				Assert.True(back == normal,
-					$"and clearing it must undo that: {normal} -> {bold} -> {back}");
-			}
+						label.FontAttributes = FontAttributes.None;
+						host.Pump();
+						int back = NaturalWidth(native);
+
+						Assert.True(bold > normal,
+							$"Label.FontAttributes=Bold must re-lay out the text: normal={normal} bold={bold}");
+						Assert.True(back == normal,
+							$"and clearing it must undo that: {normal} -> {bold} -> {back}");
+					}
+		
+			});
 		}
 	}
 }

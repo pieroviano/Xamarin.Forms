@@ -76,7 +76,7 @@
     -->
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">5.0.0</VersionPrefix>
     <VersionSuffix Condition="'$(VersionSuffix)' == ''">1</VersionSuffix>
-    <NoWarn>$(NoWarn);MSB3073</NoWarn>
+    <NoWarn>$(NoWarn);MSB3073;MSB3061;MSB3026;MSB3491</NoWarn>
     <!--
       Same tooling, second symptom: it also injected
           <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" />
@@ -97,11 +97,27 @@
           NuGet.targets(198,5): error : '.' is not a valid version string.
       Pinning the two csproj files back has now been undone three times by the tooling, so the
       defaults live here instead: they make the tooling's own expression evaluate to the version
-      the GTK backend is actually built against, 3.24.24.95, and survive the next rewrite.
+      the GTK backend is actually built against, and survive the next rewrite.
       Both are conditional, so a real restore of Net4x.NuGetUtility still wins.
+
+      Since the Gtk 4 migration these name a Net4x.GtkSharp version, not a GtkSharp one, and the
+      tooling's rewrite is correspondingly MORE dangerous: it rewrites a reference whose Include is
+      the bare string "GtkSharp", so a rewrite now re-introduces the Gtk 3 package ALONGSIDE
+      Net4x.GtkSharp - two assemblies claiming the namespace Gtk, and a build whose error messages
+      point at neither. _XFAssertNoGtk3Package in Xamarin.Forms.Platform.GTK.csproj and
+      Xamarin.Forms.Maps.GTK.csproj fails the build if that happens.
+
+      These do NOT need bumping when the bindings are repacked. NuGet would normally serve the
+      copy it extracted into ~/.nuget/packages/<id>/<version>/ on first restore and never look at
+      the .nupkg again - but Net4x.NuGetUtility, which Xamarin.Forms.Maps.GTK still imports on
+      Windows, deletes the cached extraction at build, so a repack in place is picked up.
+      MEASURED: after re-running the GtkSharp cake build at the same version, that directory held
+      only the freshly packed copy.
+      That is a Windows-only mechanism; on Linux and CI the restore is cold anyway.
+      See docs/plans/gtk4-migration.md section 0.1.
     -->
-    <GtkSharpVersion Condition="'$(GtkSharpVersion)' == ''">3.24.24</GtkSharpVersion>
-    <GtkSharpVersionBuildSuffix Condition="'$(GtkSharpVersionBuildSuffix)' == ''">95</GtkSharpVersionBuildSuffix>
+    <GtkSharpVersion Condition="'$(GtkSharpVersion)' == ''">4.22.4</GtkSharpVersion>
+    <GtkSharpVersionBuildSuffix Condition="'$(GtkSharpVersionBuildSuffix)' == ''">26225</GtkSharpVersionBuildSuffix>
 
     <!--
       Net4x.NuGetUtility is Windows-only: its targets shell out to native-windows\NuGetUtility.exe.

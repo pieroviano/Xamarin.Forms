@@ -56,8 +56,7 @@ public static class GtkTestHost
 			{
 				try
 				{
-					Gtk.Application.Init();
-					Forms.Init();
+					StartGtkThread();
 
 					s_initialized = true;
 					return;
@@ -119,6 +118,101 @@ public static class GtkTestHost
 		Assert.Skip(reason);
 	}
 
+	static System.Threading.Thread s_gtkThread;
+	static readonly System.Collections.Concurrent.BlockingCollection<Action> s_work =
+		new System.Collections.Concurrent.BlockingCollection<Action>();
+
+	/// <summary>
+	/// Starts the thread GTK is initialised on, and runs every test body on it.
+	/// </summary>
+	/// <remarks>
+	/// <para>MEASURED, and mandatory on Windows under Gtk 4: the GDK Win32 backend calls
+	/// OleInitialize during gtk_init, which REQUIRES a single-threaded apartment. xUnit runs test
+	/// bodies on thread-pool threads, which are MTA, so initialising GTK there aborted the process
+	/// outright - "COM runtime already initialized on the main thread with an incompatible
+	/// apartment model", then "Gdk-ERROR: OleInitialize failed", exit code 0xC0000409. Gtk 3 did
+	/// not call OleInitialize from gtk_init, which is why this suite could get away with the test
+	/// thread until now.</para>
+	///
+	/// <para>An apartment cannot be changed after a thread starts, so GTK needs a thread of its
+	/// own - and once it has one, every GTK call has to be marshalled onto it, because GTK may
+	/// only be used from the thread that called gtk_init. That is what GtkTestBase.Run is for.
+	/// The sibling GtkSharp suite is built the same way, for the same reason.</para>
+	/// </remarks>
+	static void StartGtkThread()
+	{
+		var ready = new System.Threading.ManualResetEventSlim();
+		System.Runtime.ExceptionServices.ExceptionDispatchInfo startupError = null;
+
+		s_gtkThread = new System.Threading.Thread(() =>
+		{
+			try
+			{
+				Gtk.Application.Init();
+				Forms.Init();
+			}
+			catch (Exception e)
+			{
+				startupError = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e);
+				ready.Set();
+				return;
+			}
+
+			ready.Set();
+
+			foreach (var work in s_work.GetConsumingEnumerable())
+				work();
+		});
+
+		s_gtkThread.IsBackground = true;
+		s_gtkThread.Name = "Gtk";
+
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			s_gtkThread.SetApartmentState(System.Threading.ApartmentState.STA);
+
+		s_gtkThread.Start();
+		ready.Wait();
+
+		startupError?.Throw();
+	}
+
+	/// <summary>Runs a test body on the GTK thread, rethrowing whatever it throws.</summary>
+	public static void Run(Action body)
+	{
+		EnsureInitialized();
+
+		if (System.Threading.Thread.CurrentThread == s_gtkThread)
+		{
+			body();
+			return;
+		}
+
+		System.Runtime.ExceptionServices.ExceptionDispatchInfo error = null;
+
+		using (var done = new System.Threading.ManualResetEventSlim())
+		{
+			s_work.Add(() =>
+			{
+				try
+				{
+					body();
+				}
+				catch (Exception e)
+				{
+					error = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e);
+				}
+				finally
+				{
+					done.Set();
+				}
+			});
+
+			done.Wait();
+		}
+
+		error?.Throw();
+	}
+
 	/// <summary>
 	/// Pumps GTK so that queued relayout actually happens.
 	///
@@ -139,20 +233,199 @@ public static class GtkTestHost
 			Drain();
 
 			if (toplevel != null)
-			{
-				toplevel.SizeAllocate(new Gdk.Rectangle(
-					0, 0, toplevel.AllocatedWidth, toplevel.AllocatedHeight));
-			}
+				Allocate(toplevel, toplevel.Width, toplevel.Height);
 
-			while (GLib.MainContext.Iteration(false))
+			// Bounded for the same reason as Drain - see MaxDrainIterations. This loop had no
+			// limit either, and between the two of them a self-requeuing idle handler hung the
+			// runner with no failing test to point at.
+			for (int j = 0; j < MaxDrainIterations && GLib.MainContext.Iteration(false); j++)
 			{
 			}
 		}
 	}
 
+	/// <summary>Resizes a test window and commits the new allocation.</summary>
+	/// <remarks>
+	/// <para>Gtk 4 removed gtk_window_resize: an application can set a window's DEFAULT size and
+	/// nothing more, because on Wayland the compositor owns the geometry. So a test that wants a
+	/// window to become a different size has to allocate it, which is exactly what
+	/// <see cref="Pump"/> already does at the toplevel's current size.</para>
+	///
+	/// <para>This is strictly more reliable than what it replaces. Gtk 3's Resize was a REQUEST to
+	/// the window manager - serviced immediately under Xvfb, never serviced at all on the Win32
+	/// backend in a non-interactive session - which is why the two call sites for this carried
+	/// long comments about waiting for an answer that might never come. There is no request and no
+	/// answer any more: the size is set here.</para>
+	/// </remarks>
+	public static void Resize(Gtk.Window window, int width, int height)
+	{
+		if (window == null)
+			throw new ArgumentNullException(nameof(window));
+
+		window.SetDefaultSize(width, height);
+		Allocate(window, width, height);
+
+		Pump(window);
+	}
+
+	/// <summary>Renders a widget and returns its pixels as tightly-packed BGRA.</summary>
+	/// <remarks>
+	/// <para>The Gtk 4 pixel-readback path, and there is no shorter one. Gtk 3 let a test ask a
+	/// realized widget's GdkWindow for its contents (<c>new Gdk.Pixbuf(window, ...)</c>); Gtk 4 has
+	/// no per-widget windows and nothing to photograph, because a widget does not own pixels - it
+	/// contributes render nodes to a tree that a GskRenderer rasterises.</para>
+	///
+	/// <para>So the widget is asked for that tree instead: a GtkWidgetPaintable snapshots it, the
+	/// snapshot becomes a GskRenderNode, and the toplevel's own renderer turns the node into a
+	/// GdkTexture whose bytes can be read. Rendering explicitly is also what replaces the Gtk 3
+	/// ProcessUpdates call the callers needed - there is no queued frame to flush, because this
+	/// does not wait for a frame at all. That removes the headless flakiness the old path had, where
+	/// a screenshot could return the PREVIOUS frame because the frame clock does not tick on demand
+	/// under Xvfb.</para>
+	///
+	/// <para>The format is BGRA8 (<c>Gdk.MemoryFormat.B8g8r8a8Premultiplied</c> is what a renderer
+	/// produces on every backend this suite runs on), premultiplied, four bytes per pixel, with no
+	/// row padding.</para>
+	/// </remarks>
+	public static byte[] RenderToBytes(Gtk.Widget widget, out int width, out int height)
+	{
+		if (widget == null)
+			throw new ArgumentNullException(nameof(widget));
+
+		width = widget.Width;
+		height = widget.Height;
+
+		if (width <= 0 || height <= 0)
+			throw new InvalidOperationException(
+				$"the widget has no allocation to render: {Describe(widget)}");
+
+		var native = widget.Native
+			?? throw new InvalidOperationException(
+				$"the widget is not in a realized toplevel, so there is no renderer: {Describe(widget)}");
+
+		var paintable = new Gtk.WidgetPaintable(widget);
+		var snapshot = new Gtk.Snapshot();
+
+		((Gdk.IPaintable)paintable).Snapshot(snapshot, width, height);
+
+		var node = snapshot.ToNode();
+
+		if (node == null)
+			throw new InvalidOperationException(
+				$"the widget produced no render nodes: {Describe(widget)}");
+
+		var bounds = Graphene.Rect.Alloc();
+		bounds.Init(0, 0, width, height);
+
+		using (var texture = native.Renderer.RenderTexture(node, bounds))
+			return texture.Download();
+	}
+
+	/// <summary>The colour of one pixel of a rendered widget, as 0-255 RGB.</summary>
+	/// <remarks>
+	/// Deliberately not Gdk.Color: its channels are 16-bit, so the 0-255 thresholds callers assert
+	/// on would silently be wrong.
+	/// </remarks>
+	public static (byte R, byte G, byte B) PixelAt(Gtk.Widget widget, int x, int y)
+	{
+		int width, height;
+		var bytes = RenderToBytes(widget, out width, out height);
+
+		if (x < 0 || y < 0 || x >= width || y >= height)
+			throw new ArgumentOutOfRangeException(
+				nameof(x), $"({x},{y}) is outside the {width}x{height} widget");
+
+		// BGRA, so blue comes first - the opposite of the pixbuf this replaces.
+		var offset = (y * width * 4) + (x * 4);
+
+		return (bytes[offset + 2], bytes[offset + 1], bytes[offset]);
+	}
+
+	/// <summary>Where a widget sits inside its toplevel, as a rectangle.</summary>
+	/// <remarks>
+	/// <para>Replaces <c>Widget.Allocation</c> for every assertion about POSITION. Gtk 3 allocated
+	/// a widget a rectangle in its parent's coordinates, so Allocation.X/Y answered "where is this";
+	/// Gtk 4 allocates a SIZE in the widget's own coordinates and carries position separately as a
+	/// transform, so Allocation.X/Y are always zero and an unported assertion compares 0 with 0 -
+	/// passing whatever the layout does.</para>
+	///
+	/// <para>gtk_widget_compute_bounds is the replacement: it walks the transforms between two
+	/// widgets and reports one's bounds in the other's coordinate space. Passing the toplevel
+	/// reproduces what the Gtk 3 assertions were reading.</para>
+	/// </remarks>
+	public static Gdk.Rectangle BoundsIn(Gtk.Widget widget, Gtk.Widget ancestor = null)
+	{
+		if (widget == null)
+			throw new ArgumentNullException(nameof(widget));
+
+		var target = ancestor ?? (Gtk.Widget)widget.Root ?? widget;
+
+		if (!widget.ComputeBounds(target, out var bounds))
+			throw new InvalidOperationException(
+				$"{Describe(widget)} has no position relative to {Describe(target)} - "
+				+ "they are not in the same widget tree, or neither has been allocated");
+
+		return new Gdk.Rectangle(
+			(int)bounds.X, (int)bounds.Y, (int)bounds.Width, (int)bounds.Height);
+	}
+
+	/// <summary>Measures a widget and then allocates it, in that order.</summary>
+	/// <remarks>
+	/// MEASURED, and the reason every layout assertion read stale geometry at first: Gtk 4 requires
+	/// measure-before-allocate. Allocating without it logs
+	///     "Allocating size to ... without calling gtk_widget_measure(). How does the code know the
+	///     size to allocate?"
+	/// and the allocation does not propagate - so no renderer was ever laid out, Platform.GetRenderer
+	/// handed back widgets with no size, and half this suite failed with NullReferenceException
+	/// rather than with a wrong number.
+	///
+	/// Gtk 3 had no such rule, which is why the Gtk 3 harness could call SizeAllocate on its own.
+	/// </remarks>
+	static void Allocate(Gtk.Widget widget, int width, int height)
+	{
+		if (width <= 0 || height <= 0)
+			return;
+
+		int minimumWidth, minimumHeight;
+
+		widget.Measure(Gtk.Orientation.Horizontal, -1, out minimumWidth, out _, out _, out _);
+
+		// Clamped to the minimum, not allocated at whatever was asked for. Gtk 4 REFUSES an
+		// allocation smaller than a widget's minimum - "Allocation height too small. Tried to
+		// allocate 400x300, but GtkWindow needs at least 400x339", a Gtk-CRITICAL - and then the
+		// layout does not settle, so every assertion downstream reads geometry that was never
+		// committed. Gtk 3 allowed the under-allocation and simply clipped.
+		//
+		// The width is fixed first and the height measured FOR that width, because these are
+		// height-for-width widgets: a narrower window needs a taller one to fit the same text.
+		width = Math.Max(width, minimumWidth);
+
+		widget.Measure(Gtk.Orientation.Vertical, width, out minimumHeight, out _, out _, out _);
+
+		height = Math.Max(height, minimumHeight);
+
+		widget.SizeAllocate(new Gdk.Rectangle(0, 0, width, height));
+	}
+
+	/// <summary>The most iterations one Drain will run before giving up.</summary>
+	/// <remarks>
+	/// A bound, where the Gtk 3 harness looped while EventsPending() with no limit. That was safe
+	/// only by luck: an idle handler that re-queues itself makes the loop infinite, and the runner
+	/// then hangs rather than failing - which is strictly worse, because a hang takes CI with it
+	/// and names no test. MEASURED under Gtk 4:
+	/// PropertyMappingTests.EntryMapsTextPlaceholderAndPassword did exactly that, spinning for
+	/// minutes while GTK logged text-buffer and accessibility criticals, and held the built
+	/// assemblies open so that even a rebuild failed.
+	///
+	/// 2000 is far more than any settling layout needs here - the next-slowest test drains in
+	/// tens of iterations - so a test that reaches it is looping, and should fail on its own
+	/// assertions instead.
+	/// </remarks>
+	const int MaxDrainIterations = 2000;
+
 	static void Drain()
 	{
-		while (Gtk.Application.EventsPending())
+		for (int i = 0; i < MaxDrainIterations && Gtk.Application.EventsPending(); i++)
 			Gtk.Application.RunIteration();
 	}
 
@@ -245,7 +518,7 @@ public static class GtkTestHost
 		if (window == null)
 			return;
 
-		window.Hide();
+		window.Visible = false;
 		Pump(null, 2);
 
 		s_retired.Add(window);
@@ -279,16 +552,18 @@ public static class GtkTestHost
 	{
 		var found = new List<T>();
 
+		// GetFirstChild/GetNextSibling, not "is Gtk.Container". Gtk 4 has no GtkContainer: children
+		// are a linked list on GtkWidget itself, and ANY widget may have them. The Gtk 3 test only
+		// descended into containers, and the compat Gtk.Container covers just this backend's own
+		// wrappers - so a walk looking for, say, the GtkScrolledWindow inside a CollectionView
+		// stopped at the first real Gtk 4 widget and reported that the renderer had built nothing.
 		void Walk(Gtk.Widget w)
 		{
 			if (w is T t)
 				found.Add(t);
 
-			if (w is Gtk.Container c)
-			{
-				foreach (var child in c.Children)
-					Walk(child);
-			}
+			for (var child = w.FirstChild; child != null; child = child.NextSibling)
+				Walk(child);
 		}
 
 		if (root != null)
@@ -297,38 +572,52 @@ public static class GtkTestHost
 		return found;
 	}
 
-	/// <summary>
-	/// Delivers a synthetic button press to <paramref name="widget"/>, as gtk_widget_event would.
-	/// </summary>
+	/// <summary>Synthesizes a button press on a widget.</summary>
 	/// <remarks>
-	/// <c>GLib.Signal.Emit(w, "clicked")</c> - what this suite uses for Button and ImageButton -
-	/// cannot stand in for this: <c>button-press-event</c> carries a <c>Gdk.EventButton</c>
-	/// argument, and its handlers read the button number and the press type off it. So the event
-	/// has to be built.
+	/// <para>By emitting the signal of the widget's own GtkGestureClick, found by walking its
+	/// controllers. Gtk 4 removed EVERY way for an application to fabricate input: there is no
+	/// public GdkEvent constructor, no gdk_event_new, and no gtk_widget_event. Driving the
+	/// controller is what is left, and it is the same path a real press takes once GDK has
+	/// dispatched it.</para>
 	///
-	/// <para>It needs a real, viewable GdkWindow. gtk_widget_event drops a button event whose
-	/// window is null or unmapped (event_window_is_still_viewable) and returns WITHOUT emitting
-	/// the signal, which a test then reads as "the handler was never attached" - the opposite
-	/// conclusion. The widget's own window is borrowed for that reason; for a windowless widget
-	/// (<see cref="Xamarin.Forms.Platform.GTK.GtkFormsContainer"/> is a no-window
-	/// <c>Gtk.EventBox</c>) that is the parent's, which is exactly what a real press would carry.</para>
+	/// <para>The gesture has to be the one the widget is already listening through - attaching a
+	/// second GestureClick and emitting on that proves nothing, because the compat
+	/// ButtonPressEvent listens to its own. (The GtkSharp test that pins this behaviour failed
+	/// exactly that way first; see CompatTests.Button_press_event_fires_from_a_click_gesture.)</para>
 	///
-	/// <para>Deliberately not freed: gdk_event_free unrefs event-&gt;any.window, and that window is
-	/// borrowed from a live widget. One leaked event per press is the cheaper half of the trade.</para>
+	/// <para>So a widget with no ButtonPressEvent subscriber has no gesture to drive, and this
+	/// says so rather than silently doing nothing - the same failure mode the Gtk 3 version
+	/// guarded against when it checked for an unrealized window.</para>
 	/// </remarks>
 	public static void PressButton(Gtk.Widget widget, uint button = 1)
 	{
-		if (widget == null || widget.Window == null)
+		if (widget == null)
+			throw new ArgumentNullException(nameof(widget));
+
+		var gesture = ControllerOf<Gtk.GestureClick>(widget);
+
+		if (gesture == null)
 			throw new InvalidOperationException(
-				$"the widget is not realized, so it has no window to press: {Describe(widget)}");
+				"the widget has no GestureClick to press: nothing has subscribed to its "
+				+ $"ButtonPressEvent, so no controller was ever attached. {Describe(widget)}");
 
-		Gdk.Event evnt = Gdk.EventHelper.New(Gdk.EventType.ButtonPress);
-		var press = new Gdk.EventButton(evnt.Handle);
+		// n_press, x, y - the arguments of GtkGestureClick::pressed. The coordinates are the
+		// widget's centre, so a handler that hit-tests lands inside it.
+		GLib.Signal.Emit(gesture, "pressed", 1, widget.Width / 2.0, widget.Height / 2.0);
+	}
 
-		press.Window = widget.Window;
-		press.Button = button;
+	/// <summary>The first controller of the given kind attached to a widget, or null.</summary>
+	static T ControllerOf<T>(Gtk.Widget widget) where T : Gtk.EventController
+	{
+		var controllers = widget.ObserveControllers();
 
-		widget.ProcessEvent(evnt);
+		for (uint i = 0; i < controllers.NItems; i++)
+		{
+			if (controllers.GetObject(i) is T match)
+				return match;
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -337,20 +626,20 @@ public static class GtkTestHost
 	/// as exactly this while the widget still reported <c>Visible == true</c>.
 	/// </summary>
 	public static bool IsUnallocated(Gtk.Widget widget) =>
-		widget == null || (widget.Allocation.Width <= 1 && widget.Allocation.Height <= 1);
+		widget == null || (widget.Width <= 1 && widget.Height <= 1);
 
 	public static string Describe(Gtk.Widget widget) =>
 		widget == null
 			? "<null>"
-			: $"{widget.GetType().Name}[{widget.Allocation.X},{widget.Allocation.Y} " +
-			  $"{widget.Allocation.Width}x{widget.Allocation.Height} visible={widget.Visible}]";
+			: $"{widget.GetType().Name}[{widget.Width}x{widget.Height} visible={widget.Visible}]";
 
 	public sealed class ViewHost<TView> : IDisposable where TView : View
 	{
 		public ViewHost(TView view, int width, int height)
 		{
 			View = view;
-			Window = new Gtk.Window(Gtk.WindowType.Toplevel);
+			// No WindowType: Gtk 4 removed the enum - a GtkWindow is always a toplevel.
+			Window = new Gtk.Window();
 			Window.SetDefaultSize(width, height);
 
 			Renderer = Platform.CreateRenderer(view);
@@ -401,9 +690,11 @@ public static class GtkTestHost
 			Window.LoadApplication(_app);
 			Window.ShowAll();
 
-			// Under Xvfb no window manager ever configures the window, so OnConfigureEvent -
-			// which is what normally tells Forms how big the page is - may never fire.
-			Window.Resize(width, height);
+			// SetDefaultSize, not Resize: Gtk 4 removed gtk_window_resize outright. The reason
+			// this call exists is unchanged - under Xvfb no window manager configures the window,
+			// so the size-allocate that normally tells Forms how big the page is may never come -
+			// but the default size is now the only lever an application has over its own geometry.
+			Window.SetDefaultSize(width, height);
 			Platform.GetRenderer(page)?.SetElementSize(new Size(width, height));
 
 			GtkTestHost.Pump(Window);
@@ -429,4 +720,7 @@ public static class GtkTestHost
 public abstract class GtkTestBase
 {
 	protected GtkTestBase() => GtkTestHost.EnsureInitialized();
+
+	/// <summary>Runs a test body on the GTK thread. See <see cref="GtkTestHost.Run"/>.</summary>
+	protected static void Run(Action body) => GtkTestHost.Run(body);
 }

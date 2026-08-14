@@ -19,12 +19,16 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_entryWrapper.Entry.HasFrame = false;
 			_searchButton = new ImageButton();
 			_searchButton.SetImagePosition(PositionType.Left);
-			// GTK3: gtk_widget_render_icon is deprecated along with stock IDs; load themed icons.
-			_searchButton.ImageWidget.Pixbuf = LoadThemedIcon("edit-find-symbolic");
+			// A themed icon NAME on the image, not a Pixbuf loaded at a fixed size. Gtk 4's
+			// IconTheme.LookupIcon hands back a GtkIconPaintable rather than a pixbuf, and there is
+			// no reason to convert one: an image told an icon name resolves it itself, at the right
+			// scale for the display, and lets a symbolic icon take its colour from the theme -
+			// all of which a 16px pixbuf threw away.
+			_searchButton.ImageWidget.IconName = "edit-find-symbolic";
 
 			_clearButton = new ImageButton();
 			_clearButton.SetImagePosition(PositionType.Left);
-			_clearButton.ImageWidget.Pixbuf = LoadThemedIcon("edit-clear-symbolic");
+			_clearButton.ImageWidget.IconName = "edit-clear-symbolic";
 
 			_container.PackStart(_searchButton, false, false, 0);
 			_container.PackStart(_entryWrapper, true, true, 0);
@@ -156,9 +160,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_entryWrapper.SetAlignment(alignmentValue);
 		}
 
-		protected override void OnFocusGrabbed()
+		/// <remarks>
+		/// OnGrabFocus, not Gtk 3's OnFocusGrabbed: Gtk 4 renamed the vfunc and gave it a return
+		/// value - true means "focus was taken". Forwarding to the inner widget and reporting what
+		/// IT says is the honest answer; the Gtk 3 version could only forward and hope.
+		/// </remarks>
+		protected override bool OnGrabFocus()
 		{
-			_entryWrapper?.GrabFocus();
+			return _entryWrapper?.GrabFocus() ?? false;
 		}
 
 		private void ShowClearButton()
@@ -195,19 +204,5 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_entryWrapper.Entry.Text = string.Empty;
 		}
 
-		// Replaces Widget.RenderIcon, which is deprecated in GTK3 together with the stock-id
-		// system it looked icons up in. Missing icons throw rather than returning null, and a
-		// search box without its glyphs is preferable to a crash on an unusual icon theme.
-		private static Gdk.Pixbuf LoadThemedIcon(string iconName)
-		{
-			try
-			{
-				return IconTheme.Default.LoadIcon(iconName, 16, IconLookupFlags.ForceSize);
-			}
-			catch
-			{
-				return null;
-			}
-		}
 	}
 }

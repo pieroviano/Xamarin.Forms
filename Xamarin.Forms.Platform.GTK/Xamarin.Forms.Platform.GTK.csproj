@@ -46,12 +46,16 @@
         -->
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
         <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
-        <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Xamarin.Forms.Platform.GTK</AssemblyName>
         <RootNamespace>Xamarin.Forms.Platform.GTK</RootNamespace>
-        <Description>GTK3 Backend for Xamarin.Forms</Description>
+        <!--
+          One Description, not two. There used to be a second one four lines further down, in this
+          same PropertyGroup; MSBuild takes the last write, so the first was dead text that still
+          read as the shipping description to anyone editing here.
+        -->
+        <Description>GTK4 backend for Xamarin.Forms, built on Net4x.GtkSharp 4.</Description>
         <LangVersion>latest</LangVersion>
         <!--
           TRUE, so the SDK emits AssemblyVersion/FileVersion/InformationalVersion from the
@@ -63,15 +67,54 @@
         -->
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <!--
+      CS0612 ("X is obsolete") is not an error in these two projects, and this is a deliberate,
+      bounded deferral rather than a blanket silence. Gtk 4.10-4.12 deprecated a family of APIs that
+      it still ships and still supports; each replacement is a separate piece of work, not a rename:
+
+        Gtk.MessageDialog            -> Gtk.AlertDialog (4.10). A different, async-only API; the
+                                        dialog helper here would be rewritten, not adjusted.
+        Gtk.Widget.StyleContext,     -> StyleContext.AddProviderForDisplay for providers and
+        Gtk.StyleContext                Widget.StyleColor for colours. Extensions/StyleExtensions
+                                        attaches providers PER WIDGET, which is the part with no
+                                        display-wide equivalent.
+        ListStore, TreeIter,         -> Gtk.ListView / ColumnView over a GListModel (4.10). This is
+        CellRendererText, CellView,     the whole cell-renderer world, and replacing it means
+        ComboBox                        rewriting Controls/ListView, Controls/TableView and Cells/*.
+                                        Tracked as follow-up in docs/plans/gtk4-migration.md.
+        Gtk.Image(Gdk.Pixbuf)        -> Image.NewFromPaintable (4.12).
+        Gdk.CairoHelper.SetSourcePixbuf -> GdkPaintable/GdkTexture. Maps.GTK composes its map tile by
+                                        tile onto one Cairo surface, so this is a compositor
+                                        rewrite rather than a call swap.
+
+      Scoped to these projects on purpose: NOT in Directory.Build.props, where it would also cover
+      Core, Xaml and Build.Tasks, and would hide the next deprecation in code that has nothing to do
+      with Gtk. Everything Gtk 4 actually REMOVED is a hard error and was ported; this list is only
+      what it deprecated.
+    -->
+    <NoWarn>$(NoWarn);CS0612</NoWarn>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <!--
+          Net4x.GtkSharp, NOT GtkSharp: the Gtk 4 bindings, built from github.com/pieroviano/GtkSharp
+          branch net4x.gtk4 and restored from the local-net4x source in NuGet.config. It brings
+          Net4x.{Gdk,Gio,GLib,Cairo,Pango,Gsk,Graphene}Sharp with it as dependencies, so those are
+          not listed here. See docs/plans/gtk4-migration.md.
+        -->
+        <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <!--
+          WebKitGTK 6.0 and the JavaScriptCore it returns script results as. Optional at RUNTIME -
+          Controls/WebView degrades to a placeholder when the native library is absent - but a
+          compile-time reference either way, since the widget is now bound rather than hand-rolled.
+        -->
+        <PackageReference Include="Net4x.WebkitGtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <PackageReference Include="Net4x.JavaScriptCoreSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
     </ItemGroup>
     <!--
     Nothing is quarantined any more (plan M6 is complete for the renderer surface):
 
-      WebView   - Controls/WebKit2.cs binds libwebkit2gtk-4.1.so.0 by hand (§9.1); every entry
-                  point is resolved lazily, so the renderer compiles and registers
+      WebView   - Controls/WebView.cs hosts a WebKit.WebView from Net4x.WebkitGtkSharp
+                  (WebKitGTK 6.0). Construction is guarded, so the renderer compiles and registers
                   unconditionally and degrades to a placeholder when WebKitGTK is absent.
       OpenGLView- Controls/OpenGLView.cs wraps Gtk.GLArea (§9.2), which is part of GTK 3.16+
                   itself; the OpenTK 3 GLWidget and its per-platform GLX/WGL/AGL window-info
@@ -134,5 +177,28 @@
     -->
     <Target Name="_XFAssertPackageVersionIsGitDerived" BeforeTargets="GenerateNuspec" DependsOnTargets="SetVersions">
         <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="PackageVersion is '$(PackageVersion)', the static fallback rather than the version Version.targets' SetVersions computed from git. Something overwrote it after SetVersions ran, so this pack would produce a $(PackageId) package that cannot be traced to a commit and collides with every other build of this branch." />
+    </Target>
+
+    <!--
+      Gtk 4 migration guards.
+
+      The first is the third head of the same tooling hydra. Net4x.NuGetUtility rewrites a
+      PackageReference whose Include is the bare string "GtkSharp" - see Directory.Build.props -
+      and that reference now names the GTK 3 package, which this backend cannot use at all. A
+      rewrite would restore it ALONGSIDE Net4x.GtkSharp, giving the compiler two assemblies that
+      both define namespace Gtk; the resulting errors point at renderer source, not at the cause.
+
+      The second exists because a missing local feed is not an error to NuGet. Packages/ is a
+      junction onto the GtkSharp repository's package drop folder (NuGet.config, local-net4x); when
+      it is absent NuGet emits NU1801, a WARNING, and falls through to nuget.org - where some
+      unrelated package could satisfy the reference. This turns the missing feed into the build
+      failure it is. See docs/plans/gtk4-migration.md V1.
+    -->
+    <Target Name="_XFAssertNoGtk3Package" BeforeTargets="BeforeBuild;Pack">
+        <Error Condition="'@(PackageReference->AnyHaveMetadataValue('Identity', 'GtkSharp'))' == 'true'" Text="A PackageReference to 'GtkSharp' (the GTK 3 bindings) is present in $(MSBuildProjectFile) alongside Net4x.GtkSharp. This backend targets GTK 4; the two packages both define namespace Gtk and cannot coexist. The Net4x.NuGetUtility tooling re-adds exactly this reference on Windows builds - remove it again, and see the comment in Directory.Build.props." />
+    </Target>
+
+    <Target Name="_XFAssertLocalFeedExists" BeforeTargets="BeforeBuild">
+        <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Packages')" Text="Packages\ is missing. It is the local NuGet feed for the Net4x.* GTK 4 bindings (NuGet.config, source 'local-net4x'): on a development machine a junction onto GtkSharp\BuildOutput\NugetPackages, on CI a step that builds that repository. Without it NuGet only warns (NU1801) and falls through to nuget.org. See docs/plans/gtk4-migration.md V1." />
     </Target>
 </Project>

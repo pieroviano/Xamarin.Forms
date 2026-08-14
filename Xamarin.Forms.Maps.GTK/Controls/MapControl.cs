@@ -49,11 +49,15 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 		public MapControl()
 		{
-			AddEvents((int)(Gdk.EventMask.ButtonPressMask
-				| Gdk.EventMask.ButtonReleaseMask
-				| Gdk.EventMask.PointerMotionMask
-				| Gdk.EventMask.ScrollMask
-				| Gdk.EventMask.SmoothScrollMask));
+			// Handlers, not vfunc overrides, and no event mask. Gtk 4 delivers input through
+			// GtkEventControllers rather than through widget signals gated by a GdkEventMask: there
+			// are no button-press-event / motion-notify-event / scroll-event vfuncs left to
+			// override, and nothing to enable. Subscribing is what asks for the events now - the
+			// binding attaches the controller on first subscription.
+			ButtonPressEvent += OnMapButtonPress;
+			ButtonReleaseEvent += OnMapButtonRelease;
+			MotionNotifyEvent += OnMapMotionNotify;
+			ScrollEvent += OnMapScroll;
 
 			CanFocus = true;
 		}
@@ -124,8 +128,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 		{
 			get
 			{
-				var width = Math.Max(1, AllocatedWidth);
-				var height = Math.Max(1, AllocatedHeight);
+				var width = Math.Max(1, Width);
+				var height = Math.Max(1, Height);
 
 				var originY = MercatorProjection.LatitudeToY(_centerLatitude, _zoom) - height / 2.0;
 
@@ -161,7 +165,7 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 			if (span == null)
 				return;
 
-			if (AllocatedWidth <= 1 || AllocatedHeight <= 1)
+			if (Width <= 1 || Height <= 1)
 			{
 				_pendingRegion = span;
 				return;
@@ -184,8 +188,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 				_centerLatitude,
 				span.LatitudeDegrees,
 				span.LongitudeDegrees,
-				AllocatedWidth,
-				AllocatedHeight,
+				Width,
+				Height,
 				_tileSource.MaxZoom));
 
 			ScheduleViewportUpdate();
@@ -223,11 +227,15 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 			});
 		}
 
-		protected override void OnDestroyed()
+		/// <remarks>
+		/// Destroy, not Gtk 3's OnDestroyed: Gtk 4 removed the ::destroy signal, so the binding has
+		/// no OnDestroyed to override. See Xamarin.Forms.Platform.GTK's Controls/OpenGLView.Destroy.
+		/// </remarks>
+		public override void Destroy()
 		{
 			_destroyed = true;
 
-			base.OnDestroyed();
+			base.Destroy();
 		}
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
@@ -259,8 +267,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 		protected override bool OnDrawn(Cairo.Context cr)
 		{
-			var width = AllocatedWidth;
-			var height = AllocatedHeight;
+			var width = Width;
+			var height = Height;
 
 			if (width <= 0 || height <= 0)
 				return true;
@@ -313,6 +321,7 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 			if (_tiles.TryGetTile(url, out var pixbuf))
 			{
+				// Deprecated in Gtk 4; see the CS0612 note in Xamarin.Forms.Maps.GTK.csproj.
 				Gdk.CairoHelper.SetSourcePixbuf(cr, pixbuf, x, y);
 				cr.Rectangle(x, y, TileSize, TileSize);
 				cr.Fill();
@@ -592,7 +601,13 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 		{
 			if (color.IsDefault)
 			{
-				var themeColor = StyleContext.GetColor(Gtk.StateFlags.Normal);
+				// StyleColor, not StyleContext.GetColor(state). Gtk 4.10 deprecated
+				// gtk_widget_get_style_context, and gtk_widget_get_color is the supported way to
+				// ask a widget for its current foreground colour - "current" meaning in the state
+				// it is actually in, which is why the state argument is gone.
+				// (StyleColor rather than Color: see the rename in GtkSharp.metadata - bound as
+				// "Color" it would shadow the type name in every Widget subclass.)
+				var themeColor = StyleColor;
 				cr.SetSourceRGBA(themeColor.Red, themeColor.Green, themeColor.Blue, themeColor.Alpha);
 
 				return;
@@ -607,8 +622,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 		public Position PositionFromPixel(double px, double py)
 		{
-			var width = Math.Max(1, AllocatedWidth);
-			var height = Math.Max(1, AllocatedHeight);
+			var width = Math.Max(1, Width);
+			var height = Math.Max(1, Height);
 
 			var originX = Math.Round(MercatorProjection.LongitudeToX(_centerLongitude, _zoom) - width / 2.0);
 			var originY = Math.Round(MercatorProjection.LatitudeToY(_centerLatitude, _zoom) - height / 2.0);
@@ -620,8 +635,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 		public Pin PinAt(double px, double py)
 		{
-			var width = Math.Max(1, AllocatedWidth);
-			var height = Math.Max(1, AllocatedHeight);
+			var width = Math.Max(1, Width);
+			var height = Math.Max(1, Height);
 
 			var originX = Math.Round(MercatorProjection.LongitudeToX(_centerLongitude, _zoom) - width / 2.0);
 			var originY = Math.Round(MercatorProjection.LatitudeToY(_centerLatitude, _zoom) - height / 2.0);
@@ -644,9 +659,13 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 			return null;
 		}
 
-		protected override bool OnButtonPressEvent(Gdk.EventButton evnt)
+		void OnMapButtonPress(object o, Gtk.ButtonPressEventArgs args)
 		{
-			if (evnt.Type == Gdk.EventType.ButtonPress && evnt.Button == 1)
+			var evnt = args.Event;
+
+			// NPress, not EventType.TwoButtonPress: Gtk 4 deleted the double- and triple-press
+			// enum members and reports the repeat count alongside a plain press instead.
+			if (evnt.NPress == 1 && evnt.Button == 1)
 			{
 				_dragging = true;
 				_dragMoved = false;
@@ -656,19 +675,20 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 				if (CanFocus && !HasFocus)
 					GrabFocus();
 			}
-			else if (evnt.Type == Gdk.EventType.TwoButtonPress && evnt.Button == 1 && _zoomEnabled)
+			else if (evnt.NPress == 2 && evnt.Button == 1 && _zoomEnabled)
 			{
 				ZoomAt(1, evnt.X, evnt.Y);
 			}
 
-			return true;
+			args.RetVal = true;
 		}
 
-		protected override bool OnMotionNotifyEvent(Gdk.EventMotion evnt)
+		void OnMapMotionNotify(object o, Gtk.MotionNotifyEventArgs args)
 		{
 			if (!_dragging)
-				return base.OnMotionNotifyEvent(evnt);
+				return;
 
+			var evnt = args.Event;
 			var deltaX = evnt.X - _dragLastX;
 			var deltaY = evnt.Y - _dragLastY;
 
@@ -681,21 +701,24 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 			if (_panEnabled)
 				PanByPixels(-deltaX, -deltaY);
 
-			return true;
+			args.RetVal = true;
 		}
 
-		protected override bool OnButtonReleaseEvent(Gdk.EventButton evnt)
+		void OnMapButtonRelease(object o, Gtk.ButtonReleaseEventArgs args)
 		{
+			var evnt = args.Event;
+
 			if (evnt.Button != 1)
-				return base.OnButtonReleaseEvent(evnt);
+				return;
 
 			var wasDrag = _dragMoved;
 
 			_dragging = false;
 			_dragMoved = false;
+			args.RetVal = true;
 
 			if (wasDrag)
-				return true;
+				return;
 
 			var pin = PinAt(evnt.X, evnt.Y);
 
@@ -703,15 +726,14 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 				PinClicked?.Invoke(this, new MapPinEventArgs(pin));
 			else
 				MapClicked?.Invoke(this, new MapPositionEventArgs(PositionFromPixel(evnt.X, evnt.Y)));
-
-			return true;
 		}
 
-		protected override bool OnScrollEvent(Gdk.EventScroll evnt)
+		void OnMapScroll(object o, Gtk.ScrollEventArgs args)
 		{
 			if (!_zoomEnabled)
-				return base.OnScrollEvent(evnt);
+				return;
 
+			var evnt = args.Event;
 			var steps = 0;
 
 			switch (evnt.Direction)
@@ -730,12 +752,12 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 					break;
 			}
 
+			args.RetVal = true;
+
 			if (steps == 0)
-				return true;
+				return;
 
 			ZoomAt(steps, evnt.X, evnt.Y);
-
-			return true;
 		}
 
 		/// <summary>Zooms while keeping the geographic point under the cursor fixed.</summary>
@@ -748,8 +770,8 @@ namespace Xamarin.Forms.Maps.GTK.Controls
 
 			var anchor = PositionFromPixel(px, py);
 
-			var width = Math.Max(1, AllocatedWidth);
-			var height = Math.Max(1, AllocatedHeight);
+			var width = Math.Max(1, Width);
+			var height = Math.Max(1, Height);
 
 			_zoom = target;
 

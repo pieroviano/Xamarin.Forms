@@ -71,22 +71,22 @@ namespace Xamarin.Forms.Platform.GTK
 		public Color GetNamedColor(string name)
 		{
 			// GTK themes expose named colours through the style context (@theme_fg_color and
-			// friends). Look the name up against the default screen's theme; unknown names fall
-			// back to Color.Default, which is what Forms expects for "this platform has no such
-			// colour". Callers may run before a screen exists, hence the null guard.
-			var screen = Gdk.Screen.Default;
-
-			if (screen == null || string.IsNullOrEmpty(name))
+			// friends). Unknown names fall back to Color.Default, which is what Forms expects for
+			// "this platform has no such colour". Callers may run before a display exists, hence
+			// the null guard.
+			//
+			// A real widget's style context, not a synthesized one. Gtk 3 let you construct a bare
+			// GtkStyleContext and describe the widget you meant with a GtkWidgetPath; Gtk 4 removed
+			// both - the constructor is internal and GtkWidgetPath is gone - because a style
+			// context is now inseparable from the widget it belongs to. A throwaway GtkWindow is
+			// the cheapest thing that has one, and it resolves against the same theme the path was
+			// standing in for.
+			if (Gdk.Display.Default == null || string.IsNullOrEmpty(name))
 				return Color.Default;
 
-			using (var styleContext = new Gtk.StyleContext())
-			using (var path = new Gtk.WidgetPath())
+			using (var probe = new Gtk.Window())
 			{
-				path.AppendType(Gtk.Window.GType);
-				styleContext.Path = path;
-				styleContext.Screen = screen;
-
-				if (styleContext.LookupColor(name, out var rgba))
+				if (probe.StyleContext.LookupColor(name, out var rgba))
 					return new Color(rgba.Red, rgba.Green, rgba.Blue, rgba.Alpha);
 			}
 

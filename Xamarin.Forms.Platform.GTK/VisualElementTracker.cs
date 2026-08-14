@@ -412,21 +412,18 @@ namespace Xamarin.Forms.Platform.GTK
 			if (view == null)
 				return;
 
-			int numClicks = 0;
-			switch (args.Event.Type)
-			{
-				case Gdk.EventType.ThreeButtonPress:
-					numClicks = 3;
-					break;
-				case Gdk.EventType.TwoButtonPress:
-					numClicks = 2;
-					break;
-				case Gdk.EventType.ButtonPress:
-					numClicks = 1;
-					break;
-				default:
-					return;
-			}
+			// NPress, not a switch on the event type. Gtk 3 encoded the repeat count IN the type -
+			// TwoButtonPress, ThreeButtonPress - and delivered a separate event per level, so a
+			// double click arrived as press, press, 2-press. Gtk 4 deleted both enum members: a
+			// click is always ButtonPress and GtkGestureClick reports the count alongside it.
+			//
+			// That also removes the ceiling. The Gtk 3 switch could not express four taps because
+			// there was no FourButtonPress, and returned early for anything past three; a
+			// TapGestureRecognizer asking for more now simply matches.
+			int numClicks = args.Event.NPress;
+
+			if (numClicks < 1)
+				return;
 
 			// Taps or Clicks
 			if (button == 1)

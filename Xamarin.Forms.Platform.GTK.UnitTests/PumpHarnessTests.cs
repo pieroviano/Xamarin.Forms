@@ -35,63 +35,66 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void OnlyTheForcedSizeAllocateCommitsANewAllocation()
 		{
-			var box = new BoxView { Color = Color.Red };
-			var page = new ContentPage { Content = new StackLayout { Children = { box } } };
-
-			using (var host = GtkTestHost.HostPage(page, 400, 300))
+			Run(() =>
 			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(box);
-				var before = widget.Allocation.Width;
+					var box = new BoxView { Color = Color.Red };
+					var page = new ContentPage { Content = new StackLayout { Children = { box } } };
 
-				Assert.True(before > 1, $"nothing was allocated to begin with: {GtkTestHost.Describe(widget)}");
+					using (var host = GtkTestHost.HostPage(page, 400, 300))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(box);
+						var before = widget.Width;
 
-				host.Window.Resize(900, 600);
-				Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
+						Assert.True(before > 1, $"nothing was allocated to begin with: {GtkTestHost.Describe(widget)}");
 
-				// Gtk.Window.Resize only ASKS for the new size; the toplevel's own allocation
-				// arrives whenever the window manager answers, and on a real desktop session that
-				// is not within any fixed number of iterations. It has to be waited for, because
-				// GtkTestHost.Pump forces its SizeAllocate at the toplevel's CURRENT AllocatedWidth
-				// - so while the window is still 400 wide the forced pass re-commits 400 and the
-				// child cannot grow. Measured: run on its own on Windows this failed 8 times out of
-				// 8 with "400px -> 400px", while the same test passed inside the full suite, which
-				// simply takes long enough elsewhere for the WM to answer.
-				//
-				// The wait uses the DRAIN-ONLY pump on purpose: forcing a SizeAllocate here would
-				// commit the child's new allocation before `drained` is read and quietly destroy
-				// the very comparison this test exists to make.
-				// Deadline-based rather than a round count, for the same reason GtkTestHost.Await
-				// is: the answer comes from another process, so what has to elapse is wall-clock
-				// time, not iterations. 200 rounds of an empty queue take no time at all and the
-				// window is still 400px wide at the end of them.
-				var deadline = DateTime.UtcNow.AddMilliseconds(5000);
+						GtkTestHost.Resize(host.Window, 900, 600);
+						Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
 
-				while (host.Window.AllocatedWidth < 900 && DateTime.UtcNow < deadline)
-					GtkTestHost.Pump(null, 1);
+						// Gtk.Window.Resize only ASKS for the new size; the toplevel's own allocation
+						// arrives whenever the window manager answers, and on a real desktop session that
+						// is not within any fixed number of iterations. It has to be waited for, because
+						// GtkTestHost.Pump forces its SizeAllocate at the toplevel's CURRENT Width
+						// - so while the window is still 400 wide the forced pass re-commits 400 and the
+						// child cannot grow. Measured: run on its own on Windows this failed 8 times out of
+						// 8 with "400px -> 400px", while the same test passed inside the full suite, which
+						// simply takes long enough elsewhere for the WM to answer.
+						//
+						// The wait uses the DRAIN-ONLY pump on purpose: forcing a SizeAllocate here would
+						// commit the child's new allocation before `drained` is read and quietly destroy
+						// the very comparison this test exists to make.
+						// Deadline-based rather than a round count, for the same reason GtkTestHost.Await
+						// is: the answer comes from another process, so what has to elapse is wall-clock
+						// time, not iterations. 200 rounds of an empty queue take no time at all and the
+						// window is still 400px wide at the end of them.
+						var deadline = DateTime.UtcNow.AddMilliseconds(5000);
 
-				Assert.SkipWhen(host.Window.AllocatedWidth < 900,
-					$"the window manager never granted the 900px resize " +
-					$"(toplevel is {host.Window.AllocatedWidth}px); there is no pending allocation " +
-					"for the two pumps to differ over, so this proves nothing either way.");
+						while (host.Window.Width < 900 && DateTime.UtcNow < deadline)
+							GtkTestHost.Pump(null, 1);
 
-				// Pump(null, ...) is the drain-only pump: EventsPending/RunIteration plus
-				// GLib.MainContext.Iteration, and no SizeAllocate on any toplevel.
-				GtkTestHost.Pump(null, 12);
-				var drained = widget.Allocation.Width;
+						Assert.SkipWhen(host.Window.Width < 900,
+							$"the window manager never granted the 900px resize " +
+							$"(toplevel is {host.Window.Width}px); there is no pending allocation " +
+							"for the two pumps to differ over, so this proves nothing either way.");
 
-				GtkTestHost.Pump(host.Window, 12);
-				var forced = widget.Allocation.Width;
+						// Pump(null, ...) is the drain-only pump: EventsPending/RunIteration plus
+						// GLib.MainContext.Iteration, and no SizeAllocate on any toplevel.
+						GtkTestHost.Pump(null, 12);
+						var drained = widget.Width;
 
-				Assert.True(drained == before || drained == forced,
-					$"drain-only pumping left a third, partly committed allocation " +
-					$"({before}px -> {drained}px, settling at {forced}px). It may legitimately leave " +
-					"the old rectangle (Xvfb, the plan's §10.2 case) or the final one (a real frame " +
-					"clock ticked), but never something in between.");
+						GtkTestHost.Pump(host.Window, 12);
+						var forced = widget.Width;
 
-				Assert.True(forced > before,
-					$"the forced SizeAllocate did not commit the resize ({before}px -> {forced}px); " +
-					"every layout assertion in this suite is then reading stale rectangles");
-			}
+						Assert.True(drained == before || drained == forced,
+							$"drain-only pumping left a third, partly committed allocation " +
+							$"({before}px -> {drained}px, settling at {forced}px). It may legitimately leave " +
+							"the old rectangle (Xvfb, the plan's §10.2 case) or the final one (a real frame " +
+							"clock ticked), but never something in between.");
+
+						Assert.True(forced > before,
+							$"the forced SizeAllocate did not commit the resize ({before}px -> {forced}px); " +
+							"every layout assertion in this suite is then reading stale rectangles");
+					}
+			});
 		}
 
 		/// <summary>
@@ -111,37 +114,41 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void AllocationsAreRealNumbersAndNotTheBrokenM3Ones()
 		{
-			var topLeft = new BoxView { Color = Color.Red };
-			var topRight = new BoxView { Color = Color.Green };
-
-			var grid = new Grid
+			Run(() =>
 			{
-				ColumnDefinitions =
-				{
-					new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-					new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-				}
-			};
+					var topLeft = new BoxView { Color = Color.Red };
+					var topRight = new BoxView { Color = Color.Green };
 
-			grid.Children.Add(topLeft, 0, 0);
-			grid.Children.Add(topRight, 1, 0);
+					var grid = new Grid
+					{
+						ColumnDefinitions =
+						{
+							new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+							new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+						}
+					};
 
-			using (var host = GtkTestHost.HostPage(new ContentPage { Content = grid }, 800, 600))
-			{
-				var tl = ((Gtk.Widget)Platform.GetRenderer(topLeft)).Allocation;
-				var tr = ((Gtk.Widget)Platform.GetRenderer(topRight)).Allocation;
+					grid.Children.Add(topLeft, 0, 0);
+					grid.Children.Add(topRight, 1, 0);
 
-				Assert.True(tl.X == 0,
-					$"column 0 should start at the left edge, got x={tl.X}");
+					using (var host = GtkTestHost.HostPage(new ContentPage { Content = grid }, 800, 600))
+					{
+						// BoundsIn: a Gtk 4 allocation is widget-local - see GtkTestHost.BoundsIn.
+						var tl = GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(topLeft));
+						var tr = GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(topRight));
 
-				Assert.True(tr.X >= 360 && tr.X <= 440,
-					$"column 1 of two star columns in an 800px window should start near x=400; " +
-					$"got x={tr.X} (column 0 at x={tl.X}). x=0 is the broken-M3 value, " +
-					"x=-1 is GTK's unallocated sentinel.");
+						Assert.True(tl.X == 0,
+							$"column 0 should start at the left edge, got x={tl.X}");
 
-				Assert.True(tl.Width >= 360 && tr.Width >= 360,
-					$"each star column should be about half the window: {tl.Width}px / {tr.Width}px");
-			}
+						Assert.True(tr.X >= 360 && tr.X <= 440,
+							$"column 1 of two star columns in an 800px window should start near x=400; " +
+							$"got x={tr.X} (column 0 at x={tl.X}). x=0 is the broken-M3 value, " +
+							"x=-1 is GTK's unallocated sentinel.");
+
+						Assert.True(tl.Width >= 360 && tr.Width >= 360,
+							$"each star column should be about half the window: {tl.Width}px / {tr.Width}px");
+					}
+			});
 		}
 	}
 }

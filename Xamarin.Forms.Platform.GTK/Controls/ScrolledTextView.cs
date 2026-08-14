@@ -94,9 +94,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				TextView.Buffer.Text = TextView.Buffer.Text.Substring(0, maxLength);
 		}
 
-		protected override void OnFocusGrabbed()
+		/// <remarks>
+		/// OnGrabFocus, not Gtk 3's OnFocusGrabbed: Gtk 4 renamed the vfunc and gave it a return
+		/// value - true means "focus was taken". Forwarding to the inner widget and reporting what
+		/// IT says is the honest answer; the Gtk 3 version could only forward and hope.
+		/// </remarks>
+		protected override bool OnGrabFocus()
 		{
-			TextView?.GrabFocus();
+			return TextView?.GrabFocus() ?? false;
 		}
 
 		Gdk.Rectangle _lastAllocation = Gdk.Rectangle.Zero;
@@ -198,8 +203,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (Sensitive)
 			{
 				TextView.Sensitive = true;
-				TextView.HasFocus = true;
-				TextView.Window?.Raise();
+				// GrabFocus - see VisualElementRenderer for why has-focus can no longer be assigned.
+				TextView.GrabFocus();
+				TextView.Raise();
 			}
 		}
 	}

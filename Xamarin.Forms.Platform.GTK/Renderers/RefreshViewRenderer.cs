@@ -58,8 +58,12 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				Control.Add(_spinnerHost);
 				_spinnerPlaced = true;
 
-				_dragGesture = new Gtk.GestureDrag(Control);
-				_dragGesture.DragEnd += OnDragEnd;
+				// AddController, not a widget argument to the constructor: Gtk 4 gestures are
+				// constructed unattached and then handed to a widget, which is what lets several
+				// of them watch the same widget in different propagation phases.
+				_dragGesture = new Gtk.GestureDrag();
+				Control.AddController(_dragGesture);
+				_dragGesture.DragEnded += OnDragEnd;
 			}
 
 			UpdateIsRefreshing();
@@ -101,7 +105,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			{
 				if (_dragGesture != null)
 				{
-					_dragGesture.DragEnd -= OnDragEnd;
+					_dragGesture.DragEnded -= OnDragEnd;
 					_dragGesture.Dispose();
 					_dragGesture = null;
 				}
@@ -119,7 +123,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_spinnerHost == null || Control == null)
 				return;
 
-			var x = Math.Max(0, (Control.AllocatedWidth - SpinnerSize) / 2);
+			var x = Math.Max(0, (Control.Width - SpinnerSize) / 2);
 
 			// Near the top, where a pull-to-refresh indicator belongs.
 			_spinnerHost.MoveTo(x, 8);
@@ -135,15 +139,15 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				// Position first, then show: showing a widget allocates it afresh, whereas moving
 				// an already-visible Gtk.Fixed child can leave the old allocation in place.
 				CentreSpinner();
-				_spinner.Show();
-				_spinnerHost.Show();
+				_spinner.Visible = true;
+				_spinnerHost.Visible = true;
 				_spinner.Start();
-				_spinnerHost.Window?.Raise();
+				_spinnerHost.Raise();
 			}
 			else
 			{
 				_spinner.Stop();
-				_spinnerHost.Hide();
+				_spinnerHost.Visible = false;
 			}
 		}
 
@@ -158,7 +162,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				_spinner.SetForegroundColor(RefreshView.RefreshColor.ToGtkColor());
 		}
 
-		void OnDragEnd(object o, Gtk.DragEndArgs args)
+		void OnDragEnd(object o, Gtk.DragEndedArgs args)
 		{
 			if (RefreshView == null || RefreshView.IsRefreshing || !RefreshView.IsEnabled)
 				return;

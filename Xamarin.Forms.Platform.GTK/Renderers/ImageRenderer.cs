@@ -295,11 +295,67 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					Pango.CairoHelper.ShowLayout(cr, layout);
 
 					surface.Flush();
-					pixbuf = new Pixbuf(surface, 0, 0, size, size);
+
+					pixbuf = ToPixbuf(surface);
 				}
 			});
 
 			return pixbuf;
+		}
+
+		/// <summary>Copies a Cairo ARGB32 surface into a <see cref="Pixbuf"/>.</summary>
+		/// <remarks>
+		/// By hand, because Gtk 4 removed gdk_pixbuf_get_from_surface - a Cairo surface is no longer
+		/// what a widget draws onto, so the bridge between the two went with it.
+		///
+		/// Two conversions, and both matter:
+		///
+		///  * BYTE ORDER. Cairo's ARGB32 is a native-endian 32-bit word, so on a little-endian
+		///    machine the bytes are B, G, R, A; a Pixbuf is always R, G, B, A. Copying straight
+		///    across swaps red and blue - which looks plausible on a monochrome glyph and wrong on
+		///    anything else.
+		///  * PREMULTIPLICATION. Cairo stores colour premultiplied by alpha, a Pixbuf does not, so
+		///    every channel is divided back out. Skipping this darkens semi-transparent pixels
+		///    towards black - visible as a dirty fringe on antialiased glyph edges.
+		/// </remarks>
+		static Pixbuf ToPixbuf(Cairo.ImageSurface surface)
+		{
+			int width = surface.Width;
+			int height = surface.Height;
+			int sourceStride = surface.Stride;
+			int targetStride = width * 4;
+
+			byte[] source = surface.Data;
+			byte[] target = new byte[targetStride * height];
+
+			for (int y = 0; y < height; y++)
+			{
+				int sourceRow = y * sourceStride;
+				int targetRow = y * targetStride;
+
+				for (int x = 0; x < width; x++)
+				{
+					int s = sourceRow + x * 4;
+					int t = targetRow + x * 4;
+
+					byte alpha = source[s + 3];
+
+					if (alpha == 0)
+						continue;   // target is already zeroed
+
+					target[t + 0] = Unpremultiply(source[s + 2], alpha);   // B -> R
+					target[t + 1] = Unpremultiply(source[s + 1], alpha);   // G
+					target[t + 2] = Unpremultiply(source[s + 0], alpha);   // R -> B
+					target[t + 3] = alpha;
+				}
+			}
+
+			return new Pixbuf(target, Gdk.Colorspace.Rgb, true, 8, width, height, targetStride);
+		}
+
+		static byte Unpremultiply(byte channel, byte alpha)
+		{
+			return alpha == 255 ? channel : (byte)Math.Min(255, channel * 255 / alpha);
 		}
 
 		static Pango.FontDescription CreateFontDescription(FontImageSource fontImageSource)

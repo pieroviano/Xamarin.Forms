@@ -24,66 +24,74 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void ImageLoadsItsSourceAndFollowsAChange()
 		{
-			var small = WriteTempPng(24, 16, 0xFF0000FF);
-			var large = WriteTempPng(48, 32, 0x00FF00FF);
-
-			try
+			Run(() =>
 			{
-				var image = new Image { Source = ImageSource.FromFile(small) };
+					var small = WriteTempPng(24, 16, 0xFF0000FF);
+					var large = WriteTempPng(48, 32, 0x00FF00FF);
 
-				using (var host = GtkTestHost.HostView(image, 200, 200))
-				{
-					var native = host.Control<Controls.ImageControl>();
+					try
+					{
+						var image = new Image { Source = ImageSource.FromFile(small) };
 
-					// GetDesiredSize, NOT the Pixbuf property. Both report the decoded image, which
-					// is the independent ground truth wanted here - it comes from the PNG on disk,
-					// not from anything the test set - but only GetDesiredSize reports the ORIGINAL:
-					// ImageControl.Pixbuf returns the child Gtk.Image's pixbuf, which
-					// OnSizeAllocated replaces with an aspect-scaled copy sized to the allocation
-					// (ImageControl.cs:137). Asserting the source dimensions on it is a race that is
-					// only winnable between the load and the next allocation, and pumping for a
-					// reload loses it by construction. GetDesiredSize reads _original and is stable.
-					WaitFor(host, () => native.GetDesiredSize().Width == 24,
-						"the Image never loaded its source");
+						using (var host = GtkTestHost.HostView(image, 200, 200))
+						{
+							var native = host.Control<Controls.ImageControl>();
 
-					Assert.Equal(24, native.GetDesiredSize().Width);
-					Assert.Equal(16, native.GetDesiredSize().Height);
+							// GetDesiredSize, NOT the Pixbuf property. Both report the decoded image, which
+							// is the independent ground truth wanted here - it comes from the PNG on disk,
+							// not from anything the test set - but only GetDesiredSize reports the ORIGINAL:
+							// ImageControl.Pixbuf returns the child Gtk.Image's pixbuf, which
+							// OnSizeAllocated replaces with an aspect-scaled copy sized to the allocation
+							// (ImageControl.cs:137). Asserting the source dimensions on it is a race that is
+							// only winnable between the load and the next allocation, and pumping for a
+							// reload loses it by construction. GetDesiredSize reads _original and is stable.
+							WaitFor(host, () => native.GetDesiredSize().Width == 24,
+								"the Image never loaded its source");
 
-					image.Source = ImageSource.FromFile(large);
-					WaitFor(host, () => native.GetDesiredSize().Width == 48,
-						"changing Image.Source did not reload the pixbuf - " +
-						"OnElementPropertyChanged is not handling SourceProperty");
+							Assert.Equal(24, native.GetDesiredSize().Width);
+							Assert.Equal(16, native.GetDesiredSize().Height);
 
-					Assert.Equal(48, native.GetDesiredSize().Width);
-					Assert.Equal(32, native.GetDesiredSize().Height);
-				}
-			}
-			finally
-			{
-				Delete(small);
-				Delete(large);
-			}
+							image.Source = ImageSource.FromFile(large);
+							WaitFor(host, () => native.GetDesiredSize().Width == 48,
+								"changing Image.Source did not reload the pixbuf - " +
+								"OnElementPropertyChanged is not handling SourceProperty");
+
+							Assert.Equal(48, native.GetDesiredSize().Width);
+							Assert.Equal(32, native.GetDesiredSize().Height);
+						}
+					}
+					finally
+					{
+						Delete(small);
+						Delete(large);
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void ImageMapsAspectAtCreationAndOnChange()
 		{
-			var image = new Image { Aspect = Aspect.AspectFill };
-
-			using (var host = GtkTestHost.HostView(image, 200, 200))
+			Run(() =>
 			{
-				var native = host.Control<Controls.ImageControl>();
+					var image = new Image { Aspect = Aspect.AspectFill };
 
-				Assert.Equal(Controls.ImageAspect.AspectFill, native.Aspect);
+					using (var host = GtkTestHost.HostView(image, 200, 200))
+					{
+						var native = host.Control<Controls.ImageControl>();
 
-				image.Aspect = Aspect.Fill;
-				host.Pump();
-				Assert.Equal(Controls.ImageAspect.Fill, native.Aspect);
+						Assert.Equal(Controls.ImageAspect.AspectFill, native.Aspect);
 
-				image.Aspect = Aspect.AspectFit;
-				host.Pump();
-				Assert.Equal(Controls.ImageAspect.AspectFit, native.Aspect);
-			}
+						image.Aspect = Aspect.Fill;
+						host.Pump();
+						Assert.Equal(Controls.ImageAspect.Fill, native.Aspect);
+
+						image.Aspect = Aspect.AspectFit;
+						host.Pump();
+						Assert.Equal(Controls.ImageAspect.AspectFit, native.Aspect);
+					}
+		
+			});
 		}
 
 		// ---- BoxView -------------------------------------------------------------------
@@ -96,36 +104,41 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void BoxViewPaintsItsColourAndRepaintsOnChange()
 		{
-			var box = new BoxView { Color = Color.Red, WidthRequest = 120, HeightRequest = 80 };
-
-			using (var host = GtkTestHost.HostView(box, 200, 160))
+			Run(() =>
 			{
-				// host.Renderer, not Platform.GetRenderer: ViewHost builds the renderer with
-				// Platform.CreateRenderer and parents it by hand, and never calls
-				// Platform.SetRenderer, so the RendererProperty this element carries is unset and
-				// the lookup returns null. Only the HostPage tests, which go through the real
-				// Forms path, can use the static accessor.
-				var widget = (Gtk.Widget)host.Renderer;
+					var box = new BoxView { Color = Color.Red, WidthRequest = 120, HeightRequest = 80 };
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"BoxView was never allocated: {GtkTestHost.Describe(widget)}");
+					using (var host = GtkTestHost.HostView(box, 200, 160))
+					{
+						// host.Renderer, not Platform.GetRenderer: ViewHost builds the renderer with
+						// Platform.CreateRenderer and parents it by hand, and never calls
+						// Platform.SetRenderer, so the RendererProperty this element carries is unset and
+						// the lookup returns null. Only the HostPage tests, which go through the real
+						// Forms path, can use the static accessor.
+						var widget = (Gtk.Widget)host.Renderer;
 
-				host.Pump(10);
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"BoxView was never allocated: {GtkTestHost.Describe(widget)}");
 
-				var red = PixelAt(host.Window, widget.Allocation.X + 10, widget.Allocation.Y + 10);
+						host.Pump(10);
 
-				Assert.True(red.R > 200 && red.G < 60 && red.B < 60,
-					$"a red BoxView painted rgb({red.R},{red.G},{red.B}) at its top-left corner");
+						var bounds = GtkTestHost.BoundsIn(widget);
+						var red = PixelAt(host.Window, bounds.X + 10, bounds.Y + 10);
 
-				box.Color = Color.Blue;
-				host.Pump(10);
+						Assert.True(red.R > 200 && red.G < 60 && red.B < 60,
+							$"a red BoxView painted rgb({red.R},{red.G},{red.B}) at its top-left corner");
 
-				var blue = PixelAt(host.Window, widget.Allocation.X + 10, widget.Allocation.Y + 10);
+						box.Color = Color.Blue;
+						host.Pump(10);
 
-				Assert.True(blue.B > 200 && blue.R < 60 && blue.G < 60,
-					$"Color Red -> Blue painted rgb({blue.R},{blue.G},{blue.B}); " +
-					"OnElementPropertyChanged is not repainting");
-			}
+						var blue = PixelAt(host.Window, bounds.X + 10, bounds.Y + 10);
+
+						Assert.True(blue.B > 200 && blue.R < 60 && blue.G < 60,
+							$"Color Red -> Blue painted rgb({blue.R},{blue.G},{blue.B}); " +
+							"OnElementPropertyChanged is not repainting");
+					}
+		
+			});
 		}
 
 		// ---- DatePicker ----------------------------------------------------------------
@@ -133,44 +146,52 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void DatePickerMapsDateBoundsAndFormat()
 		{
-			var picker = new DatePicker
+			Run(() =>
 			{
-				MinimumDate = new DateTime(2019, 1, 1),
-				MaximumDate = new DateTime(2021, 12, 31),
-				Date = new DateTime(2020, 5, 17),
-				Format = "yyyy-MM-dd"
-			};
+					var picker = new DatePicker
+					{
+						MinimumDate = new DateTime(2019, 1, 1),
+						MaximumDate = new DateTime(2021, 12, 31),
+						Date = new DateTime(2020, 5, 17),
+						Format = "yyyy-MM-dd"
+					};
 
-			using (var host = GtkTestHost.HostView(picker))
-			{
-				var native = host.Control<Controls.DatePicker>();
+					using (var host = GtkTestHost.HostView(picker))
+					{
+						var native = host.Control<Controls.DatePicker>();
 
-				Assert.Equal(new DateTime(2020, 5, 17), native.CurrentDate.Date);
-				Assert.Equal(new DateTime(2019, 1, 1), native.MinDate.Date);
-				Assert.Equal(new DateTime(2021, 12, 31), native.MaxDate.Date);
-				Assert.Equal("yyyy-MM-dd", native.DateFormat);
+						Assert.Equal(new DateTime(2020, 5, 17), native.CurrentDate.Date);
+						Assert.Equal(new DateTime(2019, 1, 1), native.MinDate.Date);
+						Assert.Equal(new DateTime(2021, 12, 31), native.MaxDate.Date);
+						Assert.Equal("yyyy-MM-dd", native.DateFormat);
 
-				picker.Date = new DateTime(2020, 9, 3);
-				picker.Format = "dd/MM/yyyy";
-				host.Pump();
+						picker.Date = new DateTime(2020, 9, 3);
+						picker.Format = "dd/MM/yyyy";
+						host.Pump();
 
-				Assert.Equal(new DateTime(2020, 9, 3), native.CurrentDate.Date);
-				Assert.Equal("dd/MM/yyyy", native.DateFormat);
-			}
+						Assert.Equal(new DateTime(2020, 9, 3), native.CurrentDate.Date);
+						Assert.Equal("dd/MM/yyyy", native.DateFormat);
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void DatePickerDateChangesFlowBackFromTheNativeControl()
 		{
-			var picker = new DatePicker { Date = new DateTime(2020, 5, 17) };
-
-			using (var host = GtkTestHost.HostView(picker))
+			Run(() =>
 			{
-				host.Control<Controls.DatePicker>().CurrentDate = new DateTime(2022, 2, 22);
-				host.Pump();
+					var picker = new DatePicker { Date = new DateTime(2020, 5, 17) };
 
-				Assert.Equal(new DateTime(2022, 2, 22), picker.Date.Date);
-			}
+					using (var host = GtkTestHost.HostView(picker))
+					{
+						host.Control<Controls.DatePicker>().CurrentDate = new DateTime(2022, 2, 22);
+						host.Pump();
+
+						Assert.Equal(new DateTime(2022, 2, 22), picker.Date.Date);
+					}
+		
+			});
 		}
 
 		// ---- TimePicker ----------------------------------------------------------------
@@ -178,49 +199,57 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void TimePickerMapsTimeAndFormat()
 		{
-			var picker = new TimePicker
+			Run(() =>
 			{
-				Time = new TimeSpan(13, 45, 0),
-				Format = "HH:mm"
-			};
+					var picker = new TimePicker
+					{
+						Time = new TimeSpan(13, 45, 0),
+						Format = "HH:mm"
+					};
 
-			using (var host = GtkTestHost.HostView(picker))
-			{
-				var native = host.Control<Controls.TimePicker>();
+					using (var host = GtkTestHost.HostView(picker))
+					{
+						var native = host.Control<Controls.TimePicker>();
 
-				Assert.Equal(new TimeSpan(13, 45, 0), native.CurrentTime);
-				Assert.Equal("HH:mm", native.TimeFormat);
+						Assert.Equal(new TimeSpan(13, 45, 0), native.CurrentTime);
+						Assert.Equal("HH:mm", native.TimeFormat);
 
-				picker.Time = new TimeSpan(7, 5, 0);
-				picker.Format = "hh:mm tt";
-				host.Pump();
+						picker.Time = new TimeSpan(7, 5, 0);
+						picker.Format = "hh:mm tt";
+						host.Pump();
 
-				Assert.Equal(new TimeSpan(7, 5, 0), native.CurrentTime);
-				Assert.Equal("hh:mm tt", native.TimeFormat);
-			}
+						Assert.Equal(new TimeSpan(7, 5, 0), native.CurrentTime);
+						Assert.Equal("hh:mm tt", native.TimeFormat);
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void TimePickerSelectionReachesTheElement()
 		{
-			// The OTHER direction. TimePickerMapsTimeAndFormat above only covers Time flowing
-			// INTO the native control, which is why this went unnoticed: the renderer pushed
-			// `DateTime.Today + CurrentTime` into TimePicker.TimeProperty, which is typed
-			// TimeSpan. BindableProperty.TryConvert has no DateTime->TimeSpan route, so
-			// SetValueCore logged and returned without assigning and every user selection was
-			// silently discarded while the entry still showed the new time.
-			var picker = new TimePicker { Time = new TimeSpan(9, 0, 0) };
-
-			using (var host = GtkTestHost.HostView(picker))
+			Run(() =>
 			{
-				var native = host.Control<Controls.TimePicker>();
+					// The OTHER direction. TimePickerMapsTimeAndFormat above only covers Time flowing
+					// INTO the native control, which is why this went unnoticed: the renderer pushed
+					// `DateTime.Today + CurrentTime` into TimePicker.TimeProperty, which is typed
+					// TimeSpan. BindableProperty.TryConvert has no DateTime->TimeSpan route, so
+					// SetValueCore logged and returned without assigning and every user selection was
+					// silently discarded while the entry still showed the new time.
+					var picker = new TimePicker { Time = new TimeSpan(9, 0, 0) };
 
-				// What the popup does when the user picks a time.
-				native.CurrentTime = new TimeSpan(14, 30, 0);
-				host.Pump();
+					using (var host = GtkTestHost.HostView(picker))
+					{
+						var native = host.Control<Controls.TimePicker>();
 
-				Assert.Equal(new TimeSpan(14, 30, 0), picker.Time);
-			}
+						// What the popup does when the user picks a time.
+						native.CurrentTime = new TimeSpan(14, 30, 0);
+						host.Pump();
+
+						Assert.Equal(new TimeSpan(14, 30, 0), picker.Time);
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -240,22 +269,26 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void DisposingATimePickerRendererUnsubscribesFromTheNativeControl()
 		{
-			var picker = new TimePicker { Time = new TimeSpan(9, 0, 0) };
-			var renderer = Platform.CreateRenderer(picker);
-			var native = (Controls.TimePicker)((IVisualNativeElementRenderer)renderer).Control;
+			Run(() =>
+			{
+					var picker = new TimePicker { Time = new TimeSpan(9, 0, 0) };
+					var renderer = Platform.CreateRenderer(picker);
+					var native = (Controls.TimePicker)((IVisualNativeElementRenderer)renderer).Control;
 
-			var before = HandlerCount(native, "GotFocus");
+					var before = HandlerCount(native, "GotFocus");
 
-			Assert.True(before >= 1,
-				"the renderer never subscribed to GotFocus, so this test proves nothing");
+					Assert.True(before >= 1,
+						"the renderer never subscribed to GotFocus, so this test proves nothing");
 
-			renderer.Dispose();
+					renderer.Dispose();
 
-			var after = HandlerCount(native, "GotFocus");
+					var after = HandlerCount(native, "GotFocus");
 
-			Assert.True(after < before,
-				$"disposing the renderer left {after} GotFocus handlers where there were {before} " +
-				"before - Dispose is subscribing (+=) instead of unsubscribing (-=)");
+					Assert.True(after < before,
+						$"disposing the renderer left {after} GotFocus handlers where there were {before} " +
+						"before - Dispose is subscribing (+=) instead of unsubscribing (-=)");
+		
+			});
 		}
 
 		// ---- helpers -------------------------------------------------------------------
@@ -289,30 +322,10 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			Assert.True(condition(), because);
 		}
 
-		// Deliberately not Gdk.Color: its channels are 16-bit, so the 0-255 thresholds the callers
-		// assert on would silently be wrong. These are the pixbuf's own bytes, unscaled.
-		static (byte R, byte G, byte B) PixelAt(Gtk.Window window, int x, int y)
-		{
-			// Flush queued redraws before photographing, for the same reason GtkTestHost.Pump
-			// forces a SizeAllocate: pumping the event queue does not run them. QueueDraw - which
-			// is all Controls.BoxView.UpdateColor does, correctly - only marks the region dirty and
-			// leaves the actual expose to the frame clock, which does not tick on demand headlessly.
-			// Without this the screenshot returns the PREVIOUS frame, so a repaint assertion reads
-			// the colour it was meant to prove had changed.
-			window.Window.ProcessUpdates(true);
-
-			var shot = new Gdk.Pixbuf(window.Window, 0, 0, window.AllocatedWidth, window.AllocatedHeight);
-
-			Assert.True(x >= 0 && y >= 0 && x < shot.Width && y < shot.Height,
-				$"({x},{y}) is outside the {shot.Width}x{shot.Height} window");
-
-			var bytes = new byte[shot.Height * shot.Rowstride];
-			System.Runtime.InteropServices.Marshal.Copy(shot.Pixels, bytes, 0, bytes.Length);
-
-			var offset = (y * shot.Rowstride) + (x * shot.NChannels);
-
-			return (bytes[offset], bytes[offset + 1], bytes[offset + 2]);
-		}
+		// The Gtk 4 readback path lives in GtkTestHost.PixelAt: a widget owns no pixels there, so
+		// it is rendered through a GtkWidgetPaintable rather than photographed off a GdkWindow.
+		static (byte R, byte G, byte B) PixelAt(Gtk.Window window, int x, int y) =>
+			GtkTestHost.PixelAt(window, x, y);
 
 		static string WriteTempPng(int width, int height, uint rgba)
 		{

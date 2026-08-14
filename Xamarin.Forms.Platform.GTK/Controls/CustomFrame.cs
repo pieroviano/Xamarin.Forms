@@ -80,8 +80,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		// Allocation-based as it was under GTK2's expose-event.
 		protected override bool OnDrawn(Cairo.Context cr)
 		{
-			double width = AllocatedWidth;
-			double height = AllocatedHeight;
+			double width = Width;
+			double height = Height;
 
 			// Draw Shadow
 			if (_hasShadow)

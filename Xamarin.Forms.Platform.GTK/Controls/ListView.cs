@@ -348,7 +348,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				{
 					Text = "Refresh"
 				});
-			_refreshButton.ImageWidget.Stock = Stock.Refresh;
+			// A themed icon name, not a stock id. Gtk 4 deleted the stock system outright - it was
+			// already deprecated in Gtk 3 - and "view-refresh-symbolic" is the freedesktop name
+			// GTK_STOCK_REFRESH resolved to anyway.
+			_refreshButton.ImageWidget.IconName = "view-refresh-symbolic";
 			_refreshButton.SetImagePosition(PositionType.Left);
 			_refreshButton.Clicked += (sender, args) =>
 			{

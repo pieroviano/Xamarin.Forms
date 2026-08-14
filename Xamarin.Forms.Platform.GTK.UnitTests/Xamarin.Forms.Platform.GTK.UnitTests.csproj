@@ -20,13 +20,32 @@
       advisory alternative - an async test method - is exactly what deadlocks this suite;
       see the comment on GtkTestHost.Await.
     -->
-    <NoWarn>$(NoWarn);xUnit1031</NoWarn>
+    <!--
+      CS0612: this suite asserts on the widgets the backend actually creates, and a few of those
+      are types Gtk 4 deprecated but still ships - Gtk.ComboBox, which PickerRenderer uses. The
+      deferral and its inventory are documented once, in Xamarin.Forms.Platform.GTK.csproj; a test
+      cannot avoid the deprecation without ceasing to test the thing that is shipped.
+
+      Everything Gtk 4 REMOVED was ported here rather than suppressed - including the pixel
+      readback and the input synthesis, which had no direct replacement at all.
+    -->
+    <NoWarn>$(NoWarn);xUnit1031;CS0612</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <!--
+      Direct, although Xamarin.Forms.Platform.GTK already brings the bindings in transitively.
+      This suite drives real GTK widgets, so it needs the native GTK 4 runtime, and on Windows
+      that is installed by the package's own build/GtkSharp.targets (it downloads a gvsbuild
+      bundle into %LOCALAPPDATA%\Gtk). That target sits in build/, not buildTransitive/, so NuGet
+      runs it only for a project holding the PackageReference itself - reaching the package
+      through a ProjectReference is not enough, and the failure without it is every test in the
+      suite erroring inside Gtk.Application.Init.
+    -->
+    <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
   </ItemGroup>
 
   <ItemGroup>

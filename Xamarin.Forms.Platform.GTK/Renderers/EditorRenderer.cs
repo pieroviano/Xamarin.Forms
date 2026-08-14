@@ -182,8 +182,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var metrics = textView.PangoContext.GetMetrics(font, Language.Default);
 			var pangoUnits = (metrics.Ascent + metrics.Descent) / Pango.Scale.PangoScale;
 
-			var resolution = textView.Screen.Resolution;
-			var minHeight = (int)(pangoUnits * (resolution / 72.0));
+			// Gtk 4 removed the screen resolution (it went with GdkScreen), and the Pango context
+			// already resolves font sizes for the display it belongs to - so the metrics above are
+			// in device units and no dots-per-inch conversion is left to do. The Gtk 3 code scaled
+			// by resolution/72 to get there from points.
+			var minHeight = (int)pangoUnits;
 
 			if (textView.HeightRequest < minHeight)
 			{

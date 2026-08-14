@@ -31,6 +31,7 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 		protected CellBase()
 		{
 			ButtonReleaseEvent += OnClick;
+			AddNotification("parent", OnParentNotified);
 		}
 
 		public Cell Cell
@@ -106,10 +107,14 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			HeightRequest = DesiredHeight;
 		}
 
-		protected override void OnParentSet(Gtk.Widget previousParent)
+		// A property notification, not Gtk 3's parent_set vfunc, which Gtk 4 removed. GtkWidget:parent
+		// is an ordinary GObject property there, so ::notify carries the same news - and carries it
+		// for every reparenting, including ones Gtk performs internally.
+		//
+		// What is lost is the PREVIOUS parent, which parent_set passed as an argument and ::notify
+		// does not. Nothing below used it.
+		void OnParentNotified(object o, GLib.NotifyArgs args)
 		{
-			base.OnParentSet(previousParent);
-
 			if (_cell == null)
 				return;
 
@@ -124,15 +129,20 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 				ClaimAppearance(_cell);
 		}
 
-		protected override void OnDestroyed()
+		/// <remarks>
+		/// Destroy, not Gtk 3's OnDestroyed, which Gtk 4 has no equivalent of - see
+		/// Controls/OpenGLView.Destroy.
+		/// </remarks>
+		public override void Destroy()
 		{
-			base.OnDestroyed();
+			base.Destroy();
 
 			ButtonReleaseEvent -= OnClick;
+			RemoveNotification("parent", OnParentNotified);
 
-			// Covers a widget destroyed while unparented, which OnParentSet never hears about. The
-			// two are idempotent between them: whichever runs first releases, the other sees that
-			// this widget no longer owns the slot and does nothing.
+			// Covers a widget destroyed while unparented, which the parent notification never hears
+			// about. The two are idempotent between them: whichever runs first releases, the other
+			// sees that this widget no longer owns the slot and does nothing.
 			if (_cell != null)
 				ReleaseAppearance(_cell);
 		}
@@ -184,45 +194,63 @@ namespace Xamarin.Forms.Platform.GTK.Cells
 			}
 		}
 
+		/// <remarks>
+		/// A <see cref="Gtk.Popover"/> of buttons, not a Gtk.Menu, which GTK4 removed. Its
+		/// replacement, GtkPopoverMenu, is driven by a GMenuModel and GActions rather than by
+		/// widgets - so porting onto it would mean giving every Xamarin.Forms MenuItem a registered
+		/// action name and an action group to live in, to end up with the same rows and the same
+		/// click handlers. A plain popover keeps the widget-and-handler model these items already
+		/// have, and looks the same: the "flat" style class is what gives a button a menu row's
+		/// appearance.
+		///
+		/// The popover is parented to this cell and destroyed when it closes, so a cell recycled by
+		/// the list does not accumulate one per right-click.
+		/// </remarks>
 		private void OpenContextMenu()
 		{
-			var menu = new Gtk.Menu();
+			var box = new Gtk.Box(Gtk.Orientation.Vertical, 0);
+			var popover = new Gtk.Popover { Child = box };
 
-			SetupMenuItems(menu);
-			menu.ShowAll();
-			menu.Popup();
+			popover.Parent = this;
+			SetupMenuItems(popover, box);
+
+			popover.Closed += (sender, args) => popover.Unparent();
+			popover.Popup();
 		}
 
-		private void SetupMenuItems(Gtk.Menu menu)
+		private void SetupMenuItems(Gtk.Popover popover, Gtk.Box box)
 		{
 			foreach (MenuItem item in Cell.ContextActions)
 			{
-				// GTK3 deprecates Gtk.ImageMenuItem and its Image property: a menu item is now a
-				// plain MenuItem whose child is whatever box of widgets you want. Build that box
-				// up front so the async icon load only has to fill in the Pixbuf.
-				var menuItem = new Gtk.MenuItem();
+				// A menu row is a button whose child is whatever box of widgets you want. Build
+				// that box up front so the async icon load only has to fill in the Pixbuf.
 				var menuItemImage = new Gtk.Image();
 				var menuItemBox = new Gtk.Box(Gtk.Orientation.Horizontal, 6);
 
 				menuItemBox.PackStart(menuItemImage, false, false, 0);
 				menuItemBox.PackStart(new Gtk.Label(item.Text) { Xalign = 0 }, true, true, 0);
-				menuItem.Add(menuItemBox);
+
+				var menuItem = new Gtk.Button { Child = menuItemBox };
+				menuItem.AddCssClass("flat");
 
 				_ = item.ApplyNativeImageAsync(MenuItem.IconImageSourceProperty, icon =>
 				{
 					if (icon != null)
 					{
 						menuItemImage.Pixbuf = icon;
-						menuItemImage.Show();
+						menuItemImage.Visible = true;
 					}
 				});
 
-				menuItem.ButtonPressEvent += (sender, args) =>
+				// Clicked, not ButtonPressEvent: a button already knows what a click is, and the
+				// popover has to be dismissed by hand - a Gtk.Menu closed itself on activation.
+				menuItem.Clicked += (sender, args) =>
 				{
+					popover.Popdown();
 					((IMenuItemController)item).Activate();
 				};
 
-				menu.Add(menuItem);
+				box.Append(menuItem);
 			}
 		}
 	}

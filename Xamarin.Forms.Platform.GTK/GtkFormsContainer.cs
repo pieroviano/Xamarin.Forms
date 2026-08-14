@@ -47,7 +47,7 @@ namespace Xamarin.Forms.Platform.GTK
 		// region, so the manual Clip()/Translate() arithmetic GTK2 required is gone.
 		protected override bool OnDrawn(Context cr)
 		{
-			var area = new Gdk.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
+			var area = new Gdk.Rectangle(0, 0, Width, Height);
 
 			// Draw first the background with the color defined in BackgroundColor.
 			//
@@ -62,7 +62,7 @@ namespace Xamarin.Forms.Platform.GTK
 			// edge"). It only ever showed on a layout with an explicit BackgroundColor, because the
 			// default here is Color.Transparent and painting that is a no-op.
 			cr.Save();
-			cr.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
+			cr.Rectangle(0, 0, Width, Height);
 			cr.Clip();
 			cr.SetSourceRGBA(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, BackgroundColor.A);
 			cr.Operator = Operator.Over;

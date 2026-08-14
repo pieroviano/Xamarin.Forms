@@ -267,11 +267,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					// This will force measure to invalidate, which we haven't hooked up to yet because we are smarter!
 					Platform.SetRenderer(headerView, _headerRenderer);
 
+					// Width, not gtk_window_get_size, which Gtk 4 removed: a window's size is its
+					// allocation like any other widget's, so the widget property IS the answer.
 					var window = FormsWindow.MainWindow;
-					int winWidth, winHeight;
-					window.GetSize(out winWidth, out winHeight);
 
-					HeaderMeasure(headerView, winWidth);
+					HeaderMeasure(headerView, window.Width);
 
 					_listView.Header = _headerRenderer.Container;
 					headerView.MeasureInvalidated += OnHeaderMeasureInvalidated;
@@ -335,11 +335,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 					_footerRenderer = Platform.CreateRenderer(footerView);
 					Platform.SetRenderer(footerView, _footerRenderer);
 
+					// See HeaderMeasure above: Gtk 4 removed gtk_window_get_size.
 					var window = FormsWindow.MainWindow;
-					int winWidth, winHeight;
-					window.GetSize(out winWidth, out winHeight);
 
-					FooterMeasure(footerView, winWidth);
+					FooterMeasure(footerView, window.Width);
 
 					_listView.Footer = _footerRenderer.Container;
 					footerView.MeasureInvalidated += OnFooterMeasureInvalidated;
@@ -634,7 +633,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			foreach (var item in Control.Items)
 			{
-				height += item.Allocation.Height;
+				height += item.Height;
 
 				if (((CellBase)item).Cell == cell)
 				{
@@ -651,7 +650,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				return;
 			}
 
-			var listHeight = _listView.Allocation.Height;
+			var listHeight = _listView.Height;
 
 			if (e.Position == ScrollToPosition.Start)
 				y = height;

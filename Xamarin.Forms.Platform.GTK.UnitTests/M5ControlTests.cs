@@ -32,37 +32,45 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void CheckBoxMapsIsCheckedBothWays()
 		{
-			var checkbox = new CheckBox { IsChecked = true };
-
-			using (var host = GtkTestHost.HostView(checkbox))
+			Run(() =>
 			{
-				var native = host.Control<Gtk.CheckButton>();
-				Assert.True(native.Active, "initial IsChecked did not reach the native widget");
+					var checkbox = new CheckBox { IsChecked = true };
 
-				checkbox.IsChecked = false;
-				host.Pump();
-				Assert.False(native.Active, "Forms -> native");
+					using (var host = GtkTestHost.HostView(checkbox))
+					{
+						var native = host.Control<Gtk.CheckButton>();
+						Assert.True(native.Active, "initial IsChecked did not reach the native widget");
 
-				native.Active = true;
-				host.Pump();
-				Assert.True(checkbox.IsChecked, "native -> Forms");
-			}
+						checkbox.IsChecked = false;
+						host.Pump();
+						Assert.False(native.Active, "Forms -> native");
+
+						native.Active = true;
+						host.Pump();
+						Assert.True(checkbox.IsChecked, "native -> Forms");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void CheckBoxIsAllocatedInsideALayout()
 		{
-			var checkbox = new CheckBox { IsChecked = true, HorizontalOptions = LayoutOptions.Start };
-
-			using (var host = GtkTestHost.HostPage(PageWith(checkbox), 500, 400))
+			Run(() =>
 			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(checkbox);
+					var checkbox = new CheckBox { IsChecked = true, HorizontalOptions = LayoutOptions.Start };
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"CheckBox never got a real allocation: {GtkTestHost.Describe(widget)}");
+					using (var host = GtkTestHost.HostPage(PageWith(checkbox), 500, 400))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(checkbox);
 
-				AssertAgreesWithForms(checkbox, widget);
-			}
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"CheckBox never got a real allocation: {GtkTestHost.Describe(widget)}");
+
+						AssertAgreesWithForms(checkbox, widget);
+					}
+		
+			});
 		}
 
 		// ---- ImageButton -----------------------------------------------------------------
@@ -70,45 +78,53 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void ImageButtonUsesItsOwnRendererAndIsAllocated()
 		{
-			var button = new FormsImageButton { HeightRequest = 48, WidthRequest = 64 };
-
-			using (var host = GtkTestHost.HostPage(PageWith(button), 500, 400))
+			Run(() =>
 			{
-				var renderer = Platform.GetRenderer(button);
+					var button = new FormsImageButton { HeightRequest = 48, WidthRequest = 64 };
 
-				Assert.True(renderer is ImageButtonRenderer,
-					$"ImageButton resolved to {renderer?.GetType().Name}, not ImageButtonRenderer - " +
-					"it is falling back to some other renderer");
+					using (var host = GtkTestHost.HostPage(PageWith(button), 500, 400))
+					{
+						var renderer = Platform.GetRenderer(button);
 
-				var widget = (Gtk.Widget)renderer;
+						Assert.True(renderer is ImageButtonRenderer,
+							$"ImageButton resolved to {renderer?.GetType().Name}, not ImageButtonRenderer - " +
+							"it is falling back to some other renderer");
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"ImageButton never got a real allocation: {GtkTestHost.Describe(widget)}");
+						var widget = (Gtk.Widget)renderer;
 
-				AssertAgreesWithForms(button, widget);
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"ImageButton never got a real allocation: {GtkTestHost.Describe(widget)}");
 
-				var native = GtkTestHost.Find<GtkImageButton>(widget).FirstOrDefault();
-				Assert.True(native != null, "no native ImageButton control under the renderer");
-			}
+						AssertAgreesWithForms(button, widget);
+
+						var native = GtkTestHost.Find<GtkImageButton>(widget).FirstOrDefault();
+						Assert.True(native != null, "no native ImageButton control under the renderer");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void ImageButtonClickedIsRaisedFromTheNativeClick()
 		{
-			var button = new FormsImageButton();
-			var clicked = 0;
-			button.Clicked += (s, e) => clicked++;
-
-			using (var host = GtkTestHost.HostView(button))
+			Run(() =>
 			{
-				var native = host.Control<GtkImageButton>();
+					var button = new FormsImageButton();
+					var clicked = 0;
+					button.Clicked += (s, e) => clicked++;
 
-				GLib.Signal.Emit(native, "clicked");
-				host.Pump();
+					using (var host = GtkTestHost.HostView(button))
+					{
+						var native = host.Control<GtkImageButton>();
 
-				Assert.True(clicked == 1,
-					$"the native click must reach ImageButton.Clicked (raised {clicked} times)");
-			}
+						GLib.Signal.Emit(native, "clicked");
+						host.Pump();
+
+						Assert.True(clicked == 1,
+							$"the native click must reach ImageButton.Clicked (raised {clicked} times)");
+					}
+		
+			});
 		}
 
 		// ---- Line (Shapes) ---------------------------------------------------------------
@@ -116,40 +132,44 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void LineIsAllocatedToItsFormsBounds()
 		{
-			var line = new LineShape
+			Run(() =>
 			{
-				X1 = 0,
-				Y1 = 0,
-				X2 = 180,
-				Y2 = 60,
-				Stroke = Brush.Red,
-				StrokeThickness = 4,
-				WidthRequest = 200,
-				HeightRequest = 80,
-				HorizontalOptions = LayoutOptions.Start,
-				VerticalOptions = LayoutOptions.Start
-			};
+					var line = new LineShape
+					{
+						X1 = 0,
+						Y1 = 0,
+						X2 = 180,
+						Y2 = 60,
+						Stroke = Brush.Red,
+						StrokeThickness = 4,
+						WidthRequest = 200,
+						HeightRequest = 80,
+						HorizontalOptions = LayoutOptions.Start,
+						VerticalOptions = LayoutOptions.Start
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(line), 600, 400))
-			{
-				var renderer = Platform.GetRenderer(line);
+					using (var host = GtkTestHost.HostPage(PageWith(line), 600, 400))
+					{
+						var renderer = Platform.GetRenderer(line);
 
-				Assert.True(renderer is LineRenderer,
-					$"Line resolved to {renderer?.GetType().Name}, not LineRenderer");
+						Assert.True(renderer is LineRenderer,
+							$"Line resolved to {renderer?.GetType().Name}, not LineRenderer");
 
-				var widget = (Gtk.Widget)renderer;
+						var widget = (Gtk.Widget)renderer;
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"Line never got a real allocation: {GtkTestHost.Describe(widget)}");
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"Line never got a real allocation: {GtkTestHost.Describe(widget)}");
 
-				Assert.True(Math.Abs(widget.Allocation.Width - 200) <= 2,
-					$"Line allocated {widget.Allocation.Width}px wide, expected ~200");
-				Assert.True(Math.Abs(widget.Allocation.Height - 80) <= 2,
-					$"Line allocated {widget.Allocation.Height}px tall, expected ~80");
+						Assert.True(Math.Abs(widget.Width - 200) <= 2,
+							$"Line allocated {widget.Width}px wide, expected ~200");
+						Assert.True(Math.Abs(widget.Height - 80) <= 2,
+							$"Line allocated {widget.Height}px tall, expected ~80");
 
-				Assert.True(GtkTestHost.Find<LineView>(widget).Count == 1,
-					"the renderer did not create exactly one native LineView");
-			}
+						Assert.True(GtkTestHost.Find<LineView>(widget).Count == 1,
+							"the renderer did not create exactly one native LineView");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -162,51 +182,55 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void LineGeometryChangesAreAcceptedAfterAllocation()
 		{
-			var line = new LineShape
+			Run(() =>
 			{
-				X1 = 0,
-				Y1 = 0,
-				X2 = 10,
-				Y2 = 10,
-				Stroke = Brush.Blue,
-				StrokeThickness = 2,
-				WidthRequest = 150,
-				HeightRequest = 150
-			};
+					var line = new LineShape
+					{
+						X1 = 0,
+						Y1 = 0,
+						X2 = 10,
+						Y2 = 10,
+						Stroke = Brush.Blue,
+						StrokeThickness = 2,
+						WidthRequest = 150,
+						HeightRequest = 150
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(line), 400, 400))
-			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(line);
-				var before = widget.Allocation;
-				var lineView = GtkTestHost.Find<LineView>(widget).Single();
+					using (var host = GtkTestHost.HostPage(PageWith(line), 400, 400))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(line);
+						var before = GtkTestHost.BoundsIn(widget);
+						var lineView = GtkTestHost.Find<LineView>(widget).Single();
 
-				// Ground truth, and the check that says whether this widget can be drawn at all
-				// here: the 0,0 -> 10,10 line paints over its own start point and nowhere near the
-				// far corner.
-				Assert.True(PaintedNear(lineView, 5, 5),
-					"the 0,0 -> 10,10 line painted nothing at its own start point, so the native " +
-					$"LineView drew nothing at all: {GtkTestHost.Describe(lineView)}");
-				Assert.False(PaintedNear(lineView, 120, 120),
-					"a line that ends at 10,10 painted over 120,120");
+						// Ground truth, and the check that says whether this widget can be drawn at all
+						// here: the 0,0 -> 10,10 line paints over its own start point and nowhere near the
+						// far corner.
+						Assert.True(PaintedNear(lineView, 5, 5),
+							"the 0,0 -> 10,10 line painted nothing at its own start point, so the native " +
+							$"LineView drew nothing at all: {GtkTestHost.Describe(lineView)}");
+						Assert.False(PaintedNear(lineView, 120, 120),
+							"a line that ends at 10,10 painted over 120,120");
 
-				line.X2 = 140;
-				line.Y2 = 140;
-				host.Pump();
+						line.X2 = 140;
+						line.Y2 = 140;
+						host.Pump();
 
-				Assert.True(PaintedNear(lineView, 120, 120),
-					"moving X2/Y2 from 10,10 to 140,140 did not move the native LineView's end " +
-					"point: 120,120 sits on the new segment and is still unpainted, i.e. " +
-					"LineRenderer never called UpdateLine");
+						Assert.True(PaintedNear(lineView, 120, 120),
+							"moving X2/Y2 from 10,10 to 140,140 did not move the native LineView's end " +
+							"point: 120,120 sits on the new segment and is still unpainted, i.e. " +
+							"LineRenderer never called UpdateLine");
 
-				// And a post-allocation geometry change neither throws nor wedges the subtree:
-				// M3 root cause 2 was that mutating geometry at the wrong moment made GTK discard
-				// the resize and leave the widget stuck.
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"Line lost its allocation after a geometry change: {GtkTestHost.Describe(widget)}");
-				Assert.True(widget.Allocation.Width == before.Width,
-					$"Line width changed from {before.Width} to {widget.Allocation.Width} " +
-					"for a change that only moves the end point");
-			}
+						// And a post-allocation geometry change neither throws nor wedges the subtree:
+						// M3 root cause 2 was that mutating geometry at the wrong moment made GTK discard
+						// the resize and leave the widget stuck.
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"Line lost its allocation after a geometry change: {GtkTestHost.Describe(widget)}");
+						Assert.True(widget.Width == before.Width,
+							$"Line width changed from {before.Width} to {widget.Width} " +
+							"for a change that only moves the end point");
+					}
+		
+			});
 		}
 
 		// ---- RefreshView -----------------------------------------------------------------
@@ -214,23 +238,27 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void RefreshViewLaysOutItsContent()
 		{
-			var content = new BoxView { Color = Color.Teal };
-			var refreshView = new RefreshView
+			Run(() =>
 			{
-				Content = new StackLayout { Children = { content } }
-			};
+					var content = new BoxView { Color = Color.Teal };
+					var refreshView = new RefreshView
+					{
+						Content = new StackLayout { Children = { content } }
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(refreshView, fill: true), 600, 400))
-			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(content);
+					using (var host = GtkTestHost.HostPage(PageWith(refreshView, fill: true), 600, 400))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(content);
 
-				Assert.False(GtkTestHost.IsUnallocated(widget),
-					$"RefreshView content was never allocated: {GtkTestHost.Describe(widget)}");
+						Assert.False(GtkTestHost.IsUnallocated(widget),
+							$"RefreshView content was never allocated: {GtkTestHost.Describe(widget)}");
 
-				Assert.True(widget.Allocation.Width > 300,
-					$"RefreshView content allocated {widget.Allocation.Width}px wide inside a " +
-					"600px page - the RefreshView is not laying its content out");
-			}
+						Assert.True(widget.Width > 300,
+							$"RefreshView content allocated {widget.Width}px wide inside a " +
+							"600px page - the RefreshView is not laying its content out");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -244,41 +272,46 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void RefreshViewSpinnerIsShownHiddenAndOwnsItsWindow()
 		{
-			var refreshView = new RefreshView
+			Run(() =>
 			{
-				Content = new StackLayout { Children = { new BoxView { Color = Color.Teal } } }
-			};
+					var refreshView = new RefreshView
+					{
+						Content = new StackLayout { Children = { new BoxView { Color = Color.Teal } } }
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(refreshView, fill: true), 600, 400))
-			{
-				var renderer = (Gtk.Widget)Platform.GetRenderer(refreshView);
+					using (var host = GtkTestHost.HostPage(PageWith(refreshView, fill: true), 600, 400))
+					{
+						var renderer = (Gtk.Widget)Platform.GetRenderer(refreshView);
 
-				var spinner = GtkTestHost.Find<Gtk.Spinner>(renderer).FirstOrDefault();
-				Assert.True(spinner != null, "RefreshViewRenderer created no Gtk.Spinner");
+						var spinner = GtkTestHost.Find<Gtk.Spinner>(renderer).FirstOrDefault();
+						Assert.True(spinner != null, "RefreshViewRenderer created no Gtk.Spinner");
 
-				var spinnerHost = spinner.Parent as Gtk.EventBox;
-				Assert.True(spinnerHost != null,
-					$"the spinner's parent is {spinner.Parent?.GetType().Name}, not a Gtk.EventBox - " +
-					"without its own GdkWindow it paints under the content and is invisible");
-				Assert.True(spinnerHost.VisibleWindow,
-					"the spinner host EventBox has VisibleWindow = false, so it owns no GdkWindow " +
-					"and the spinner is drawn underneath the content");
+						var spinnerHost = spinner.Parent as Gtk.EventBox;
+						Assert.True(spinnerHost != null,
+							$"the spinner's parent is {spinner.Parent?.GetType().Name}, not a Gtk.EventBox - " +
+							"without its own GdkWindow it paints under the content and is invisible");
+						Assert.True(spinnerHost.VisibleWindow,
+							"the spinner host EventBox has VisibleWindow = false, so it owns no GdkWindow " +
+							"and the spinner is drawn underneath the content");
 
-				Assert.False(spinnerHost.Visible, "the spinner must be hidden while not refreshing");
+						Assert.False(spinnerHost.Visible, "the spinner must be hidden while not refreshing");
 
-				refreshView.IsRefreshing = true;
-				host.Pump();
+						refreshView.IsRefreshing = true;
+						host.Pump();
 
-				Assert.True(spinnerHost.Visible, "IsRefreshing = true did not show the spinner");
-				Assert.True(spinner.Active, "the spinner was shown but is not animating");
-				Assert.False(GtkTestHost.IsUnallocated(spinnerHost),
-					$"the spinner host was shown but never allocated: {GtkTestHost.Describe(spinnerHost)}");
+						Assert.True(spinnerHost.Visible, "IsRefreshing = true did not show the spinner");
+						// Spinning, not Active: Gtk 4 renamed GtkSpinner's property.
+						Assert.True(spinner.Spinning, "the spinner was shown but is not animating");
+						Assert.False(GtkTestHost.IsUnallocated(spinnerHost),
+							$"the spinner host was shown but never allocated: {GtkTestHost.Describe(spinnerHost)}");
 
-				refreshView.IsRefreshing = false;
-				host.Pump();
+						refreshView.IsRefreshing = false;
+						host.Pump();
 
-				Assert.False(spinnerHost.Visible, "IsRefreshing = false did not hide the spinner");
-			}
+						Assert.False(spinnerHost.Visible, "IsRefreshing = false did not hide the spinner");
+					}
+		
+			});
 		}
 
 		// ---- IndicatorView ---------------------------------------------------------------
@@ -308,116 +341,128 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void IndicatorViewSizeRequestTracksTheDotCount()
 		{
-			var indicator = new IndicatorView
+			Run(() =>
 			{
-				Count = 3,
-				Position = 0,
-				IndicatorSize = 10,
-				HorizontalOptions = LayoutOptions.Start,
-				VerticalOptions = LayoutOptions.Start
-			};
+					var indicator = new IndicatorView
+					{
+						Count = 3,
+						Position = 0,
+						IndicatorSize = 10,
+						HorizontalOptions = LayoutOptions.Start,
+						VerticalOptions = LayoutOptions.Start
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
-			{
-				var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
-				var control = GtkTestHost.Find<IndicatorViewControl>(renderer).SingleOrDefault();
+					using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
+					{
+						var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
+						var control = GtkTestHost.Find<IndicatorViewControl>(renderer).SingleOrDefault();
 
-				Assert.True(control != null, "the renderer did not create an IndicatorViewControl");
+						Assert.True(control != null, "the renderer did not create an IndicatorViewControl");
 
-				Assert.False(GtkTestHost.IsUnallocated(control),
-					$"IndicatorView was never allocated: {GtkTestHost.Describe(control)}");
+						Assert.False(GtkTestHost.IsUnallocated(control),
+							$"IndicatorView was never allocated: {GtkTestHost.Describe(control)}");
 
-				control.GetSizeRequest(out var width, out var height);
+						control.GetSizeRequest(out var width, out var height);
 
-				Assert.True(width == ExpectedDotWidth(3, 10),
-					$"3 x 10px dots + 6px spacing should request {ExpectedDotWidth(3, 10)}px, got {width}");
-				Assert.True(height == 10, $"the dot row should be 10px tall, got {height}");
+						Assert.True(width == ExpectedDotWidth(3, 10),
+							$"3 x 10px dots + 6px spacing should request {ExpectedDotWidth(3, 10)}px, got {width}");
+						Assert.True(height == 10, $"the dot row should be 10px tall, got {height}");
 
-				Assert.True(control.Allocation.Width >= width,
-					$"the control was allocated {control.Allocation.Width}px but needs {width}px " +
-					"for its dots");
+						Assert.True(control.Width >= width,
+							$"the control was allocated {control.Width}px but needs {width}px " +
+							"for its dots");
 
-				indicator.Count = 7;
-				host.Pump();
+						indicator.Count = 7;
+						host.Pump();
 
-				control.GetSizeRequest(out var wider, out _);
+						control.GetSizeRequest(out var wider, out _);
 
-				Assert.True(wider == ExpectedDotWidth(7, 10),
-					$"Count 3 -> 7 should re-request {ExpectedDotWidth(7, 10)}px, got {wider}; " +
-					"OnElementPropertyChanged is not re-measuring");
-			}
+						Assert.True(wider == ExpectedDotWidth(7, 10),
+							$"Count 3 -> 7 should re-request {ExpectedDotWidth(7, 10)}px, got {wider}; " +
+							"OnElementPropertyChanged is not re-measuring");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void IndicatorViewMaximumVisibleCapsTheDotCount()
 		{
-			var indicator = new IndicatorView
+			Run(() =>
 			{
-				Count = 20,
-				MaximumVisible = 4,
-				IndicatorSize = 10,
-				HorizontalOptions = LayoutOptions.Start,
-				VerticalOptions = LayoutOptions.Start
-			};
+					var indicator = new IndicatorView
+					{
+						Count = 20,
+						MaximumVisible = 4,
+						IndicatorSize = 10,
+						HorizontalOptions = LayoutOptions.Start,
+						VerticalOptions = LayoutOptions.Start
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
-			{
-				var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
-				var control = GtkTestHost.Find<IndicatorViewControl>(renderer).Single();
+					using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
+					{
+						var renderer = (Gtk.Widget)Platform.GetRenderer(indicator);
+						var control = GtkTestHost.Find<IndicatorViewControl>(renderer).Single();
 
-				control.GetSizeRequest(out var width, out _);
+						control.GetSizeRequest(out var width, out _);
 
-				Assert.True(width == ExpectedDotWidth(4, 10),
-					$"MaximumVisible = 4 should draw 4 dots ({ExpectedDotWidth(4, 10)}px); the " +
-					$"control asked for {width}px, and all 20 dots would be " +
-					$"{ExpectedDotWidth(20, 10)}px");
-			}
+						Assert.True(width == ExpectedDotWidth(4, 10),
+							$"MaximumVisible = 4 should draw 4 dots ({ExpectedDotWidth(4, 10)}px); the " +
+							$"control asked for {width}px, and all 20 dots would be " +
+							$"{ExpectedDotWidth(20, 10)}px");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void IndicatorViewHideSingleSuppressesTheOnlyDot()
 		{
-			var indicator = new IndicatorView
+			Run(() =>
 			{
-				Count = 1,
-				HideSingle = true,
-				IndicatorSize = 10,
-				HorizontalOptions = LayoutOptions.Start,
-				VerticalOptions = LayoutOptions.Start
-			};
+					var indicator = new IndicatorView
+					{
+						Count = 1,
+						HideSingle = true,
+						IndicatorSize = 10,
+						HorizontalOptions = LayoutOptions.Start,
+						VerticalOptions = LayoutOptions.Start
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
-			{
-				var control = GtkTestHost
-					.Find<IndicatorViewControl>((Gtk.Widget)Platform.GetRenderer(indicator))
-					.Single();
+					using (var host = GtkTestHost.HostPage(PageWith(indicator), 600, 400))
+					{
+						var control = GtkTestHost
+							.Find<IndicatorViewControl>((Gtk.Widget)Platform.GetRenderer(indicator))
+							.Single();
 
-				control.GetSizeRequest(out var hidden, out _);
+						control.GetSizeRequest(out var hidden, out _);
 
-				// The renderer asks for 0px when it draws no dots; MEASURED, GTK reports that back
-				// as 1px, so the bar is "no room for a dot" rather than a literal zero. One dot
-				// would be 10px, so this still fails outright if HideSingle is ignored.
-				Assert.True(hidden <= 1,
-					$"HideSingle should draw no dots at all for Count = 1, but the control asked " +
-					$"for {hidden}px (one dot would be {ExpectedDotWidth(1, 10)}px)");
+						// The renderer asks for 0px when it draws no dots; MEASURED, GTK reports that back
+						// as 1px, so the bar is "no room for a dot" rather than a literal zero. One dot
+						// would be 10px, so this still fails outright if HideSingle is ignored.
+						Assert.True(hidden <= 1,
+							$"HideSingle should draw no dots at all for Count = 1, but the control asked " +
+							$"for {hidden}px (one dot would be {ExpectedDotWidth(1, 10)}px)");
 
-				indicator.HideSingle = false;
-				host.Pump();
+						indicator.HideSingle = false;
+						host.Pump();
 
-				control.GetSizeRequest(out var shown, out _);
+						control.GetSizeRequest(out var shown, out _);
 
-				Assert.True(shown == ExpectedDotWidth(1, 10),
-					$"HideSingle = false should bring the single dot back " +
-					$"({ExpectedDotWidth(1, 10)}px), got {shown}px");
+						Assert.True(shown == ExpectedDotWidth(1, 10),
+							$"HideSingle = false should bring the single dot back " +
+							$"({ExpectedDotWidth(1, 10)}px), got {shown}px");
 
-				indicator.Count = 4;
-				host.Pump();
+						indicator.Count = 4;
+						host.Pump();
 
-				control.GetSizeRequest(out var four, out _);
+						control.GetSizeRequest(out var four, out _);
 
-				Assert.True(four == ExpectedDotWidth(4, 10),
-					$"Count = 4 should request {ExpectedDotWidth(4, 10)}px, got {four}px");
-			}
+						Assert.True(four == ExpectedDotWidth(4, 10),
+							$"Count = 4 should request {ExpectedDotWidth(4, 10)}px, got {four}px");
+					}
+		
+			});
 		}
 
 		// ---- SwipeView -------------------------------------------------------------------
@@ -430,93 +475,105 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void SwipeViewOpenRevealsItsItemsAtTheExpectedExtent()
 		{
-			var swipeView = new SwipeView
+			Run(() =>
 			{
-				Content = new StackLayout { Children = { new BoxView { Color = Color.Silver } } },
-				RightItems = new SwipeItems
-				{
-					new SwipeItem { Text = "Delete", BackgroundColor = Color.Red }
-				}
-			};
+					var swipeView = new SwipeView
+					{
+						Content = new StackLayout { Children = { new BoxView { Color = Color.Silver } } },
+						RightItems = new SwipeItems
+						{
+							new SwipeItem { Text = "Delete", BackgroundColor = Color.Red }
+						}
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(swipeView, fill: true), 600, 400))
-			{
-				var renderer = (Gtk.Widget)Platform.GetRenderer(swipeView);
+					using (var host = GtkTestHost.HostPage(PageWith(swipeView, fill: true), 600, 400))
+					{
+						var renderer = (Gtk.Widget)Platform.GetRenderer(swipeView);
 
-				swipeView.Open(OpenSwipeItem.RightItems);
-				host.Pump();
+						swipeView.Open(OpenSwipeItem.RightItems);
+						host.Pump();
 
-				var item = GtkTestHost.Find<Gtk.Button>(renderer)
-					.FirstOrDefault(b => b.Label == "Delete");
+						var item = GtkTestHost.Find<Gtk.Button>(renderer)
+							.FirstOrDefault(b => b.Label == "Delete");
 
-				Assert.True(item != null,
-					"Open(RightItems) built no native button for the SwipeItem");
+						Assert.True(item != null,
+							"Open(RightItems) built no native button for the SwipeItem");
 
-				var itemsHost = Ancestor<Gtk.EventBox>(item);
+						var itemsHost = Ancestor<Gtk.EventBox>(item);
 
-				Assert.True(itemsHost != null,
-					"the swipe items are not inside a Gtk.EventBox, so they have no GdkWindow " +
-					"of their own and are drawn underneath the SwipeView content");
-				Assert.True(itemsHost.VisibleWindow,
-					"the swipe items host has VisibleWindow = false and cannot be raised above " +
-					"the content");
-				Assert.True(itemsHost.Visible, "Open() did not show the swipe items host");
+						Assert.True(itemsHost != null,
+							"the swipe items are not inside a Gtk.EventBox, so they have no GdkWindow " +
+							"of their own and are drawn underneath the SwipeView content");
+						Assert.True(itemsHost.VisibleWindow,
+							"the swipe items host has VisibleWindow = false and cannot be raised above " +
+							"the content");
+						Assert.True(itemsHost.Visible, "Open() did not show the swipe items host");
 
-				// One visible item, no Threshold => DefaultItemExtent (80px), against the right edge.
-				Assert.True(Math.Abs(itemsHost.Allocation.Width - 80) <= 2,
-					$"swipe items allocated {itemsHost.Allocation.Width}px wide, expected ~80: " +
-					GtkTestHost.Describe(itemsHost));
+						// One visible item, no Threshold => DefaultItemExtent (80px), against the right edge.
+						Assert.True(Math.Abs(itemsHost.Width - 80) <= 2,
+							$"swipe items allocated {itemsHost.Width}px wide, expected ~80: " +
+							GtkTestHost.Describe(itemsHost));
 
-				var contentRight = renderer.Allocation.X + renderer.Allocation.Width;
-				var itemsRight = itemsHost.Allocation.X + itemsHost.Allocation.Width;
+						// BoundsIn: a Gtk 4 allocation carries no position - see GtkTestHost.BoundsIn.
+						var contentRight = GtkTestHost.BoundsIn(renderer).X + renderer.Width;
+						var itemsRight = GtkTestHost.BoundsIn(itemsHost).X + itemsHost.Width;
 
-				Assert.True(Math.Abs(itemsRight - contentRight) <= 2,
-					$"RightItems must sit against the right edge: items end at {itemsRight}, " +
-					$"content ends at {contentRight}");
+						Assert.True(Math.Abs(itemsRight - contentRight) <= 2,
+							$"RightItems must sit against the right edge: items end at {itemsRight}, " +
+							$"content ends at {contentRight}");
 
-				swipeView.Close();
-				host.Pump();
+						swipeView.Close();
+						host.Pump();
 
-				Assert.False(itemsHost.Visible, "Close() did not hide the swipe items host");
-			}
+						Assert.False(itemsHost.Visible, "Close() did not hide the swipe items host");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void SwipeViewThresholdSetsTheRevealedExtent()
 		{
-			var swipeView = new SwipeView
+			Run(() =>
 			{
-				Threshold = 140,
-				Content = new StackLayout { Children = { new BoxView { Color = Color.Silver } } },
-				LeftItems = new SwipeItems
-				{
-					new SwipeItem { Text = "Archive", BackgroundColor = Color.Blue }
-				}
-			};
+					var swipeView = new SwipeView
+					{
+						Threshold = 140,
+						Content = new StackLayout { Children = { new BoxView { Color = Color.Silver } } },
+						LeftItems = new SwipeItems
+						{
+							new SwipeItem { Text = "Archive", BackgroundColor = Color.Blue }
+						}
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(swipeView, fill: true), 600, 400))
-			{
-				var renderer = (Gtk.Widget)Platform.GetRenderer(swipeView);
+					using (var host = GtkTestHost.HostPage(PageWith(swipeView, fill: true), 600, 400))
+					{
+						var renderer = (Gtk.Widget)Platform.GetRenderer(swipeView);
 
-				swipeView.Open(OpenSwipeItem.LeftItems);
-				host.Pump();
+						swipeView.Open(OpenSwipeItem.LeftItems);
+						host.Pump();
 
-				var item = GtkTestHost.Find<Gtk.Button>(renderer)
-					.FirstOrDefault(b => b.Label == "Archive");
+						var item = GtkTestHost.Find<Gtk.Button>(renderer)
+							.FirstOrDefault(b => b.Label == "Archive");
 
-				Assert.True(item != null, "Open(LeftItems) built no native button");
+						Assert.True(item != null, "Open(LeftItems) built no native button");
 
-				var itemsHost = Ancestor<Gtk.EventBox>(item);
-				Assert.True(itemsHost != null, "no EventBox host for the swipe items");
+						var itemsHost = Ancestor<Gtk.EventBox>(item);
+						Assert.True(itemsHost != null, "no EventBox host for the swipe items");
 
-				Assert.True(Math.Abs(itemsHost.Allocation.Width - 140) <= 2,
-					$"Threshold = 140 should set the revealed extent; got " +
-					$"{itemsHost.Allocation.Width}px");
+						Assert.True(Math.Abs(itemsHost.Width - 140) <= 2,
+							$"Threshold = 140 should set the revealed extent; got " +
+							$"{itemsHost.Width}px");
 
-				Assert.True(Math.Abs(itemsHost.Allocation.X - renderer.Allocation.X) <= 2,
-					$"LeftItems must sit against the left edge: items at x={itemsHost.Allocation.X}, " +
-					$"content at x={renderer.Allocation.X}");
-			}
+						var itemsX = GtkTestHost.BoundsIn(itemsHost).X;
+						var contentX = GtkTestHost.BoundsIn(renderer).X;
+
+						Assert.True(Math.Abs(itemsX - contentX) <= 2,
+							$"LeftItems must sit against the left edge: items at x={itemsX}, " +
+							$"content at x={contentX}");
+					}
+		
+			});
 		}
 
 		// ---- CarouselView ----------------------------------------------------------------
@@ -530,94 +587,106 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void CarouselViewLaysOutTheCurrentItemAtFullSize()
 		{
-			var carousel = new CarouselView
+			Run(() =>
 			{
-				ItemsSource = new[] { "item 1", "item 2", "item 3" },
-				ItemTemplate = LabelTemplate()
-			};
+					var carousel = new CarouselView
+					{
+						ItemsSource = new[] { "item 1", "item 2", "item 3" },
+						ItemTemplate = LabelTemplate()
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
-			{
-				host.Pump(10);
+					using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
+					{
+						host.Pump(10);
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
-				var label = LabelWithText(renderer, "item 1");
+						var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
+						var label = LabelWithText(renderer, "item 1");
 
-				Assert.True(label != null,
-					"the carousel rendered no label for its first item: " +
-					Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
+						Assert.True(label != null,
+							"the carousel rendered no label for its first item: " +
+							Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
 
-				Assert.False(GtkTestHost.IsUnallocated(label),
-					$"the carousel item was never allocated: {GtkTestHost.Describe(label)}");
+						Assert.False(GtkTestHost.IsUnallocated(label),
+							$"the carousel item was never allocated: {GtkTestHost.Describe(label)}");
 
-				Assert.True(label.Allocation.Width > 300,
-					$"the carousel item is {label.Allocation.Width}px wide inside a 600px page - " +
-					"the renderer did not run view.Layout() on it");
-			}
+						Assert.True(label.Width > 300,
+							$"the carousel item is {label.Width}px wide inside a 600px page - " +
+							"the renderer did not run view.Layout() on it");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void CarouselViewPositionSwapsTheRenderedItem()
 		{
-			var carousel = new CarouselView
+			Run(() =>
 			{
-				ItemsSource = new[] { "item 1", "item 2", "item 3" },
-				ItemTemplate = LabelTemplate()
-			};
+					var carousel = new CarouselView
+					{
+						ItemsSource = new[] { "item 1", "item 2", "item 3" },
+						ItemTemplate = LabelTemplate()
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
-			{
-				host.Pump(10);
+					using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
+					{
+						host.Pump(10);
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
-				Assert.True(LabelWithText(renderer, "item 1") != null, "precondition: item 1 shown");
+						var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
+						Assert.True(LabelWithText(renderer, "item 1") != null, "precondition: item 1 shown");
 
-				carousel.Position = 2;
-				host.Pump(10);
+						carousel.Position = 2;
+						host.Pump(10);
 
-				var third = LabelWithText(renderer, "item 3");
+						var third = LabelWithText(renderer, "item 3");
 
-				Assert.True(third != null,
-					"Position = 2 did not render the third item: " +
-					Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
+						Assert.True(third != null,
+							"Position = 2 did not render the third item: " +
+							Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
 
-				Assert.True(LabelWithText(renderer, "item 1") == null,
-					"the previous item is still in the native tree after Position changed");
+						Assert.True(LabelWithText(renderer, "item 1") == null,
+							"the previous item is still in the native tree after Position changed");
 
-				Assert.True(third.Allocation.Width > 300,
-					$"the swapped-in item is {third.Allocation.Width}px wide - it was rendered but " +
-					"never laid out");
+						Assert.True(third.Width > 300,
+							$"the swapped-in item is {third.Width}px wide - it was rendered but " +
+							"never laid out");
 
-				Assert.Equal("item 3", carousel.CurrentItem);
-			}
+						Assert.Equal("item 3", carousel.CurrentItem);
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void CarouselViewFollowsItsObservableSource()
 		{
-			var source = new ObservableCollection<string> { "item 1" };
-
-			var carousel = new CarouselView
+			Run(() =>
 			{
-				ItemsSource = source,
-				ItemTemplate = LabelTemplate()
-			};
+					var source = new ObservableCollection<string> { "item 1" };
 
-			using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
-			{
-				host.Pump(10);
+					var carousel = new CarouselView
+					{
+						ItemsSource = source,
+						ItemTemplate = LabelTemplate()
+					};
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
-				Assert.True(LabelWithText(renderer, "item 1") != null, "precondition");
+					using (var host = GtkTestHost.HostPage(PageWith(carousel, fill: true), 600, 400))
+					{
+						host.Pump(10);
 
-				source.Add("item 2");
-				carousel.Position = 1;
-				host.Pump(10);
+						var renderer = (Gtk.Widget)Platform.GetRenderer(carousel);
+						Assert.True(LabelWithText(renderer, "item 1") != null, "precondition");
 
-				Assert.True(LabelWithText(renderer, "item 2") != null,
-					"an item appended to the ObservableCollection never rendered: " +
-					Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
-			}
+						source.Add("item 2");
+						carousel.Position = 1;
+						host.Pump(10);
+
+						Assert.True(LabelWithText(renderer, "item 2") != null,
+							"an item appended to the ObservableCollection never rendered: " +
+							Describe(GtkTestHost.Find<Gtk.Label>(renderer)));
+					}
+		
+			});
 		}
 
 		// ---- CollectionView --------------------------------------------------------------
@@ -625,82 +694,90 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void CollectionViewAllocatesItemsAtDistinctPositions()
 		{
-			var collectionView = new CollectionView
+			Run(() =>
 			{
-				ItemsSource = Enumerable.Range(1, 6).Select(i => $"item {i}").ToList(),
-				ItemTemplate = LabelTemplate()
-			};
+					var collectionView = new CollectionView
+					{
+						ItemsSource = Enumerable.Range(1, 6).Select(i => $"item {i}").ToList(),
+						ItemTemplate = LabelTemplate()
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
-			{
-				host.Pump(12);
+					using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
+					{
+						host.Pump(12);
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
-				var labels = ItemLabels(renderer);
+						var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
+						var labels = ItemLabels(renderer);
 
-				Assert.True(labels.Count >= 4,
-					$"only {labels.Count} of 6 items were realized: {Describe(labels)}");
+						Assert.True(labels.Count >= 4,
+							$"only {labels.Count} of 6 items were realized: {Describe(labels)}");
 
-				var unallocated = labels.Where(GtkTestHost.IsUnallocated).Select(l => l.Text).ToList();
-				Assert.True(unallocated.Count == 0,
-					$"items left at GTK's unallocated sentinel: {string.Join(", ", unallocated)}");
+						var unallocated = labels.Where(GtkTestHost.IsUnallocated).Select(l => l.Text).ToList();
+						Assert.True(unallocated.Count == 0,
+							$"items left at GTK's unallocated sentinel: {string.Join(", ", unallocated)}");
 
-				var ys = labels.Select(l => Root(l).Allocation.Y).ToList();
-				Assert.True(ys.Distinct().Count() == ys.Count,
-					$"a linear CollectionView stacked items on top of each other at y = " +
-					$"[{string.Join(", ", ys)}]");
+						var ys = labels.Select(l => GtkTestHost.BoundsIn(Root(l)).Y).ToList();
+						Assert.True(ys.Distinct().Count() == ys.Count,
+							$"a linear CollectionView stacked items on top of each other at y = " +
+							$"[{string.Join(", ", ys)}]");
 
-				Assert.True(ys.SequenceEqual(ys.OrderBy(y => y)),
-					$"items are out of order: y = [{string.Join(", ", ys)}]");
+						Assert.True(ys.SequenceEqual(ys.OrderBy(y => y)),
+							$"items are out of order: y = [{string.Join(", ", ys)}]");
 
-				Assert.True(labels[0].Allocation.Width > 200,
-					$"a linear item is {labels[0].Allocation.Width}px wide inside a 600px page - " +
-					"it was never given the viewport width");
-			}
+						Assert.True(labels[0].Width > 200,
+							$"a linear item is {labels[0].Width}px wide inside a 600px page - " +
+							"it was never given the viewport width");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void CollectionViewGridLayoutPlacesItemsInColumns()
 		{
-			var collectionView = new CollectionView
+			Run(() =>
 			{
-				ItemsLayout = new GridItemsLayout(2, ItemsLayoutOrientation.Vertical),
-				ItemsSource = Enumerable.Range(1, 6).Select(i => $"item {i}").ToList(),
-				ItemTemplate = LabelTemplate()
-			};
+					var collectionView = new CollectionView
+					{
+						ItemsLayout = new GridItemsLayout(2, ItemsLayoutOrientation.Vertical),
+						ItemsSource = Enumerable.Range(1, 6).Select(i => $"item {i}").ToList(),
+						ItemTemplate = LabelTemplate()
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
-			{
-				host.Pump(12);
+					using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
+					{
+						host.Pump(12);
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
-				var labels = ItemLabels(renderer);
+						var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
+						var labels = ItemLabels(renderer);
 
-				Assert.True(labels.Count >= 4,
-					$"only {labels.Count} of 6 items were realized: {Describe(labels)}");
+						Assert.True(labels.Count >= 4,
+							$"only {labels.Count} of 6 items were realized: {Describe(labels)}");
 
-				var first = Root(labels[0]).Allocation;
-				var second = Root(labels[1]).Allocation;
+						var first = GtkTestHost.BoundsIn(Root(labels[0]));
+						var second = GtkTestHost.BoundsIn(Root(labels[1]));
 
-				Assert.True(Math.Abs(first.Y - second.Y) <= 2,
-					$"a 2-column grid must put items 1 and 2 on the same row: " +
-					$"y = {first.Y} and {second.Y}");
+						Assert.True(Math.Abs(first.Y - second.Y) <= 2,
+							$"a 2-column grid must put items 1 and 2 on the same row: " +
+							$"y = {first.Y} and {second.Y}");
 
-				Assert.True(second.X > first.X,
-					$"item 2 must sit to the right of item 1: x = {first.X} and {second.X}");
+						Assert.True(second.X > first.X,
+							$"item 2 must sit to the right of item 1: x = {first.X} and {second.X}");
 
-				var third = Root(labels[2]).Allocation;
+						var third = GtkTestHost.BoundsIn(Root(labels[2]));
 
-				Assert.True(third.Y > first.Y,
-					$"item 3 must wrap to the second row: y = {first.Y} then {third.Y}");
-				Assert.True(Math.Abs(third.X - first.X) <= 2,
-					$"item 3 must start a new row at column 0: x = {first.X} then {third.X}");
+						Assert.True(third.Y > first.Y,
+							$"item 3 must wrap to the second row: y = {first.Y} then {third.Y}");
+						Assert.True(Math.Abs(third.X - first.X) <= 2,
+							$"item 3 must start a new row at column 0: x = {first.X} then {third.X}");
 
-				// Two columns across 600px: each item gets roughly half, never the whole width.
-				Assert.True(first.Width < 400,
-					$"a 2-column item is {first.Width}px wide inside a 600px page - " +
-					"the grid is laying out as a single column");
-			}
+						// Two columns across 600px: each item gets roughly half, never the whole width.
+						Assert.True(first.Width < 400,
+							$"a 2-column item is {first.Width}px wide inside a 600px page - " +
+							"the grid is laying out as a single column");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -719,84 +796,92 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void CollectionViewSelectionReachesTheNativeRowsAndComesBack()
 		{
-			var items = Enumerable.Range(1, 4).Select(i => $"item {i}").ToList();
-
-			var collectionView = new CollectionView
+			Run(() =>
 			{
-				SelectionMode = SelectionMode.Single,
-				ItemsSource = items,
-				ItemTemplate = LabelTemplate()
-			};
+					var items = Enumerable.Range(1, 4).Select(i => $"item {i}").ToList();
 
-			var changed = 0;
-			collectionView.SelectionChanged += (s, e) => changed++;
+					var collectionView = new CollectionView
+					{
+						SelectionMode = SelectionMode.Single,
+						ItemsSource = items,
+						ItemTemplate = LabelTemplate()
+					};
 
-			using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
-			{
-				host.Pump(12);
+					var changed = 0;
+					collectionView.SelectionChanged += (s, e) => changed++;
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
+					using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
+					{
+						host.Pump(12);
 
-				collectionView.SelectedItem = items[2];
-				host.Pump();
+						var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
 
-				Assert.Equal(items[2], collectionView.SelectedItem);
-				Assert.True(changed == 1,
-					$"one SelectedItem change should raise SelectionChanged once, got {changed}");
+						collectionView.SelectedItem = items[2];
+						host.Pump();
 
-				AssertOnlySelectedRow(renderer, items, 2, "SelectedItem = \"item 3\"");
+						Assert.Equal(items[2], collectionView.SelectedItem);
+						Assert.True(changed == 1,
+							$"one SelectedItem change should raise SelectionChanged once, got {changed}");
 
-				// The other direction: a press on the native row drives the element. Nothing in
-				// Core can make this pass - CollectionViewRenderer.OnItemButtonPress is the only
-				// thing that turns a click into SetValueFromRenderer.
-				PressRow(SelectionHost(renderer, items[0]));
-				host.Pump();
+						AssertOnlySelectedRow(renderer, items, 2, "SelectedItem = \"item 3\"");
 
-				Assert.Equal(items[0], collectionView.SelectedItem);
-				Assert.True(changed == 2,
-					"the native press should have raised SelectionChanged a second time, " +
-					$"total {changed}");
+						// The other direction: a press on the native row drives the element. Nothing in
+						// Core can make this pass - CollectionViewRenderer.OnItemButtonPress is the only
+						// thing that turns a click into SetValueFromRenderer.
+						PressRow(SelectionHost(renderer, items[0]));
+						host.Pump();
 
-				AssertOnlySelectedRow(renderer, items, 0, "a native button press on \"item 1\"");
-			}
+						Assert.Equal(items[0], collectionView.SelectedItem);
+						Assert.True(changed == 2,
+							"the native press should have raised SelectionChanged a second time, " +
+							$"total {changed}");
+
+						AssertOnlySelectedRow(renderer, items, 0, "a native button press on \"item 1\"");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void CollectionViewFollowsItsObservableSource()
 		{
-			var source = new ObservableCollection<string>(
-				Enumerable.Range(1, 3).Select(i => $"item {i}"));
-
-			var collectionView = new CollectionView
+			Run(() =>
 			{
-				ItemsSource = source,
-				ItemTemplate = LabelTemplate()
-			};
+					var source = new ObservableCollection<string>(
+						Enumerable.Range(1, 3).Select(i => $"item {i}"));
 
-			using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
-			{
-				host.Pump(12);
+					var collectionView = new CollectionView
+					{
+						ItemsSource = source,
+						ItemTemplate = LabelTemplate()
+					};
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
-				var before = ItemLabels(renderer).Count;
+					using (var host = GtkTestHost.HostPage(PageWith(collectionView, fill: true), 600, 500))
+					{
+						host.Pump(12);
 
-				source.Add("item 4");
-				host.Pump(12);
+						var renderer = (Gtk.Widget)Platform.GetRenderer(collectionView);
+						var before = ItemLabels(renderer).Count;
 
-				var after = ItemLabels(renderer);
+						source.Add("item 4");
+						host.Pump(12);
 
-				Assert.True(after.Count == before + 1,
-					$"appending one item took the realized count from {before} to {after.Count}");
+						var after = ItemLabels(renderer);
 
-				var appended = after.FirstOrDefault(l => l.Text == "item 4");
+						Assert.True(after.Count == before + 1,
+							$"appending one item took the realized count from {before} to {after.Count}");
 
-				Assert.True(appended != null,
-					$"the appended item never rendered: {Describe(after)}");
-				Assert.False(GtkTestHost.IsUnallocated(Root(appended)),
-					"an item appended after the first allocation was never allocated - " +
-					"M3 root cause 4, on CollectionView this time: " +
-					GtkTestHost.Describe(Root(appended)));
-			}
+						var appended = after.FirstOrDefault(l => l.Text == "item 4");
+
+						Assert.True(appended != null,
+							$"the appended item never rendered: {Describe(after)}");
+						Assert.False(GtkTestHost.IsUnallocated(Root(appended)),
+							"an item appended after the first allocation was never allocated - " +
+							"M3 root cause 4, on CollectionView this time: " +
+							GtkTestHost.Describe(Root(appended)));
+					}
+		
+			});
 		}
 
 		// ---- helpers ---------------------------------------------------------------------
@@ -889,13 +974,14 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 
 		/// <summary>
 		/// Synthesises the button press CollectionViewRenderer listens for on an item host.
-		/// See <see cref="GtkTestHost.PressButton"/> for why the event is built rather than emitted.
+		/// See <see cref="GtkTestHost.PressButton"/> for how, and why it is the gesture that is
+		/// driven rather than an event that is built.
 		/// </summary>
 		static void PressRow(Gtk.Widget row)
 		{
-			Assert.True(row.Window != null,
-				$"the row is not realized, so it has no window to press: {GtkTestHost.Describe(row)}");
-
+			// No realization check: Gtk 4 has no GdkWindow to test for, and PressButton's own
+			// precondition - that something is listening, so a gesture exists - is the one that
+			// actually determines whether the press can land.
 			GtkTestHost.PressButton(row);
 		}
 
@@ -912,23 +998,18 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		/// </remarks>
 		static bool PaintedNear(Gtk.Widget widget, int x, int y, int radius = 3)
 		{
-			int width = widget.AllocatedWidth;
-			int height = widget.AllocatedHeight;
+			int width = widget.Width;
+			int height = widget.Height;
 
 			Assert.True(width > x + radius && height > y + radius,
 				$"{GtkTestHost.Describe(widget)} is too small to sample at ({x},{y})");
 
-			// Backed by a managed array so the pixels can be read without marshalling; ARGB32 is
-			// four bytes per pixel and cairo is happy with the tightly packed stride.
+			// Rendered through GtkTestHost, not gtk_widget_draw onto a Cairo surface: Gtk 4 removed
+			// gtk_widget_draw, because a widget contributes render nodes rather than painting. The
+			// bytes come back BGRA rather than Cairo's ARGB32 - which does not matter here, since
+			// this only reads alpha, and alpha is the fourth byte in both.
 			int stride = 4 * width;
-			var pixels = new byte[stride * height];
-
-			using (var surface = new Cairo.ImageSurface(pixels, Cairo.Format.Argb32, width, height, stride))
-			using (var cr = new Cairo.Context(surface))
-			{
-				widget.Draw(cr);
-				surface.Flush();
-			}
+			var pixels = GtkTestHost.RenderToBytes(widget, out width, out height);
 
 			for (int dy = -radius; dy <= radius; dy++)
 			{
@@ -963,11 +1044,11 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		static void AssertAgreesWithForms(View view, Gtk.Widget widget)
 		{
 			// One pixel of slack: Forms works in doubles, GTK in ints.
-			Assert.True(Math.Abs(widget.Allocation.Width - (int)view.Width) <= 1,
-				$"{view.GetType().Name} native width {widget.Allocation.Width} disagrees with " +
+			Assert.True(Math.Abs(widget.Width - (int)view.Width) <= 1,
+				$"{view.GetType().Name} native width {widget.Width} disagrees with " +
 				$"Forms {(int)view.Width} - geometry did not reach GTK");
-			Assert.True(Math.Abs(widget.Allocation.Height - (int)view.Height) <= 1,
-				$"{view.GetType().Name} native height {widget.Allocation.Height} disagrees with " +
+			Assert.True(Math.Abs(widget.Height - (int)view.Height) <= 1,
+				$"{view.GetType().Name} native height {widget.Height} disagrees with " +
 				$"Forms {(int)view.Height}");
 		}
 	}

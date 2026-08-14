@@ -247,9 +247,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				tab.Indicator.SetBackgroundColor(indicatorColor);
 
 				if (selected)
-					tab.Indicator.Show();
+					tab.Indicator.Visible = true;
 				else
-					tab.Indicator.Hide();
+					tab.Indicator.Visible = false;
 			}
 		}
 

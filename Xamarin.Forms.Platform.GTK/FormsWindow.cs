@@ -10,8 +10,9 @@ namespace Xamarin.Forms.Platform.GTK
 		private Application _application;
 		private Gdk.Size _lastSize;
 
+		// No WindowType: Gtk 4 removed the enum, because a GtkWindow is always a toplevel now -
+		// the popup case it also covered is a GtkPopover.
 		public FormsWindow()
-			: base(WindowType.Toplevel)
 		{
 			SetDefaultSize(800, 600);
 			SetSizeRequest(400, 400);
@@ -22,7 +23,12 @@ namespace Xamarin.Forms.Platform.GTK
 			if (SynchronizationContext.Current == null)
 				SynchronizationContext.SetSynchronizationContext(new GtkSynchronizationContext());
 
-			WindowStateEvent += OnWindowStateEvent;
+			// GtkWindow:suspended, not Gtk 3's window-state-event, which Gtk 4 removed along with
+			// GdkWindowState. It is a better fit than the state bit it replaces here: "suspended"
+			// means the window's content is not visible to the user - minimised, on another
+			// workspace, or fully occluded - which is exactly when an application should sleep,
+			// whereas the Gtk 3 code could only see the minimise case.
+			AddNotification("suspended", OnSuspendedNotified);
 		}
 
 		public static int MainThreadID { get; set; }
@@ -55,17 +61,24 @@ namespace Xamarin.Forms.Platform.GTK
 			if (string.IsNullOrEmpty(icon))
 				return;
 
-			var appliccationIconPixbuf = new Gdk.Pixbuf(icon);
-			Icon = appliccationIconPixbuf;
+			// IconName, not an icon Pixbuf. Gtk 4 removed gtk_window_set_icon: a window is
+			// identified to the desktop by a themed icon NAME, which the shell looks up itself, so
+			// there is nowhere to hand a loaded image. The file's base name is the closest thing to
+			// the caller's intent - it is what an installed .desktop file's Icon= key would carry.
+			IconName = System.IO.Path.GetFileNameWithoutExtension(icon);
 		}
 
 		// GtkSharp 3: GLib.Object.Dispose() is no longer virtual - the disposal hook is
 		// Dispose(bool) (overridden below), which the base Dispose() calls for us.
 
-		protected override bool OnDeleteEvent(Gdk.Event evnt)
+		/// <remarks>
+		/// GtkWindow::close-request, not Gtk 3's delete-event: Gtk 4 removed GdkEvent delivery to
+		/// widgets entirely, and close-request is the signal that replaced it. The return value
+		/// means the same thing - true stops the default handling, which is what keeps the window
+		/// alive long enough for Application.Quit to unwind the main loop.
+		/// </remarks>
+		protected override bool OnCloseRequest()
 		{
-			base.OnDeleteEvent(evnt);
-
 			Gtk.Application.Quit();
 
 			return true;
@@ -79,18 +92,25 @@ namespace Xamarin.Forms.Platform.GTK
 			}
 		}
 
-		protected override bool OnConfigureEvent(Gdk.EventConfigure evnt)
+		/// <remarks>
+		/// The size_allocate vfunc, not Gtk 3's configure-event. Gtk 4 has no configure-event -
+		/// there is no GdkWindow to configure - and a widget learns its geometry from being
+		/// allocated. The allocation is in the window's own coordinates, so it carries the size
+		/// this needs and none of the screen position the Gtk 3 event also had; nothing here read
+		/// the position.
+		/// </remarks>
+		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
-			Gdk.Size newSize = new Gdk.Size(evnt.Width, evnt.Height);
+			base.OnSizeAllocated(allocation);
 
-			if (_lastSize != newSize)
-			{
-				_lastSize = newSize;
-				var pageRenderer = Platform.GetRenderer(_application.MainPage);
-				pageRenderer?.SetElementSize(new Size(newSize.Width, newSize.Height));
-			}
+			Gdk.Size newSize = new Gdk.Size(allocation.Width, allocation.Height);
 
-			return base.OnConfigureEvent(evnt);
+			if (_lastSize == newSize || _application == null)
+				return;
+
+			_lastSize = newSize;
+			var pageRenderer = Platform.GetRenderer(_application.MainPage);
+			pageRenderer?.SetElementSize(new Size(newSize.Width, newSize.Height));
 		}
 
 		private void UpdateMainPage()
@@ -127,24 +147,24 @@ namespace Xamarin.Forms.Platform.GTK
 			}
 		}
 
-		private void OnWindowStateEvent(object o, WindowStateEventArgs args)
+		private void OnSuspendedNotified(object o, GLib.NotifyArgs args)
 		{
-			if (args.Event.ChangedMask == Gdk.WindowState.Iconified)
-			{
-				var windowState = args.Event.NewWindowState;
+			// The notification fires on every change of the property, so there is no changed-mask
+			// to test as there was in Gtk 3 - the property IS the news.
+			if (_application == null)
+				return;
 
-				if (windowState == Gdk.WindowState.Iconified)
-					_application.SendSleep();
-				else
-					_application.SendResume();
-			}
+			if (Suspended)
+				_application.SendSleep();
+			else
+				_application.SendResume();
 		}
 
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing && _application != null)
 			{
-				WindowStateEvent -= OnWindowStateEvent;
+				RemoveNotification("suspended", OnSuspendedNotified);
 				_application.PropertyChanged -= ApplicationOnPropertyChanged;
 			}
 

@@ -20,7 +20,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			BuildTableView();
 		}
 
-		public TableRoot Root
+		// new: Gtk 4's GtkWidget gained a Root property (the GtkRoot this widget is in). This one
+		// is the Forms TableRoot and predates it; the shadowing is deliberate.
+		public new TableRoot Root
 		{
 			get
 			{

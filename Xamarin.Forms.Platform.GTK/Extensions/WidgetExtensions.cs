@@ -68,17 +68,33 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			}
 		}
 
+		// gtk_fixed_get_child_position, not a pair of child-property reads. Gtk 4 has no container
+		// child properties at all - GtkFixed keeps the position in its own layout manager and
+		// offers a direct getter, which is both the replacement and a good deal less indirect.
 		static void GetContainerChildXY(Fixed parent, Widget child, out int x, out int y)
 		{
-			using (GLib.Value val = parent.ChildGetProperty(child, "x"))
-			{
-				x = (int)val;
-			}
+			parent.GetChildPosition(child, out double childX, out double childY);
 
-			using (GLib.Value val = parent.ChildGetProperty(child, "y"))
-			{
-				y = (int)val;
-			}
+			x = (int)childX;
+			y = (int)childY;
+		}
+
+		/// <summary>
+		/// Puts a widget on top of its siblings.
+		/// </summary>
+		/// <remarks>
+		/// Replaces <c>widget.Window.Raise()</c>. In Gtk 3 an overlapping widget was raised by
+		/// restacking its GdkWindow; Gtk 4 has no per-widget windows and draws siblings strictly in
+		/// child order, so being last IS being on top.
+		///
+		/// Only a box can reorder - it is the one Gtk 4 container with an ordering API. A widget
+		/// inside anything else keeps the order it was added in, which is what the Gtk 3 code got
+		/// for a windowless widget too.
+		/// </remarks>
+		public static void Raise(this Widget self)
+		{
+			if (self?.Parent is Box box && box.LastChild != self)
+				box.ReorderChildAfter(self, box.LastChild);
 		}
 
 		public static void SetSize(this Widget self, double width, double height)
@@ -118,8 +134,8 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			// immediately, and so did nudging the request to a different value and back) - see
 			// scratchpad/m3-wedge.log.
 			if (self.Parent is Fixed
-				&& ((calcWidth >= 0 && self.Allocation.Width < calcWidth)
-					|| (calcHeight >= 0 && self.Allocation.Height < calcHeight)))
+				&& ((calcWidth >= 0 && self.Width < calcWidth)
+					|| (calcHeight >= 0 && self.Height < calcHeight)))
 			{
 				self.QueueResize();
 			}
@@ -199,8 +215,9 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 					widget.Name,
 					widget.GetType()));
 
-			Console.WriteLine(string.Format("{0} Size: {1}", new String('\t', level), widget.Allocation.Size));
-			Console.WriteLine(string.Format("{0} Location: {1}", new String('\t', level), widget.Allocation.Location));
+			// Width/Height, not Allocation: the property is deprecated in Gtk 4, and its X/Y are
+			// always zero there - a "Location" line would print (0, 0) for every widget.
+			Console.WriteLine(string.Format("{0} Size: {1}x{2}", new String('\t', level), widget.Width, widget.Height));
 
 			if (widget is Container)
 			{

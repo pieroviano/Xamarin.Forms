@@ -57,8 +57,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			double half;
 			double x, y;
 
-			x = Allocation.Width / 2;
-			y = Allocation.Height / 2;
+			x = Width / 2;
+			y = Height / 2;
 
 			radius = Math.Min(x, y);
 

@@ -48,7 +48,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public Gtk.Image ImageWidget => _image;
 
 		// Hides Gtk.Button.ImageSpacing (GTK3); this is the Forms spacing, in pixels.
-		public new uint ImageSpacing
+		public uint ImageSpacing
 		{
 			get
 			{
@@ -134,7 +134,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			double colorMaxValue = 65535;
 
-			cr.Rectangle(0, 0, AllocatedWidth, AllocatedHeight);
+			cr.Rectangle(0, 0, Width, Height);
 
 			// Draw BackgroundColor
 			if (_backgroundColor.HasValue)

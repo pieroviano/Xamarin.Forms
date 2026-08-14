@@ -18,22 +18,26 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void PageFillsTheWindow()
 		{
-			var page = new ContentPage
+			Run(() =>
 			{
-				Content = new BoxView { Color = Color.Red }
-			};
+					var page = new ContentPage
+					{
+						Content = new BoxView { Color = Color.Red }
+					};
 
-			using (var host = GtkTestHost.HostPage(page, 800, 600))
-			{
-				Assert.True(page.Width > 0, "the page never received a size");
-				Assert.True(page.Height > 0, "the page never received a height");
+					using (var host = GtkTestHost.HostPage(page, 800, 600))
+					{
+						Assert.True(page.Width > 0, "the page never received a size");
+						Assert.True(page.Height > 0, "the page never received a height");
 
-				var renderer = Platform.GetRenderer(page);
-				var widget = (Gtk.Widget)renderer;
+						var renderer = Platform.GetRenderer(page);
+						var widget = (Gtk.Widget)renderer;
 
-				Assert.True(widget.Allocation.Width > 1,
-					$"the page widget is still at GTK's unallocated sentinel: {GtkTestHost.Describe(widget)}");
-			}
+						Assert.True(widget.Width > 1,
+							$"the page widget is still at GTK's unallocated sentinel: {GtkTestHost.Describe(widget)}");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -44,93 +48,107 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void StackLayoutChildrenAreAllocatedAtDistinctPositions()
 		{
-			var first = new BoxView { Color = Color.Red, HeightRequest = 40 };
-			var second = new BoxView { Color = Color.Green, HeightRequest = 40 };
-			var third = new BoxView { Color = Color.Blue, HeightRequest = 40 };
-
-			var page = new ContentPage
+			Run(() =>
 			{
-				Content = new StackLayout
-				{
-					Spacing = 10,
-					Children = { first, second, third }
-				}
-			};
+					var first = new BoxView { Color = Color.Red, HeightRequest = 40 };
+					var second = new BoxView { Color = Color.Green, HeightRequest = 40 };
+					var third = new BoxView { Color = Color.Blue, HeightRequest = 40 };
 
-			using (var host = GtkTestHost.HostPage(page))
-			{
-				var ys = new[] { first, second, third }
-					.Select(b => (Gtk.Widget)Platform.GetRenderer(b))
-					.Select(w => w.Allocation.Y)
-					.ToArray();
+					var page = new ContentPage
+					{
+						Content = new StackLayout
+						{
+							Spacing = 10,
+							Children = { first, second, third }
+						}
+					};
 
-				Assert.True(ys.Distinct().Count() == 3,
-					$"children stacked on top of each other at y = [{string.Join(", ", ys)}]");
+					using (var host = GtkTestHost.HostPage(page))
+					{
+						var ys = new[] { first, second, third }
+							.Select(b => (Gtk.Widget)Platform.GetRenderer(b))
+							.Select(w => GtkTestHost.BoundsIn(w).Y)
+							.ToArray();
 
-				Assert.True(ys[0] < ys[1], $"y = [{string.Join(", ", ys)}] is not in order");
-				Assert.True(ys[1] < ys[2], $"y = [{string.Join(", ", ys)}] is not in order");
-			}
+						Assert.True(ys.Distinct().Count() == 3,
+							$"children stacked on top of each other at y = [{string.Join(", ", ys)}]");
+
+						Assert.True(ys[0] < ys[1], $"y = [{string.Join(", ", ys)}] is not in order");
+						Assert.True(ys[1] < ys[2], $"y = [{string.Join(", ", ys)}] is not in order");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void StackLayoutChildAllocationsAgreeWithFormsBounds()
 		{
-			var box = new BoxView { Color = Color.Red, HeightRequest = 50 };
-
-			var page = new ContentPage
+			Run(() =>
 			{
-				Content = new StackLayout { Padding = new Thickness(20), Children = { box } }
-			};
+					var box = new BoxView { Color = Color.Red, HeightRequest = 50 };
 
-			using (var host = GtkTestHost.HostPage(page))
-			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(box);
+					var page = new ContentPage
+					{
+						Content = new StackLayout { Padding = new Thickness(20), Children = { box } }
+					};
 
-				// One pixel of slack: Forms works in doubles, GTK in ints.
-				Assert.True(Math.Abs(widget.Allocation.Width - (int)box.Width) <= 1,
-					$"native width {widget.Allocation.Width} disagrees with Forms {(int)box.Width} - " +
-					"geometry did not reach GTK");
-				Assert.True(Math.Abs(widget.Allocation.Height - (int)box.Height) <= 1,
-					$"native height {widget.Allocation.Height} disagrees with Forms {(int)box.Height}");
-			}
+					using (var host = GtkTestHost.HostPage(page))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(box);
+
+						// One pixel of slack: Forms works in doubles, GTK in ints.
+						Assert.True(Math.Abs(widget.Width - (int)box.Width) <= 1,
+							$"native width {widget.Width} disagrees with Forms {(int)box.Width} - " +
+							"geometry did not reach GTK");
+						Assert.True(Math.Abs(widget.Height - (int)box.Height) <= 1,
+							$"native height {widget.Height} disagrees with Forms {(int)box.Height}");
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void GridPlacesChildrenInTheirCells()
 		{
-			var topLeft = new BoxView { Color = Color.Red };
-			var topRight = new BoxView { Color = Color.Green };
-			var bottomLeft = new BoxView { Color = Color.Blue };
-
-			var grid = new Grid
+			Run(() =>
 			{
-				RowDefinitions =
-				{
-					new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
-					new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
-				},
-				ColumnDefinitions =
-				{
-					new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-					new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-				}
-			};
+					var topLeft = new BoxView { Color = Color.Red };
+					var topRight = new BoxView { Color = Color.Green };
+					var bottomLeft = new BoxView { Color = Color.Blue };
 
-			grid.Children.Add(topLeft, 0, 0);
-			grid.Children.Add(topRight, 1, 0);
-			grid.Children.Add(bottomLeft, 0, 1);
+					var grid = new Grid
+					{
+						RowDefinitions =
+						{
+							new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+							new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+						},
+						ColumnDefinitions =
+						{
+							new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+							new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+						}
+					};
 
-			using (var host = GtkTestHost.HostPage(new ContentPage { Content = grid }))
-			{
-				var tl = ((Gtk.Widget)Platform.GetRenderer(topLeft)).Allocation;
-				var tr = ((Gtk.Widget)Platform.GetRenderer(topRight)).Allocation;
-				var bl = ((Gtk.Widget)Platform.GetRenderer(bottomLeft)).Allocation;
+					grid.Children.Add(topLeft, 0, 0);
+					grid.Children.Add(topRight, 1, 0);
+					grid.Children.Add(bottomLeft, 0, 1);
 
-				Assert.True(tr.X > tl.X, $"column 1 (x={tr.X}) must sit right of column 0 (x={tl.X})");
-				Assert.True(bl.Y > tl.Y, $"row 1 (y={bl.Y}) must sit below row 0 (y={tl.Y})");
-				Assert.True(Math.Abs(tr.Y - tl.Y) <= 1, $"same row, same y: {tr.Y} vs {tl.Y}");
-				Assert.True(Math.Abs(bl.X - tl.X) <= 1, $"same column, same x: {bl.X} vs {tl.X}");
-			}
+					using (var host = GtkTestHost.HostPage(new ContentPage { Content = grid }))
+					{
+						// BoundsIn, not Allocation: a Gtk 4 allocation is widget-local, so its X/Y are always
+						// zero and every assertion below would compare 0 with 0. See GtkTestHost.BoundsIn.
+						var tl = GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(topLeft));
+						var tr = GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(topRight));
+						var bl = GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(bottomLeft));
+
+						Assert.True(tr.X > tl.X, $"column 1 (x={tr.X}) must sit right of column 0 (x={tl.X})");
+						Assert.True(bl.Y > tl.Y, $"row 1 (y={bl.Y}) must sit below row 0 (y={tl.Y})");
+						Assert.True(Math.Abs(tr.Y - tl.Y) <= 1, $"same row, same y: {tr.Y} vs {tl.Y}");
+						Assert.True(Math.Abs(bl.X - tl.X) <= 1, $"same column, same x: {bl.X} vs {tl.X}");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -141,34 +159,38 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void NestedLayoutsPropagateGeometryToTheDeepestChild()
 		{
-			var leaf = new BoxView { Color = Color.Purple };
-
-			var page = new ContentPage
+			Run(() =>
 			{
-				Content = new StackLayout
-				{
-					Padding = new Thickness(10),
-					Children =
+					var leaf = new BoxView { Color = Color.Purple };
+
+					var page = new ContentPage
 					{
-						new Grid
+						Content = new StackLayout
 						{
+							Padding = new Thickness(10),
 							Children =
 							{
-								new StackLayout { Children = { leaf } }
+								new Grid
+								{
+									Children =
+									{
+										new StackLayout { Children = { leaf } }
+									}
+								}
 							}
 						}
+					};
+
+					using (var host = GtkTestHost.HostPage(page, 600, 400))
+					{
+						var widget = (Gtk.Widget)Platform.GetRenderer(leaf);
+
+						Assert.True(widget.Width > 100,
+							$"leaf allocated {widget.Width}px wide inside a 600px window - " +
+							"it is still at its natural size, i.e. geometry stopped propagating");
 					}
-				}
-			};
-
-			using (var host = GtkTestHost.HostPage(page, 600, 400))
-			{
-				var widget = (Gtk.Widget)Platform.GetRenderer(leaf);
-
-				Assert.True(widget.Allocation.Width > 100,
-					$"leaf allocated {widget.Allocation.Width}px wide inside a 600px window - " +
-					"it is still at its natural size, i.e. geometry stopped propagating");
-			}
+		
+			});
 		}
 
 		/// <summary>
@@ -179,59 +201,63 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void ListViewRowsAddedAfterTheFirstAllocationAreStillAllocated()
 		{
-			var items = Enumerable.Range(1, 8).Select(i => $"row {i}").ToList();
-
-			var listView = new ListView
+			Run(() =>
 			{
-				ItemsSource = items,
-				ItemTemplate = new DataTemplate(() =>
-				{
-					var cell = new TextCell();
-					cell.SetBinding(TextCell.TextProperty, ".");
-					return cell;
-				})
-			};
+					var items = Enumerable.Range(1, 8).Select(i => $"row {i}").ToList();
 
-			using (var host = GtkTestHost.HostPage(new ContentPage { Content = listView }))
-			{
-				// The rows are appended by an idle loader, so give it several rounds.
-				host.Pump(12);
+					var listView = new ListView
+					{
+						ItemsSource = items,
+						ItemTemplate = new DataTemplate(() =>
+						{
+							var cell = new TextCell();
+							cell.SetBinding(TextCell.TextProperty, ".");
+							return cell;
+						})
+					};
 
-				var renderer = (Gtk.Widget)Platform.GetRenderer(listView);
-				var labels = GtkTestHost.Find<Gtk.Label>(renderer)
-					.Where(l => l.Text != null && l.Text.StartsWith("row "))
-					.ToList();
+					using (var host = GtkTestHost.HostPage(new ContentPage { Content = listView }))
+					{
+						// The rows are appended by an idle loader, so give it several rounds.
+						host.Pump(12);
 
-				// Every row, not a sample of them. The floor here used to be "at least two", which
-				// is the bug this test is named for spelled as an assertion: an idle loader that
-				// stopped after the first two rows satisfied it, and the unallocated check below
-				// only ever inspects the rows that were FOUND, so a partial load was silent.
-				//
-				// Eight is derived, not hopeful. The GTK ListView does not virtualize:
-				// Controls/ListView.LoadItems packs one cell per GLib.Idle round and re-arms itself
-				// until every cell is packed, and a Pump round drains a ready idle source to
-				// exhaustion (EventsPending() reports it), so what gets realized never depends on
-				// the viewport. They all fit on screen as well - Cell.DefaultCellHeight is 40 and
-				// each row is followed by a 1px ListViewSeparator, so 8 x 41 = 328px inside the
-				// 600px page.
-				var texts = labels.Select(l => l.Text).ToList();
+						var renderer = (Gtk.Widget)Platform.GetRenderer(listView);
+						var labels = GtkTestHost.Find<Gtk.Label>(renderer)
+							.Where(l => l.Text != null && l.Text.StartsWith("row "))
+							.ToList();
 
-				Assert.True(texts.Count == items.Count,
-					$"{texts.Count} of the {items.Count} rows were realized: " +
-					$"[{string.Join(", ", texts)}]");
+						// Every row, not a sample of them. The floor here used to be "at least two", which
+						// is the bug this test is named for spelled as an assertion: an idle loader that
+						// stopped after the first two rows satisfied it, and the unallocated check below
+						// only ever inspects the rows that were FOUND, so a partial load was silent.
+						//
+						// Eight is derived, not hopeful. The GTK ListView does not virtualize:
+						// Controls/ListView.LoadItems packs one cell per GLib.Idle round and re-arms itself
+						// until every cell is packed, and a Pump round drains a ready idle source to
+						// exhaustion (EventsPending() reports it), so what gets realized never depends on
+						// the viewport. They all fit on screen as well - Cell.DefaultCellHeight is 40 and
+						// each row is followed by a 1px ListViewSeparator, so 8 x 41 = 328px inside the
+						// 600px page.
+						var texts = labels.Select(l => l.Text).ToList();
 
-				// And in source order: a loader that packs the tail out of order is a different
-				// failure from one that stops early, and the count alone cannot tell them apart.
-				Assert.Equal(items, texts);
+						Assert.True(texts.Count == items.Count,
+							$"{texts.Count} of the {items.Count} rows were realized: " +
+							$"[{string.Join(", ", texts)}]");
 
-				var unallocated = labels
-					.Where(GtkTestHost.IsUnallocated)
-					.Select(l => l.Text)
-					.ToList();
+						// And in source order: a loader that packs the tail out of order is a different
+						// failure from one that stops early, and the count alone cannot tell them apart.
+						Assert.Equal(items, texts);
 
-				Assert.True(unallocated.Count == 0,
-					$"rows left at GTK's unallocated sentinel: {string.Join(", ", unallocated)}");
-			}
+						var unallocated = labels
+							.Where(GtkTestHost.IsUnallocated)
+							.Select(l => l.Text)
+							.ToList();
+
+						Assert.True(unallocated.Count == 0,
+							$"rows left at GTK's unallocated sentinel: {string.Join(", ", unallocated)}");
+					}
+		
+			});
 		}
 
 		/// <summary>
@@ -314,18 +340,18 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 				{
 					var widget = (Gtk.Widget)Platform.GetRenderer(child);
 
-					Assert.True(Math.Abs(widget.Allocation.Width - (int)child.Width) <= 2,
+					Assert.True(Math.Abs(widget.Width - (int)child.Width) <= 2,
 						$"{child.GetType().Name}: Forms width {child.Width:0}, " +
-						$"request {widget.WidthRequest}, allocation {widget.Allocation.Width}");
+						$"request {widget.WidthRequest}, allocation {widget.Width}");
 
-					Assert.True(Math.Abs(widget.Allocation.Height - (int)child.Height) <= 2,
+					Assert.True(Math.Abs(widget.Height - (int)child.Height) <= 2,
 						$"{child.GetType().Name}: Forms height {child.Height:0}, " +
-						$"request {widget.HeightRequest}, allocation {widget.Allocation.Height}");
+						$"request {widget.HeightRequest}, allocation {widget.Height}");
 				}
 
 				// And the symptom itself: the three must not paint over one another.
 				var rects = children
-					.Select(c => ((Gtk.Widget)Platform.GetRenderer(c)).Allocation)
+					.Select(c => GtkTestHost.BoundsIn((Gtk.Widget)Platform.GetRenderer(c)))
 					.OrderBy(r => r.Y)
 					.ToList();
 
@@ -341,44 +367,48 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void ResizingTheWindowRelaysTheContent()
 		{
-			var box = new BoxView { Color = Color.Red };
-			var page = new ContentPage { Content = new StackLayout { Children = { box } } };
-
-			using (var host = GtkTestHost.HostPage(page, 400, 300))
+			Run(() =>
 			{
-				var before = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
+					var box = new BoxView { Color = Color.Red };
+					var page = new ContentPage { Content = new StackLayout { Children = { box } } };
 
-				host.Window.Resize(900, 600);
-
-				// MEASURED: Gtk.Window.Resize only REQUESTS a size from the window manager. Under
-				// Xvfb, where this suite was written, there is no window manager to disagree and
-				// the request lands within a pump or two. On the Win32 GDK backend in a
-				// non-interactive session it is never serviced at all - the toplevel still
-				// reports AllocatedWidth == 400 after five seconds of pumping - so the assertion
-				// below used to read 400 -> 400 and fail for a reason that has nothing to do with
-				// Forms layout.
-				//
-				// So drive the allocation directly, which is what PageHost already does for the
-				// INITIAL size and what Pump does on every round. What this test is actually
-				// guarding is that a size-allocate on the toplevel propagates through
-				// FormsWindow -> the page renderer -> StackLayout -> the BoxView; whether a given
-				// platform's window manager honours a resize request is not Forms' behaviour and
-				// not what the M3 regression was about.
-				host.Window.SizeAllocate(new Gdk.Rectangle(0, 0, 900, 600));
-				Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
-
-				var after = before;
-				GtkTestHost.PumpUntil(
-					() =>
+					using (var host = GtkTestHost.HostPage(page, 400, 300))
 					{
-						after = ((Gtk.Widget)Platform.GetRenderer(box)).Allocation.Width;
-						return after > before;
-					},
-					host.Window);
+						var before = ((Gtk.Widget)Platform.GetRenderer(box)).Width;
 
-				Assert.True(after > before,
-					$"content did not follow the window: {before}px -> {after}px");
-			}
+						GtkTestHost.Resize(host.Window, 900, 600);
+
+						// MEASURED: Gtk.Window.Resize only REQUESTS a size from the window manager. Under
+						// Xvfb, where this suite was written, there is no window manager to disagree and
+						// the request lands within a pump or two. On the Win32 GDK backend in a
+						// non-interactive session it is never serviced at all - the toplevel still
+						// reports Width == 400 after five seconds of pumping - so the assertion
+						// below used to read 400 -> 400 and fail for a reason that has nothing to do with
+						// Forms layout.
+						//
+						// So drive the allocation directly, which is what PageHost already does for the
+						// INITIAL size and what Pump does on every round. What this test is actually
+						// guarding is that a size-allocate on the toplevel propagates through
+						// FormsWindow -> the page renderer -> StackLayout -> the BoxView; whether a given
+						// platform's window manager honours a resize request is not Forms' behaviour and
+						// not what the M3 regression was about.
+						host.Window.SizeAllocate(new Gdk.Rectangle(0, 0, 900, 600));
+						Platform.GetRenderer(page)?.SetElementSize(new Size(900, 600));
+
+						var after = before;
+						GtkTestHost.PumpUntil(
+							() =>
+							{
+								after = ((Gtk.Widget)Platform.GetRenderer(box)).Width;
+								return after > before;
+							},
+							host.Window);
+
+						Assert.True(after > before,
+							$"content did not follow the window: {before}px -> {after}px");
+					}
+		
+			});
 		}
 	}
 }

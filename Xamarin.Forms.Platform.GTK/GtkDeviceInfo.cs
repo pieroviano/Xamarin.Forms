@@ -18,15 +18,17 @@ namespace Xamarin.Forms.Platform.GTK
 		{
 			CurrentOrientation = GetOrientation();
 
-			var screen = Gdk.Screen.Default;
+			// Gtk 4 removed GdkScreen and with it screen-level size/monitor signals. What replaced
+			// them is the display's monitor list, which is a GListModel - so "the monitors
+			// changed" is items-changed on that model, and it covers both cases the two Gtk 3
+			// signals did between them (a resolution switch changes a monitor's geometry, a
+			// plugged-in monitor changes the list).
+			var monitors = Gdk.Display.Default?.Monitors;
 
-			if (screen != null)
-			{
-				// Re-read on monitor changes (resolution switch, monitor plugged in) so a rotated
-				// or resized screen updates Forms instead of keeping the start-up value forever.
-				screen.SizeChanged += (o, args) => CurrentOrientation = GetOrientation();
-				screen.MonitorsChanged += (o, args) => CurrentOrientation = GetOrientation();
-			}
+            if (monitors != null)
+            {
+                monitors.ItemsChanged += (o, args) => CurrentOrientation = GetOrientation();
+            }
 		}
 
 		public override Size PixelScreenSize
@@ -68,9 +70,15 @@ namespace Xamarin.Forms.Platform.GTK
 			if (display == null)
 				return null;
 
-			// GetMonitor(0) covers displays that report no primary monitor, which is the normal
-			// case under Xvfb and some Wayland compositors.
-			return display.PrimaryMonitor ?? display.GetMonitor(0);
+			// The first monitor, full stop. Gtk 4 removed gdk_display_get_primary_monitor - there
+			// is no portable notion of a primary monitor under Wayland, which is why it went - so
+			// the list's first entry is what is left, and it is what the Gtk 3 fallback path here
+			// already used under Xvfb and some Wayland compositors.
+			var monitors = display.Monitors;
+
+			return monitors != null && monitors.NItems > 0
+				? monitors.GetObject(0) as Gdk.Monitor
+				: null;
 		}
 
 		static Gdk.Rectangle GetPrimaryMonitorGeometry()

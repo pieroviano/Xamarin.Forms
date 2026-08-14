@@ -15,7 +15,8 @@
         <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)'==''">1.0.13</NuGetUtilityVersion>
         <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
         <VersionBuildSuffix>*</VersionBuildSuffix>
-        <GtkSharpVersion>3.24.24</GtkSharpVersion>
+        <GtkSharpVersionBuildSuffix>26225</GtkSharpVersionBuildSuffix>
+        <GtkSharpVersion>4.22.4</GtkSharpVersion>
         <InputBoxLibraryVersion>2.0.0</InputBoxLibraryVersion>
         <Net4xXUnit2Version>1.0.0</Net4xXUnit2Version>
         <NuGetUtilityVersion>1.0.9</NuGetUtilityVersion>

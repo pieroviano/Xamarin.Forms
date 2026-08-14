@@ -63,10 +63,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				Control.Add(_itemsHost);
 
-				_dragGesture = new Gtk.GestureDrag(Control);
-				_dragGesture.DragBegin += OnDragBegin;
+				// AddController, not a widget argument to the constructor: Gtk 4 gestures are
+				// constructed unattached and then handed to a widget, which is what lets several
+				// of them watch the same widget in different propagation phases.
+				_dragGesture = new Gtk.GestureDrag();
+				Control.AddController(_dragGesture);
+				_dragGesture.DragStarted += OnDragBegin;
 				_dragGesture.DragUpdate += OnDragUpdate;
-				_dragGesture.DragEnd += OnDragEnd;
+				_dragGesture.DragEnded += OnDragEnd;
 			}
 
 			if (e.NewElement is SwipeView swipeView)
@@ -103,9 +107,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 				if (_dragGesture != null)
 				{
-					_dragGesture.DragBegin -= OnDragBegin;
+					_dragGesture.DragStarted -= OnDragBegin;
 					_dragGesture.DragUpdate -= OnDragUpdate;
-					_dragGesture.DragEnd -= OnDragEnd;
+					_dragGesture.DragEnded -= OnDragEnd;
 					_dragGesture.Dispose();
 					_dragGesture = null;
 				}
@@ -119,7 +123,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		// ---- gesture ---------------------------------------------------------------------
 
-		void OnDragBegin(object o, Gtk.DragBeginArgs args)
+		void OnDragBegin(object o, Gtk.DragStartedArgs args)
 		{
 			_swipeStartedSent = false;
 		}
@@ -157,7 +161,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			Controller?.SendSwipeChanging(new SwipeChangingEventArgs(_activeDirection, _currentOffset));
 		}
 
-		void OnDragEnd(object o, Gtk.DragEndArgs args)
+		void OnDragEnd(object o, Gtk.DragEndedArgs args)
 		{
 			if (!_swipeStartedSent)
 				return;
@@ -316,8 +320,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			if (_itemsHost == null || Control == null)
 				return;
 
-			var width = Control.AllocatedWidth;
-			var height = Control.AllocatedHeight;
+			var width = Control.Width;
+			var height = Control.Height;
 			var extent = (int)Math.Round(offset);
 
 			int hostX, hostY, hostW, hostH;
@@ -340,7 +344,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			if (extent <= 0)
 			{
-				_itemsHost.Hide();
+				_itemsHost.Visible = false;
 				return;
 			}
 
@@ -349,8 +353,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			// Position first, then show: showing a widget allocates it afresh, whereas moving an
 			// already-visible Gtk.Fixed child can leave the old allocation in place.
 			_itemsHost.MoveTo(hostX, hostY);
-			_itemsHost.Show();
-			_itemsHost.Window?.Raise();
+			_itemsHost.Visible = true;
+			_itemsHost.Raise();
 		}
 
 		void OpenSwipe()
@@ -369,7 +373,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		{
 			_currentOffset = 0;
 
-			_itemsHost?.Hide();
+			if (_itemsHost != null)
+				_itemsHost.Visible = false;
 
 			_isOpen = false;
 

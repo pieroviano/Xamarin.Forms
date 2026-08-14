@@ -124,9 +124,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		readonly Gtk.Box _toolbarItemsBox;
 		readonly EventBox _overflowBox;
 		readonly Gtk.Label _overflowLabel;
-		readonly Gtk.Menu _overflowMenu;
+		readonly Gtk.Popover _overflowMenu;
+		readonly Gtk.Box _overflowMenuBox;
 		readonly List<ToolbarEntry> _toolbarEntries = new List<ToolbarEntry>();
-		readonly Dictionary<Gtk.MenuItem, int> _overflowEntries = new Dictionary<Gtk.MenuItem, int>();
+		readonly Dictionary<Gtk.Button, int> _overflowEntries = new Dictionary<Gtk.Button, int>();
 
 		readonly ShellTabBar _sectionTabs;
 		readonly ShellTabBar _contentTabs;
@@ -164,6 +165,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		public ShellWidget()
 			: base(Gtk.Orientation.Vertical, 0)
 		{
+			// Replaces the GtkBoxLayout the base constructor installed. Same layout, plus the
+			// size-request clamp - see RequestClampingBoxLayout.
+			LayoutManager = new RequestClampingBoxLayout(Gtk.Orientation.Vertical);
+
 			// ---- nav bar -----------------------------------------------------------------
 			_navBar = new EventBox { VisibleWindow = true };
 			_navBar.HeightRequest = NavBarHeight;
@@ -233,7 +238,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_overflowBox.Add(_overflowLabel);
 			_overflowBox.ButtonPressEvent += OnOverflowPressed;
 
-			_overflowMenu = new Gtk.Menu();
+			// A popover of buttons, not a Gtk.Menu, which Gtk 4 removed. Its replacement,
+			// GtkPopoverMenu, is driven by a GMenuModel and GActions rather than by widgets; a plain
+			// popover keeps the widget-and-handler model these entries already have. See the same
+			// note on Cells/CellBase.OpenContextMenu.
+			_overflowMenuBox = new Gtk.Box(Gtk.Orientation.Vertical, 0);
+			_overflowMenu = new Gtk.Popover { Child = _overflowMenuBox };
 
 			// NoShowAll on the wrapper, so a nav bar ShowAll() cannot resurrect a toolbar that has no
 			// entries; the entries themselves are shown through _toolbarItemsBox.
@@ -413,8 +423,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		/// <summary>The "⋮" button that pops the secondary toolbar entries.</summary>
 		public EventBox ToolbarOverflow => _overflowBox;
 
-		/// <summary>The menu the secondary toolbar entries live in.</summary>
-		public Gtk.Menu ToolbarOverflowMenu => _overflowMenu;
+		/// <summary>The popover the secondary toolbar entries live in.</summary>
+		public Gtk.Popover ToolbarOverflowMenu => _overflowMenu;
 
 		/// <summary>The tab strip over the current <c>ShellItem</c>'s <c>ShellSection</c>s.</summary>
 		public ShellTabBar SectionTabs => _sectionTabs;
@@ -673,8 +683,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			foreach (var pair in _overflowEntries)
 			{
-				pair.Key.Activated -= OnOverflowItemActivated;
-				_overflowMenu.Remove(pair.Key);
+				pair.Key.Clicked -= OnOverflowItemActivated;
+				_overflowMenuBox.Remove(pair.Key);
 				pair.Key.Destroy();
 			}
 
@@ -691,10 +701,11 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 					if (item.IsSecondary)
 					{
-						var menuItem = new Gtk.MenuItem(item.Text ?? string.Empty) { Sensitive = item.IsEnabled };
+						var menuItem = new Gtk.Button(item.Text ?? string.Empty) { Sensitive = item.IsEnabled };
+						menuItem.AddCssClass("flat");
 
-						menuItem.Activated += OnOverflowItemActivated;
-						_overflowMenu.Add(menuItem);
+						menuItem.Clicked += OnOverflowItemActivated;
+						_overflowMenuBox.Append(menuItem);
 						_overflowEntries[menuItem] = i;
 
 						continue;
@@ -719,9 +730,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				}
 			}
 
-			// Show the menu ITEMS, never the Gtk.Menu itself - gtk_widget_show on a GtkMenu maps
-			// its toplevel, i.e. it pops the menu open. The menu is shown in the popup handler.
-			foreach (var child in _overflowMenu.Children)
+			// Show the entries, never the popover itself - showing a popover pops it open. It is
+			// popped in the press handler. (In Gtk 3 the same rule held for a different reason:
+			// gtk_widget_show on a GtkMenu mapped its toplevel.)
+			foreach (var child in _overflowMenuBox.Children)
 				child.ShowAll();
 
 			RefreshToolbar();
@@ -733,18 +745,18 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 			if (_overflowEntries.Count > 0)
 			{
-				_overflowLabel.Show();
-				_overflowBox.Show();
+				_overflowLabel.Visible = true;
+				_overflowBox.Visible = true;
 			}
 			else
 			{
-				_overflowBox.Hide();
+				_overflowBox.Visible = false;
 			}
 
 			if (_toolbarEntries.Count > 0 || _overflowEntries.Count > 0)
-				_toolbarBox.Show();
+				_toolbarBox.Visible = true;
 			else
-				_toolbarBox.Hide();
+				_toolbarBox.Visible = false;
 		}
 
 		public void UpdateTabBarColors(Gdk.Color? background, Gdk.Color? foreground, Gdk.Color? unselected)
@@ -773,28 +785,40 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		/// Reports the size the renderer asked for as both the minimum and the natural size.
 		/// </summary>
 		/// <remarks>
-		/// This widget lives inside <c>Controls.Page</c>'s <see cref="Gtk.Fixed"/>, and a Fixed
-		/// allocates each child its <b>natural</b> size. In Locked mode the content stack carries a
-		/// 300px start margin, which pushed the natural width to window+300 - and the Fixed duly
-		/// allocated that, so the right 300px of every page hung off the window (measured: an 820px
-		/// window allocating the stack 820px starting at x=300). The renderer always gives this
-		/// widget an explicit request equal to the page area, so honour it and let the box
-		/// distribute what is actually there.
+		/// <para>This widget lives inside <c>Controls.Page</c>'s <see cref="Gtk.Fixed"/>, and a
+		/// Fixed allocates each child its <b>natural</b> size. In Locked mode the content stack
+		/// carries a 300px start margin, which pushed the natural width to window+300 - and the
+		/// Fixed duly allocated that, so the right 300px of every page hung off the window
+		/// (measured: an 820px window allocating the stack 820px starting at x=300). The renderer
+		/// always gives this widget an explicit request equal to the page area, so honour it and
+		/// let the box distribute what is actually there.</para>
+		/// <para>A LAYOUT MANAGER, not the Gtk 3 get_preferred_width/height vfuncs this replaces.
+		/// In Gtk 4 a widget that has a GtkLayoutManager - and every GtkBox does - never has its
+		/// own measure vfunc called: the manager answers instead. An override on this class would
+		/// have compiled and silently never run. Subclassing the box's own layout manager puts the
+		/// clamp exactly where Gtk 4 asks the question.</para>
 		/// </remarks>
-		protected override void OnGetPreferredWidth(out int minimum_width, out int natural_width)
+		sealed class RequestClampingBoxLayout : Gtk.BoxLayout
 		{
-			base.OnGetPreferredWidth(out minimum_width, out natural_width);
+			public RequestClampingBoxLayout(Gtk.Orientation orientation)
+				: base(orientation)
+			{
+			}
 
-			if (WidthRequest > 0)
-				minimum_width = natural_width = WidthRequest;
-		}
+			protected override void OnMeasure(Gtk.Widget widget, Gtk.Orientation orientation, int forSize,
+			                                  out int minimum, out int natural,
+			                                  out int minimumBaseline, out int naturalBaseline)
+			{
+				base.OnMeasure(widget, orientation, forSize, out minimum, out natural,
+					out minimumBaseline, out naturalBaseline);
 
-		protected override void OnGetPreferredHeight(out int minimum_height, out int natural_height)
-		{
-			base.OnGetPreferredHeight(out minimum_height, out natural_height);
+				int request = orientation == Gtk.Orientation.Horizontal
+					? widget.WidthRequest
+					: widget.HeightRequest;
 
-			if (HeightRequest > 0)
-				minimum_height = natural_height = HeightRequest;
+				if (request > 0)
+					minimum = natural = request;
+			}
 		}
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
@@ -869,7 +893,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 					entry.Host.ButtonPressEvent -= OnToolbarItemPressed;
 
 				foreach (var pair in _overflowEntries)
-					pair.Key.Activated -= OnOverflowItemActivated;
+					pair.Key.Clicked -= OnOverflowItemActivated;
+
+				// Gtk 4 warns if a widget is finalized while it still has a child, and a popover is
+				// parented to the button it points at rather than owned by it.
+				if (_overflowMenu.Parent != null)
+					_overflowMenu.Unparent();
 
 				foreach (var row in _suggestionRows)
 				{
@@ -902,8 +931,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		void OnOverflowItemActivated(object sender, EventArgs e)
 		{
-			if (sender is Gtk.MenuItem menuItem && _overflowEntries.TryGetValue(menuItem, out var index))
-				ToolbarItemActivated?.Invoke(this, new ShellToolbarItemActivatedEventArgs(index));
+			if (!(sender is Gtk.Button menuItem) || !_overflowEntries.TryGetValue(menuItem, out var index))
+				return;
+
+			// A popover does not dismiss itself when something inside it is clicked, where an
+			// activated Gtk.Menu did.
+			_overflowMenu.Popdown();
+
+			ToolbarItemActivated?.Invoke(this, new ShellToolbarItemActivatedEventArgs(index));
 		}
 
 		void OnOverflowPressed(object o, ButtonPressEventArgs args)
@@ -913,7 +948,11 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_overflowEntries.Count == 0)
 				return;
 
-			_overflowMenu.ShowAll();
+			// Parented to the "⋮" button, so the popover points at it. Gtk 3's menu positioned
+			// itself at the pointer instead.
+			if (_overflowMenu.Parent == null)
+				_overflowMenu.Parent = _overflowBox;
+
 			_overflowMenu.Popup();
 		}
 
@@ -951,15 +990,15 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			if (_titleViewVisible)
 			{
-				_titleLabel.Hide();
-				_titleViewHost.Show();
+				_titleLabel.Visible = false;
+				_titleViewHost.Visible = true;
 			}
 			else
 			{
-				_titleViewHost.Hide();
+				_titleViewHost.Visible = false;
 
 				if (_navBarVisible)
-					_titleLabel.Show();
+					_titleLabel.Visible = true;
 			}
 		}
 
@@ -967,35 +1006,35 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		{
 			if (_searchMode == ShellSearchBoxMode.Hidden)
 			{
-				_searchHost.Hide();
+				_searchHost.Visible = false;
 				return;
 			}
 
 			if (SearchExpanded)
 			{
-				_searchToggleBox.Hide();
+				_searchToggleBox.Visible = false;
 				_searchEntry.ShowAll();
 
 				if (_clearPlaceholderVisible)
 				{
-					_clearPlaceholderLabel.Show();
-					_clearPlaceholderBox.Show();
+					_clearPlaceholderLabel.Visible = true;
+					_clearPlaceholderBox.Visible = true;
 				}
 				else
 				{
-					_clearPlaceholderBox.Hide();
+					_clearPlaceholderBox.Visible = false;
 				}
 
-				_searchEntryHost.Show();
+				_searchEntryHost.Visible = true;
 			}
 			else
 			{
-				_searchEntryHost.Hide();
-				_searchToggleLabel.Show();
-				_searchToggleBox.Show();
+				_searchEntryHost.Visible = false;
+				_searchToggleLabel.Visible = true;
+				_searchToggleBox.Visible = true;
 			}
 
-			_searchHost.Show();
+			_searchHost.Visible = true;
 		}
 
 		/// <summary>
@@ -1046,12 +1085,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_suggestionsVisible && _suggestionRows.Count > 0)
 			{
 				_suggestionsScroller.ShowAll();
-				_suggestionsWrapper.Show();
-				_suggestionsWrapper.Window?.Raise();
+				_suggestionsWrapper.Visible = true;
+				_suggestionsWrapper.Raise();
 			}
 			else
 			{
-				_suggestionsWrapper.Hide();
+				_suggestionsWrapper.Visible = false;
 			}
 		}
 
@@ -1076,14 +1115,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		void RefreshTabBars()
 		{
 			if (_sectionTabsVisible)
-				_sectionTabs.Show();
+				_sectionTabs.Visible = true;
 			else
-				_sectionTabs.Hide();
+				_sectionTabs.Visible = false;
 
 			if (_contentTabsVisible)
-				_contentTabs.Show();
+				_contentTabs.Visible = true;
 			else
-				_contentTabs.Hide();
+				_contentTabs.Visible = false;
 		}
 
 		void RefreshBehavior()
@@ -1104,12 +1143,12 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				// would be a no-op: show the contents through the inner box and the wrapper itself
 				// with the plain Show(), which does not consult the flag.
 				_flyoutBox.ShowAll();
-				_flyoutWrapper.Show();
-				_flyoutWrapper.Window?.Raise();
+				_flyoutWrapper.Visible = true;
+				_flyoutWrapper.Raise();
 			}
 			else
 			{
-				_flyoutWrapper.Hide();
+				_flyoutWrapper.Visible = false;
 			}
 		}
 
@@ -1118,7 +1157,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (_navBarVisible)
 			{
 				_navBarBox.ShowAll();
-				_navBar.Show();
+				_navBar.Visible = true;
 
 				// ShowAll has just un-hidden the title label and every toolbar entry regardless of
 				// whether a TitleView or a collapsed search box wants them; put that back.
@@ -1126,7 +1165,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			}
 			else
 			{
-				_navBar.Hide();
+				_navBar.Visible = false;
 			}
 
 			// The back arrow replaces the hamburger while there is somewhere to go back to; both
@@ -1134,25 +1173,25 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			// which also means the ShowAll above skipped the labels inside them.
 			if (_backVisible)
 			{
-				_backLabel.Show();
-				_backBox.Show();
-				_toggleBox.Hide();
+				_backLabel.Visible = true;
+				_backBox.Visible = true;
+				_toggleBox.Visible = false;
 
 				return;
 			}
 
-			_backBox.Hide();
+			_backBox.Visible = false;
 
 			// Only a Flyout-behaviour shell can be toggled: Locked is always open and Disabled has
 			// no flyout at all, so in both cases the hamburger would be a dead control.
 			if (_behavior == ShellFlyoutBehaviorType.Flyout)
 			{
-				_toggleLabel.Show();
-				_toggleBox.Show();
+				_toggleLabel.Visible = true;
+				_toggleBox.Visible = true;
 			}
 			else
 			{
-				_toggleBox.Hide();
+				_toggleBox.Visible = false;
 			}
 		}
 

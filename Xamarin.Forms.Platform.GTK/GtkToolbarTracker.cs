@@ -228,17 +228,28 @@ namespace Xamarin.Forms.Platform.GTK
 				ToolButton secondaryButton = ToolButtonHelper.CreateToolButtonFromIconName("list-add-symbolic");
 				_toolbarSection.PackStart(secondaryButton, false, false, 0);
 
-				Gtk.Menu menu = new Gtk.Menu();
+				// A Gtk.Popover of flat buttons, not a Gtk.Menu, which Gtk 4 removed. Its replacement,
+				// GtkPopoverMenu, is driven by a GMenuModel and GActions rather than by widgets - so
+				// porting onto it would mean registering an action name for every Forms ToolbarItem
+				// to end up with the same rows and the same handlers. See the identical note on
+				// Cells/CellBase.OpenContextMenu.
+				var menuBox = new Gtk.Box(Gtk.Orientation.Vertical, 0);
+				var menu = new Gtk.Popover { Child = menuBox };
+
 				foreach (var secondaryToolBarItem in secondaryToolBarItems)
 				{
-					Gtk.MenuItem menuItem = new Gtk.MenuItem(secondaryToolBarItem.Text)
+					var menuItem = new Gtk.Button(secondaryToolBarItem.Text)
 					{
 						Sensitive = secondaryToolBarItem.IsEnabled
 					};
-					menu.Add(menuItem);
+					menuItem.AddCssClass("flat");
+					menuBox.Append(menuItem);
 
-					menuItem.ButtonPressEvent += (sender, args) =>
+					// Clicked, not ButtonPressEvent: a button knows what a click is, and the popover
+					// has to be dismissed by hand where an activated Gtk.Menu closed itself.
+					menuItem.Clicked += (sender, args) =>
 					{
+						menu.Popdown();
 						((IMenuItemController)secondaryToolBarItem).Activate();
 					};
 
@@ -246,9 +257,12 @@ namespace Xamarin.Forms.Platform.GTK
 					secondaryToolBarItem.PropertyChanged += OnToolbarItemPropertyChanged;
 				}
 
+				// Parented to the button it drops from, which is also what positions it - a Gtk 3
+				// menu positioned itself at the pointer instead.
+				menu.Parent = secondaryButton;
+
 				secondaryButton.Clicked += (sender, args) =>
 				{
-					menu.ShowAll();
 					menu.Popup();
 				};
 			}
@@ -423,7 +437,9 @@ namespace Xamarin.Forms.Platform.GTK
 			// stock system itself, so the icon comes from the icon theme by name instead.
 			public static ToolButton CreateToolButtonFromIconName(string iconName)
 			{
-				ToolButton button = new ToolButton(new Gtk.Image(iconName, IconSize.SmallToolbar), null);
+				// See Controls/CustomComboBox: Gtk 4 dropped the (name, size) constructor, and an
+				// icon takes its size from CSS.
+				ToolButton button = new ToolButton(Gtk.Image.NewFromIconName(iconName), null);
 				ApplyDefaultDimensions(button);
 
 				return button;

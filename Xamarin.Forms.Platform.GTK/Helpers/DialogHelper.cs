@@ -20,18 +20,20 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 			SetButtonText(arguments.Accept, ButtonsType.Ok, messageDialog);
 			SetButtonText(arguments.Cancel, ButtonsType.Cancel, messageDialog);
 
-			ResponseType result = (ResponseType)messageDialog.Run();
-
-			if (result == ResponseType.Ok)
+			// The Response signal, not Run(). Gtk 4 removed gtk_dialog_run because it spun a NESTED
+			// main loop to block until the user answered, and re-entering the main loop from inside
+			// an event handler is what made modal dialogs deadlock.
+			//
+			// Nothing is lost by not blocking: arguments.SetResult completes the TaskCompletionSource
+			// that Forms' DisplayAlert is already awaiting, so the wait simply happens where it
+			// always belonged - in the caller's await, not in a second main loop.
+			messageDialog.Response += (o, args) =>
 			{
-				arguments.SetResult(true);
-			}
-			else
-			{
-				arguments.SetResult(false);
-			}
+				arguments.SetResult(args.ResponseId == ResponseType.Ok);
+				messageDialog.Destroy();
+			};
 
-			messageDialog.Destroy();
+			messageDialog.Present();
 		}
 
 		public static void ShowActionSheet(PlatformRenderer platformRender, ActionSheetArguments arguments)
@@ -48,18 +50,24 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 			SetDestructionButton(arguments.Destruction, messageDialog);
 			AddExtraButtons(arguments, messageDialog);
 
-			int result = messageDialog.Run();
-
-			if ((ResponseType)result == ResponseType.Cancel)
+			// See ShowAlert for why this is a signal rather than a blocking Run().
+			messageDialog.Response += (o, args) =>
 			{
-				arguments.SetResult(arguments.Cancel);
-			}
-			else if ((ResponseType)result == ResponseType.Reject)
-			{
-				arguments.SetResult(arguments.Destruction);
-			}
+				var response = args.ResponseId;
 
-			messageDialog.Destroy();
+				if (response == ResponseType.Cancel)
+				{
+					arguments.SetResult(arguments.Cancel);
+				}
+				else if (response == ResponseType.Reject)
+				{
+					arguments.SetResult(arguments.Destruction);
+				}
+
+				messageDialog.Destroy();
+			};
+
+			messageDialog.Present();
 		}
 
 		private static void SetDialogTitle(string title, MessageDialog messageDialog)
@@ -67,37 +75,37 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 			messageDialog.Title = title ?? string.Empty;
 		}
 
+		/// <remarks>
+		/// GetWidgetForResponse, not a descendant walk for a button whose label is the stock id
+		/// "gtk-ok". Gtk 4 removed GtkHButtonBox (the dialog's action area is an ordinary box now)
+		/// AND the stock system that supplied those labels, so the old search had lost both its
+		/// container and its needle. Asking the dialog which widget carries a response is what the
+		/// walk was approximating, and it does not depend on the theme's wording.
+		/// </remarks>
 		private static void SetButtonText(string text, ButtonsType type, MessageDialog messageDialog)
 		{
-			string gtkLabel = string.Empty;
+			ResponseType response;
 
 			switch (type)
 			{
 				case ButtonsType.Ok:
-					gtkLabel = "gtk-ok";
+					response = ResponseType.Ok;
 					break;
 				case ButtonsType.Cancel:
-					gtkLabel = "gtk-cancel";
+					response = ResponseType.Cancel;
 					break;
+				default:
+					return;
 			}
 
-			var buttonsBox = messageDialog.GetDescendants()
-				.OfType<HButtonBox>()
-				.FirstOrDefault();
-
-			if (buttonsBox == null)
-				return;
-
-			var targetButton = buttonsBox.GetDescendants()
-				.OfType<Gtk.Button>()
-				.FirstOrDefault(x => x.Label == gtkLabel);
+			var targetButton = messageDialog.GetWidgetForResponse((int)response) as Gtk.Button;
 
 			if (targetButton == null)
 				return;
 
 			if (string.IsNullOrEmpty(text))
 			{
-				targetButton.Hide();
+				targetButton.Visible = false;
 			}
 			else
 			{
@@ -125,7 +133,10 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 
 			// As we are not showing any message in this dialog, we just 
 			// hide default container and avoid it from using space
-			vbox.Children[0].Hide();
+			var firstChild = vbox.Children.FirstOrDefault();
+
+			if (firstChild != null)
+				firstChild.Visible = false;
 
 			if (arguments.Buttons.Any())
 			{
@@ -138,7 +149,7 @@ namespace Xamarin.Forms.Platform.GTK.Helpers
 						arguments.SetResult(button.Label);
 						messageDialog.Destroy();
 					};
-					button.Show();
+					button.Visible = true;
 
 					vbox.PackStart(button, false, false, 0);
 				}

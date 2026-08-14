@@ -47,8 +47,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				return true;
 
 			var totalWidth = _count * _size + (_count - 1) * DotSpacing;
-			var x = Math.Max(0, (AllocatedWidth - totalWidth) / 2);
-			var y = Math.Max(0, (AllocatedHeight - _size) / 2);
+			var x = Math.Max(0, (Width - totalWidth) / 2);
+			var y = Math.Max(0, (Height - _size) / 2);
 
 			for (int i = 0; i < _count; i++)
 			{

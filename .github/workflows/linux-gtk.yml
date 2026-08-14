@@ -6,9 +6,9 @@ name: linux-gtk
 # that prune, so this IS the CI for this fork.
 on:
   push:
-    branches: [ 5.0.0 ]
+    branches: [ 5.0.0, gtk4 ]
   pull_request:
-    branches: [ 5.0.0 ]
+    branches: [ 5.0.0, gtk4 ]
   workflow_dispatch:
 
 jobs:
@@ -35,22 +35,58 @@ jobs:
             8.0.x
             10.0.x
 
-      - name: Install GTK 3, WebKitGTK, Mesa and a headless X server
+      # The Net4x.* Gtk 4 bindings this backend is built on. NuGet.config declares a local source
+      # at ./Packages, which on a development machine is a junction onto the GtkSharp repository's
+      # BuildOutput/NugetPackages drop folder - so a cake build there publishes straight into it.
+      # A junction cannot be committed, so CI has to produce the same folder for itself.
+      #
+      # The commit is PINNED rather than tracking a branch: the shims in that repository and the
+      # backend here move together, and a floating checkout would let an unrelated push there turn
+      # this job red. Bump it in the same commit that needs the new bindings.
+      #
+      # See docs/plans/gtk4-migration.md O1 for the alternative (publishing Net4x.* to nuget.org),
+      # which is the intended end state once the compat surface stops moving.
+      - name: Check out the GtkSharp bindings
+        uses: actions/checkout@v4
+        with:
+          repository: pieroviano/GtkSharp
+          ref: 624be46e647a6ef62ca11e99fe0058fc64d5eab8
+          path: .gtksharp
+          fetch-depth: 0
+
+      - name: Build the Net4x.* binding packages
+        working-directory: .gtksharp
+        run: |
+          dotnet tool restore
+          dotnet cake build.cake --BuildTarget=PackageNuGet --BuildVersion=4.22.4.26225
+          mkdir -p "$GITHUB_WORKSPACE/Packages"
+          cp BuildOutput/NugetPackages/*.nupkg "$GITHUB_WORKSPACE/Packages/"
+
+      # Fails loudly rather than letting restore fall through to nuget.org and resolve something
+      # unrelated - a missing local source is only NU1801, a warning, as far as NuGet is concerned.
+      - name: Verify the local feed
+        run: |
+          ls -1 Packages/Net4x.GtkSharp.*.nupkg
+          test -n "$(ls -1 Packages/Net4x.*.nupkg 2>/dev/null)"
+
+      - name: Install GTK 4, WebKitGTK, Mesa and a headless X server
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libgtk-3-0 libgtk-3-dev \
-            libwebkit2gtk-4.1-0 \
+            libgtk-4-1 libgtk-4-dev \
+            libwebkitgtk-6.0-4 \
             libgl1-mesa-dri libglx-mesa0 \
             xvfb dbus-x11 fonts-dejavu-core
 
-      # libwebkit2gtk-4.1 is bound by hand in Controls/WebKit2.cs and every entry point is
-      # resolved lazily, so its absence degrades WebView to a placeholder rather than failing
-      # the build - but the renderer tests should exercise the real thing.
+      # WebKitGTK 6.0, not webkit2gtk-4.1: the 4.1 series links against GTK 3 and cannot be
+      # embedded in a GTK 4 widget tree at all. Controls/WebView.cs constructs its
+      # WebKit.WebView inside a try/catch, so an absent runtime degrades the widget to a
+      # placeholder rather than failing the build - but the renderer tests should exercise
+      # the real thing.
       - name: Report native versions
         run: |
-          pkg-config --modversion gtk+-3.0 || true
-          ls /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so.0 || true
+          pkg-config --modversion gtk4 || true
+          ls /usr/lib/x86_64-linux-gnu/libwebkitgtk-6.0.so.4 || true
 
       # Debug, NOT Release, and that is forced rather than chosen. MEASURED: a Release build of
       # the solution fails outright with

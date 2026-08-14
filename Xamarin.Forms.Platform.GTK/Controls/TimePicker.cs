@@ -22,7 +22,14 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		}
 	}
 
-	public class TimePickerWindow : Gtk.Window
+	/// <summary>The hour/minute/second drop-down of <see cref="TimePicker"/>.</summary>
+	/// <remarks>
+	/// A <see cref="Gtk.Popover"/>, for the reasons set out on
+	/// <see cref="DatePickerWindow"/>: Gtk 4 removed the popup window type, hand positioning and
+	/// application-driven grabs that the Gtk 3 version was built from, and a popover replaces all
+	/// three at once.
+	/// </remarks>
+	public class TimePickerWindow : Gtk.Popover
 	{
 		private Gtk.Box _timeBox;
 		private Gtk.Label _labelHour;
@@ -33,10 +40,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		private Gtk.SpinButton _txtSec;
 
 		public TimePickerWindow()
-			: base(Gtk.WindowType.Popup)
 		{
 			BuildTimePickerWindow();
-			Helpers.GrabHelper.GrabWindow(this);
 
 			RefreshTime();
 		}
@@ -60,41 +65,15 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public event TimeEventHandler OnTimeChanged;
 
-		protected override bool OnDrawn(Cairo.Context cr)
-		{
-			base.OnDrawn(cr);
-
-			int winWidth, winHeight;
-			GetSize(out winWidth, out winHeight);
-
-			// GTK3 removed Gdk.GC drawing (Style.ForegroundGC + GdkWindow.DrawRectangle).
-			// Stroke the 1px frame with Cairo instead, using the theme's insensitive
-			// foreground colour. The 0.5 offset keeps the hairline on the pixel grid.
-			var color = StyleContext.GetColor(Gtk.StateFlags.Insensitive);
-			cr.SetSourceRGBA(color.Red, color.Green, color.Blue, color.Alpha);
-			cr.LineWidth = 1;
-			cr.Rectangle(0.5, 0.5, winWidth - 1, winHeight - 1);
-			cr.Stroke();
-
-			return false;
-		}
-
-		protected virtual void OnButtonPressEvent(object o, Gtk.ButtonPressEventArgs args)
-		{
-			Close();
-		}
+		// The hand-stroked 1px frame is gone with the undecorated toplevel that needed it; a
+		// popover is themed. See the same note on DatePickerWindow.
 
 		private void BuildTimePickerWindow()
 		{
-			Title = "TimePicker";
-			TypeHint = Gdk.WindowTypeHint.Normal;
-			WindowPosition = Gtk.WindowPosition.None;
-			BorderWidth = 1;
-			Resizable = false;
-			Decorated = false;
-			DestroyWithParent = true;
-			SkipPagerHint = true;
-			SkipTaskbarHint = true;
+			// Autohide replaces the seat grab AND the click-outside-to-close handler. See
+			// DatePickerWindow.BuildDatePickerWindow.
+			Autohide = true;
+			HasArrow = false;
 
 			_timeBox = new Gtk.Box(Gtk.Orientation.Horizontal, 0);
 			_timeBox.Spacing = 6;
@@ -162,16 +141,8 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			w7.Expand = false;
 			w7.Fill = false;
 
-			Add(_timeBox);
+			Child = _timeBox;
 
-			if ((Child != null))
-			{
-				Child.ShowAll();
-			}
-
-			Show();
-
-			ButtonPressEvent += new Gtk.ButtonPressEventHandler(OnButtonPressEvent);
 			_txtHour.ValueChanged += new EventHandler(OnTxtHourValueChanged);
 			_txtHour.ButtonPressEvent += new Gtk.ButtonPressEventHandler(OnTxtHourButtonPressEvent);
 			_txtMin.ValueChanged += new EventHandler(OnTxtMinValueChanged);
@@ -180,12 +151,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_txtSec.ButtonPressEvent += new Gtk.ButtonPressEventHandler(OnTxtSecButtonPressEvent);
 		}
 
-		// GTK3 Gtk.Window gained a Close() method; this dismisses the popup, not the window.
-		// internal so TimePicker.ClosePicker can dismiss it - see the comment there.
-		internal new void Close()
+		/// <summary>Dismisses the drop-down. See <see cref="DatePickerWindow.Close"/>.</summary>
+		internal void Close()
 		{
-			Helpers.GrabHelper.RemoveGrab(this);
-			Destroy();
+			Popdown();
 		}
 
 		private void RefreshTime()
@@ -238,6 +207,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 		private const string DefaultTimeFormat = @"hh\:mm\:ss";
 
 		private CustomComboBox _comboBox;
+		private TimePickerWindow _picker;
 		private Gdk.Color _color;
 		private TimeSpan _currentTime;
 		private string _timeFormat;
@@ -309,15 +279,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		public void ClosePicker()
 		{
-			var windows = Gtk.Window.ListToplevels();
-			var window = windows.FirstOrDefault(w => w.GetType() == typeof(TimePickerWindow))
-				as TimePickerWindow;
-
-			// Close(), not Remove() - see the identical note in DatePicker.ClosePicker.
-			if (window != null)
-			{
-				window.Close();
-			}
+			// The popover this control owns - see the note in DatePicker.ClosePicker for why the
+			// Gtk 3 toplevel search is gone.
+			_picker?.Close();
 		}
 
 		protected virtual void OnTxtTimeChanged(object sender, EventArgs e)
@@ -334,17 +298,19 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		private void ShowTimePickerWindow()
 		{
-			int x = 0;
-			int y = 0;
+			if (_picker == null)
+			{
+				_picker = new TimePickerWindow();
+				_picker.OnTimeChanged += OnPopupTimeChanged;
+				_picker.Closed += OnPickerClosed;
 
-			Window.GetOrigin(out x, out y);
-			y += Allocation.Height;
+				_picker.Parent = this;
+				_picker.Position = Gtk.PositionType.Bottom;
+			}
 
-			var picker = new TimePickerWindow();
-			picker.Move(x, y);
-			picker.CurrentTime = CurrentTime;
-			picker.OnTimeChanged += OnPopupTimeChanged;
-			picker.Destroyed += OnPickerClosed;
+			_picker.CurrentTime = CurrentTime;
+			_picker.Popup();
+
 			GotFocus?.Invoke(this, EventArgs.Empty);
 		}
 
@@ -363,7 +329,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				Child.ShowAll();
 			}
 
-			Show();
+			Visible = true;
 		}
 
 		private void UpdateEntryText()
@@ -375,13 +341,23 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 
 		private void OnPickerClosed(object sender, EventArgs e)
 		{
-			var window = sender as TimePickerWindow;
+			// No Remove - see the note in DatePicker.OnPickerClosed.
+			LostFocus?.Invoke(this, EventArgs.Empty);
+		}
 
-			if (window != null)
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && _picker != null)
 			{
-				Remove(window);
-				LostFocus?.Invoke(this, EventArgs.Empty);
+				_picker.OnTimeChanged -= OnPopupTimeChanged;
+				_picker.Closed -= OnPickerClosed;
+
+				// Gtk 4 warns if a widget is finalized while it still has a child.
+				_picker.Unparent();
+				_picker = null;
 			}
+
+			base.Dispose(disposing);
 		}
 	}
 }

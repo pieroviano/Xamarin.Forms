@@ -312,6 +312,9 @@ namespace Xamarin.Forms.Maps.GTK
 			if (_disposed || Control == null || Element == null)
 				return;
 
+			// args.Allocation, not args.Width/Height: the compat SizeAllocatedArgs carries the
+			// rectangle the Gtk 3 signal carried, and nothing else - Gtk 4 has no size-allocate
+			// signal at all, only the vfunc the shim raises this from.
 			var width = args.Allocation.Width;
 			var height = args.Allocation.Height;
 

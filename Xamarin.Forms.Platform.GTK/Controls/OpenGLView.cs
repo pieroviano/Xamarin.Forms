@@ -43,7 +43,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 				// Set before realization: the context is created with these attributes.
 				HasDepthBuffer = true,
 				HasStencilBuffer = false,
-				HasAlpha = false,
+				// No HasAlpha: Gtk 4 removed it. A GtkGLArea's framebuffer always has an alpha
+				// channel now, because the area is composited into the widget tree rather than
+				// drawn straight to a window - so "false" had nothing left to select.
 				// We decide when a frame is produced: either the Forms render loop (a frame-clock
 				// tick callback) or an explicit Display() call. Without AutoRender the last frame is
 				// simply re-composited when the widget is redrawn, which is exactly what we want.
@@ -55,7 +57,7 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			_glArea.Realized += OnGLAreaRealized;
 
 			Add(_glArea);
-			_glArea.Show();
+			_glArea.Visible = true;
 		}
 
 		/// <summary>
@@ -130,7 +132,9 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 					return null;
 
 				// domain (guint32) + code (gint32) = 8 bytes, then the message pointer.
-				return WebKit2.Utf8ToString(Marshal.ReadIntPtr(error, 8))
+				// GLib.Marshaller, not the hand-rolled helper this used to borrow from
+				// Controls/WebKit2.cs - that file is gone with the WebKit2GTK 4.1 binding it held.
+				return GLib.Marshaller.Utf8PtrToString(Marshal.ReadIntPtr(error, 8))
 					?? "OpenGL context creation failed.";
 			}
 		}
@@ -196,8 +200,10 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			if (onDisplay == null)
 				return;
 
-			Gdk.Rectangle allocation = _glArea.Allocation;
-			onDisplay(new Rectangle(0, 0, allocation.Width, allocation.Height));
+			// Width/Height rather than the deprecated Allocation, which this only ever read the
+			// size out of - the origin was already hardcoded to (0, 0) below, which is what a Gtk 4
+			// allocation reports anyway.
+			onDisplay(new Rectangle(0, 0, _glArea.Width, _glArea.Height));
 		}
 
 		void StartRenderLoop()
@@ -232,11 +238,20 @@ namespace Xamarin.Forms.Platform.GTK.Controls
 			return true;
 		}
 
-		protected override void OnDestroyed()
+		/// <remarks>
+		/// Destroy, not Gtk 3's OnDestroyed: Gtk 4 removed the ::destroy signal outright, so the
+		/// binding has no OnDestroyed to override - see the note in GtkSharp's Widget.cs. What is
+		/// left is Widget.Destroy, which is virtual and is what an explicit teardown calls.
+		///
+		/// Note the asymmetry this introduces, and why Dispose below still tears down as well: a
+		/// widget destroyed by its PARENT going away never passes through Destroy at all in Gtk 4,
+		/// and Dispose is the only hook that still runs for it.
+		/// </remarks>
+		public override void Destroy()
 		{
 			Teardown();
 
-			base.OnDestroyed();
+			base.Destroy();
 		}
 
 		protected override void Dispose(bool disposing)

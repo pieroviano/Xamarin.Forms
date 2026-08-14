@@ -16,38 +16,46 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void RenderersCanBeCreatedAndDestroyedRepeatedly()
 		{
-			for (int i = 0; i < 20; i++)
+			Run(() =>
 			{
-				using (var host = GtkTestHost.HostView(new Entry { Text = $"pass {i}" }))
-				{
-					Assert.NotNull(host.Renderer);
-				}
-			}
+					for (int i = 0; i < 20; i++)
+					{
+						using (var host = GtkTestHost.HostView(new Entry { Text = $"pass {i}" }))
+						{
+							Assert.NotNull(host.Renderer);
+						}
+					}
+		
+			});
 		}
 
 		[Fact]
 		public void PagesCanBeLoadedAndTornDownRepeatedly()
 		{
-			for (int i = 0; i < 5; i++)
+			Run(() =>
 			{
-				var page = new ContentPage
-				{
-					Content = new StackLayout
+					for (int i = 0; i < 5; i++)
 					{
-						Children =
+						var page = new ContentPage
 						{
-							new Label { Text = $"page {i}" },
-							new Button { Text = "ok" },
-							new Entry { Text = "x" }
+							Content = new StackLayout
+							{
+								Children =
+								{
+									new Label { Text = $"page {i}" },
+									new Button { Text = "ok" },
+									new Entry { Text = "x" }
+								}
+							}
+						};
+
+						using (var host = GtkTestHost.HostPage(page))
+						{
+							Assert.NotNull(Platform.GetRenderer(page));
 						}
 					}
-				};
-
-				using (var host = GtkTestHost.HostPage(page))
-				{
-					Assert.NotNull(Platform.GetRenderer(page));
-				}
-			}
+		
+			});
 		}
 
 		/// <summary>
@@ -58,59 +66,67 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 		[Fact]
 		public void DisposingAPageClearsItsChildrenRenderers()
 		{
-			var label = new Label { Text = "child" };
-			var page = new ContentPage { Content = new StackLayout { Children = { label } } };
-
-			using (var host = GtkTestHost.HostPage(page))
+			Run(() =>
 			{
-				Assert.True(Platform.GetRenderer(label) != null, "precondition");
+					var label = new Label { Text = "child" };
+					var page = new ContentPage { Content = new StackLayout { Children = { label } } };
 
-				// Actually run the teardown this test is named for. It previously asserted the
-				// precondition and stopped, so the behaviour described above - that disposing a
-				// page clears its children's renderers - was never checked and the test could not
-				// fail.
-				Platform.DisposeModelAndChildrenRenderers(page);
-				GtkTestHost.Pump(null, 3);
+					using (var host = GtkTestHost.HostPage(page))
+					{
+						Assert.True(Platform.GetRenderer(label) != null, "precondition");
 
-				Assert.Null(Platform.GetRenderer(label));
-				Assert.Null(Platform.GetRenderer(page));
-			}
+						// Actually run the teardown this test is named for. It previously asserted the
+						// precondition and stopped, so the behaviour described above - that disposing a
+						// page clears its children's renderers - was never checked and the test could not
+						// fail.
+						Platform.DisposeModelAndChildrenRenderers(page);
+						GtkTestHost.Pump(null, 3);
 
-			GtkTestHost.Pump(null, 3);
+						Assert.Null(Platform.GetRenderer(label));
+						Assert.Null(Platform.GetRenderer(page));
+					}
+
+					GtkTestHost.Pump(null, 3);
+		
+			});
 		}
 
 		[Fact]
 		public void DestroyingARendererDoesNotThrowOnSubsequentPumps()
 		{
-			var views = new List<View>
+			Run(() =>
 			{
-				new Label { Text = "l" },
-				new Button { Text = "b" },
-				new Entry { Text = "e" },
-				new Switch(),
-				new CheckBox(),
-				new ProgressBar { Progress = 0.5 },
-				new ActivityIndicator { IsRunning = true },
-				new BoxView { Color = Color.Red },
-				new Slider { Value = 1 },
-				new Stepper { Value = 1 }
-			};
-
-			foreach (var view in views)
-			{
-				var exception = Record.Exception(() =>
-				{
-					using (var host = GtkTestHost.HostView(view))
+					var views = new List<View>
 					{
-						host.Pump(2);
+						new Label { Text = "l" },
+						new Button { Text = "b" },
+						new Entry { Text = "e" },
+						new Switch(),
+						new CheckBox(),
+						new ProgressBar { Progress = 0.5 },
+						new ActivityIndicator { IsRunning = true },
+						new BoxView { Color = Color.Red },
+						new Slider { Value = 1 },
+						new Stepper { Value = 1 }
+					};
+
+					foreach (var view in views)
+					{
+						var exception = Record.Exception(() =>
+						{
+							using (var host = GtkTestHost.HostView(view))
+							{
+								host.Pump(2);
+							}
+
+							GtkTestHost.Pump(null, 2);
+						});
+
+						Assert.True(exception == null,
+							$"{view.GetType().Name} threw during create/destroy: {exception}");
 					}
-
-					GtkTestHost.Pump(null, 2);
-				});
-
-				Assert.True(exception == null,
-					$"{view.GetType().Name} threw during create/destroy: {exception}");
-			}
+		
+			});
 		}
 	}
 }

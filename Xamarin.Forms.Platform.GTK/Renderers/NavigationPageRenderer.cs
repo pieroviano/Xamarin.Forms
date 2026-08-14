@@ -91,17 +91,25 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			base.OnShown();
 		}
 
-		protected override void OnDestroyed()
+		/// <remarks>
+		/// Destroy, not Gtk 3's OnDestroyed, which Gtk 4 has no equivalent of - see
+		/// Controls/OpenGLView.Destroy for the full note.
+		///
+		/// The early return the Gtk 3 version had is gone: it guarded only the disappearing
+		/// notification, but skipping the chain-up here would skip the DESTROY, leaving the
+		/// renderer's widget alive.
+		/// </remarks>
+		public override void Destroy()
 		{
-			if (!_appeared)
-				return;
+			if (_appeared)
+			{
+				_toolbarTracker.TryHide(Page);
+				_appeared = false;
 
-			_toolbarTracker.TryHide(Page);
-			_appeared = false;
+				PageController?.SendDisappearing();
+			}
 
-			PageController?.SendDisappearing();
-
-			base.OnDestroyed();
+			base.Destroy();
 		}
 
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
@@ -251,7 +259,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected virtual void ConfigurePageRenderer()
 		{
-			Container.IsFocus = true;
+			// GrabFocus - see VisualElementRenderer for why is-focus can no longer be assigned.
+			Container.GrabFocus();
 		}
 
 		protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -406,7 +415,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			if (animated)
 			{
-				var from = pageRenderer.Container.Parent.Allocation.Width;
+				var from = pageRenderer.Container.Parent.Width;
 				pageRenderer.Container.MoveTo(from, 0);
 
 				await AnimatePageAsync(pageRenderer.Container, from, 0);
@@ -442,7 +451,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				if (PlatformHelper.GetGTKPlatform() == GTKPlatform.Windows)
 				{
 					target.Container.MoveTo(0, 0);
-					var to = target.Container.Parent.Allocation.Width;
+					var to = target.Container.Parent.Width;
 					await AnimatePageAsync(target.Container, 0, to);
 				}
 

@@ -446,10 +446,16 @@ namespace Xamarin.Forms.Platform.GTK
 				return;
 
 			if (args.Focus)
-				args.Result = control.IsFocus = true;
+				// GrabFocus, not an assignment: Gtk 4 made is-focus read-only, because focus is taken
+				// rather than assigned - the widget may refuse it, and the return value says whether it
+				// did. Reporting that to Forms is strictly better than the Gtk 3 code's unconditional
+				// true.
+				args.Result = control.GrabFocus();
 			else
 			{
-				control.IsFocus = false;
+				// Dropping focus has no direct Gtk 4 spelling either; moving it to the toplevel is the
+				// documented way to take it off a particular widget.
+				control.Toplevel?.Focus = null;
 				args.Result = true;
 			}
 		}

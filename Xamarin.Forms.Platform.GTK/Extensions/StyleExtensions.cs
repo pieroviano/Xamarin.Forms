@@ -117,7 +117,9 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 				return;
 
 			var provider = new CssProvider();
-			provider.LoadFromData(css.ToString());
+			// LoadFromString, not LoadFromData: Gtk 4.12 deprecated the latter, whose extra length
+			// argument the managed binding never used anyway.
+			provider.LoadFromString(css.ToString());
 			widget.StyleContext.AddProvider(provider, StyleProviderPriority.Application);
 			style.Provider = provider;
 		}
@@ -260,22 +262,54 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 		// ---- theme-default readers (replacing Gtk.Style.* arrays) ----------------------
 
 		/// <summary>
-		/// Replaces <c>Style.Backgrounds[(int)state]</c>. Reads the CSS property directly:
-		/// gtk_style_context_get_background_color is deprecated, while the generic property
-		/// getter is not, and both return the same "background-color" value.
+		/// Replaces <c>Style.Backgrounds[(int)state]</c>, as the theme's background colour.
 		/// </summary>
+		/// <remarks>
+		/// GTK4 removed CSS value queries outright - there is no gtk_style_context_get_property and
+		/// no get_background_color - because a background is a full CSS box (colour, gradient,
+		/// image, border) that does not reduce to one colour. What is left is the theme's named
+		/// colours, and @theme_bg_color is the one the removed query almost always returned.
+		///
+		/// <paramref name="state"/> is therefore ignored: named theme colours are not per-state.
+		/// The parameter is kept so the four Default* getters here stay one family, and because
+		/// every caller passes Normal.
+		/// </remarks>
 		public static Gdk.Color GetDefaultBackgroundColor(this Widget widget, StateFlags state = StateFlags.Normal)
 		{
 			if (widget == null)
 				return new Gdk.Color(0, 0, 0);
 
-			using (var value = widget.StyleContext.GetProperty("background-color", state))
-				return ((Gdk.RGBA)value.Val).ToGdkColor();
+			if (widget.StyleContext.LookupColor("theme_bg_color", out var background))
+				return background.ToGdkColor();
+
+			return new Gdk.Color(0, 0, 0);
 		}
 
 		/// <summary>Replaces <c>Style.Foregrounds[(int)state]</c>.</summary>
-		public static Gdk.Color GetDefaultForegroundColor(this Widget widget, StateFlags state = StateFlags.Normal) =>
-			widget == null ? new Gdk.Color(0, 0, 0) : widget.StyleContext.GetColor(state).ToGdkColor();
+		/// <remarks>
+		/// The foreground DID survive, as gtk_style_context_get_color - but without the state
+		/// argument, since a Gtk 4 style context reports the colour for the state it is currently
+		/// in. Save/Restore around a temporary state change is how you ask about another one.
+		/// </remarks>
+		public static Gdk.Color GetDefaultForegroundColor(this Widget widget, StateFlags state = StateFlags.Normal)
+		{
+			if (widget == null)
+				return new Gdk.Color(0, 0, 0);
+
+			var context = widget.StyleContext;
+
+			context.Save();
+
+			try
+			{
+				context.State = state;
+				return context.Color.ToGdkColor();
+			}
+			finally
+			{
+				context.Restore();
+			}
+		}
 
 		/// <summary>
 		/// Replaces <c>Style.BaseColors[(int)state]</c>. GTK3 has no separate "base" colour,
@@ -288,17 +322,18 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 		public static Gdk.Color GetDefaultTextColor(this Widget widget, StateFlags state = StateFlags.Normal) =>
 			widget.GetDefaultForegroundColor(state);
 
-		/// <summary>
-		/// Replaces <c>Style.FontDescription</c>. As above, the generic property getter stands in
-		/// for the deprecated gtk_style_context_get_font.
-		/// </summary>
+		/// <summary>Replaces <c>Style.FontDescription</c>.</summary>
+		/// <remarks>
+		/// The widget's Pango context, not a CSS property query - GTK4 removed the latter. This is
+		/// the better source anyway: it is the font the widget will actually lay text out with,
+		/// after the theme, any provider this code installed and any inherited settings have been
+		/// resolved, where the CSS query reported one declaration in isolation.
+		///
+		/// <paramref name="state"/> is ignored; a Pango context carries no widget state.
+		/// </remarks>
 		public static Pango.FontDescription GetDefaultFont(this Widget widget, StateFlags state = StateFlags.Normal)
 		{
-			if (widget == null)
-				return null;
-
-			using (var value = widget.StyleContext.GetProperty("font", state))
-				return value.Val as Pango.FontDescription;
+			return widget?.PangoContext?.FontDescription;
 		}
 
 		// ---- conversions ---------------------------------------------------------------
@@ -316,12 +351,14 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 		public static Gdk.Color ToGdkColor(this Gdk.RGBA rgba) =>
 			new Gdk.Color((byte)(rgba.Red * 255), (byte)(rgba.Green * 255), (byte)(rgba.Blue * 255));
 
+		// float, not double: Gtk 4's GdkRGBA carries single-precision channels, where the Gtk 3
+		// binding used doubles.
 		public static Gdk.RGBA ToRgba(this Gdk.Color color) => new Gdk.RGBA
 		{
-			Red = color.Red / 65535.0,
-			Green = color.Green / 65535.0,
-			Blue = color.Blue / 65535.0,
-			Alpha = 1.0
+			Red = color.Red / 65535f,
+			Green = color.Green / 65535f,
+			Blue = color.Blue / 65535f,
+			Alpha = 1f
 		};
 	}
 }
