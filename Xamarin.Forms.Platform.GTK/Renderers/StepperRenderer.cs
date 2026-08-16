@@ -12,9 +12,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override bool PreventGestureBubbling { get; set; } = true;
 
+		/// <remarks>
+		/// Only <c>disposing == true</c> may touch other objects: SpinButton.ValueChanged's remover
+		/// is a native g_signal_handler_disconnect, which must not run on the finalizer thread. See
+		/// the remarks on ViewRenderer.Dispose.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			if (Control != null)
+			if (disposing && Control != null)
 				Control.ValueChanged -= OnValueChanged;
 
 			base.Dispose(disposing);

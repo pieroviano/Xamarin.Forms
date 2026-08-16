@@ -107,7 +107,10 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			// ScrollToRequested invocation list; re-showing the same page instance re-enables the
 			// element and flushes any pending scroll straight into the dead renderer, which
 			// dereferences the nulled Control. Same fix as ScrollViewRenderer.Dispose.
-			if (Element != null)
+			//
+			// Gated on disposing like the block below it: the Forms element is another object, and
+			// this override also runs from the finalizer. See the remarks on ViewRenderer.Dispose.
+			if (disposing && Element != null)
 			{
 				Element.ScrollToRequested -= OnElementScrollToRequested;
 			}

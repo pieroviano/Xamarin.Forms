@@ -75,31 +75,44 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 				UpdateHorizontalScrollBarVisibility();
 		}
 
+		/// <remarks>
+		/// Every statement here is gated on <c>disposing</c>, because all of it touches other
+		/// objects: the Forms element, GtkSharp signal removal (a native g_signal_handler_disconnect),
+		/// the Hadjustment/Vadjustment property reads that wrap native objects, and above all
+		/// <c>_viewPort.Destroy()</c> - Gtk.Widget.Destroy reads Parent, which on the finalizer thread
+		/// throws GLib.MissingIntPtrCtorException and takes the process with it. See the remarks on
+		/// ViewRenderer.Dispose; this is the same hazard, and _viewPort is nulled only inside this
+		/// block, so a renderer collected without an explicit Destroy() hits it with _viewPort live.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			// The Forms-side handler, which nothing else removes: OnElementChanged only detaches it
-			// from e.OldElement. Left attached, the ScrollView element keeps the disposed renderer
-			// alive and a later ScrollToAsync re-enters OnScrollToRequested, which dereferences the
-			// Control that base.Dispose has already nulled.
-			if (Element != null)
+			if (disposing)
 			{
-				Element.ScrollToRequested -= OnScrollToRequested;
-			}
+				// The Forms-side handler, which nothing else removes: OnElementChanged only detaches it
+				// from e.OldElement. Left attached, the ScrollView element keeps the disposed renderer
+				// alive and a later ScrollToAsync re-enters OnScrollToRequested, which dereferences the
+				// Control that base.Dispose has already nulled.
+				if (Element != null)
+				{
+					Element.ScrollToRequested -= OnScrollToRequested;
+				}
 
-			if (Control != null)
-			{
-				Control.ScrollEvent -= OnScrollEvent;
+				if (Control != null)
+				{
+					Control.ScrollEvent -= OnScrollEvent;
 
-				if (Control.Hadjustment != null)
-					Control.Hadjustment.ValueChanged -= OnScrollEvent;
+					if (Control.Hadjustment != null)
+						Control.Hadjustment.ValueChanged -= OnScrollEvent;
 
-				if (Control.Vadjustment != null)
-					Control.Vadjustment.ValueChanged -= OnScrollEvent;
-			}
-			if (_viewPort != null)
-			{
-				_viewPort.Destroy();
-				_viewPort = null;
+					if (Control.Vadjustment != null)
+						Control.Vadjustment.ValueChanged -= OnScrollEvent;
+				}
+
+				if (_viewPort != null)
+				{
+					_viewPort.Destroy();
+					_viewPort = null;
+				}
 			}
 
 			base.Dispose(disposing);

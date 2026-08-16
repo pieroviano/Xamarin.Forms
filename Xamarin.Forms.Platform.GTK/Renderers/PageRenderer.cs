@@ -6,20 +6,32 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 	{
 		private PageElementPackager _packager;
 
+		/// <remarks>
+		/// Only <c>disposing == true</c>: VisualElementPackager.Dispose unsubscribes from the Forms
+		/// element's ChildAdded/ChildRemoved, which is another object and must not be touched from
+		/// the finalizer thread. It also latches its own _isDisposed, so an unguarded finalizer pass
+		/// would silently disarm the real disposal. See the remarks on ViewRenderer.Dispose;
+		/// LayoutRenderer.Dispose guards the same packager teardown.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
 			base.Dispose(disposing);
 
-			if (_packager != null)
+			if (disposing && _packager != null)
 			{
 				_packager.Dispose();
 				_packager = null;
 			}
 		}
 
-		protected override void OnShown()
+		/// <remarks>
+		/// OnMapped, not the Gtk 3 "show" vfunc: Gtk 4 widgets are born visible, so that vfunc never
+		/// fires. This is the call that builds a page's child renderers, so under Gtk 4 the page
+		/// stayed empty. See the remarks on AbstractPageRenderer.OnMapped.
+		/// </remarks>
+		protected override void OnMapped()
 		{
-			base.OnShown();
+			base.OnMapped();
 
 			if (_packager == null)
 			{

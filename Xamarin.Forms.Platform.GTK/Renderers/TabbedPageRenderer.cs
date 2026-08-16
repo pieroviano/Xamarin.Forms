@@ -90,15 +90,31 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			Widget?.SetBackgroundImage(Page.BackgroundImageSource);
 		}
 
+		/// <remarks>
+		/// Only <c>disposing == true</c> may touch other objects - the Forms page and the notebook's
+		/// native signal - so none of this may run from the finalizer. See the remarks on
+		/// ViewRenderer.Dispose.
+		///
+		/// The Page null check is not defensive padding either: Page is <c>Element as TPage</c> and
+		/// AbstractPageRenderer.Dispose nulls Element, while Destroy() calls Dispose(true) without
+		/// suppressing finalization - so a second pass is guaranteed and would dereference null here.
+		/// CarouselPageRenderer guards the same way.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			Page.PagesChanged -= OnPagesChanged;
-			Page.ChildAdded -= OnPageAdded;
-			Page.ChildRemoved -= OnPageRemoved;
-
-			if (Widget != null)
+			if (disposing)
 			{
-				Widget.NoteBook.SwitchPage -= OnNotebookPageSwitched;
+				if (Page != null)
+				{
+					Page.PagesChanged -= OnPagesChanged;
+					Page.ChildAdded -= OnPageAdded;
+					Page.ChildRemoved -= OnPageRemoved;
+				}
+
+				if (Widget != null)
+				{
+					Widget.NoteBook.SwitchPage -= OnNotebookPageSwitched;
+				}
 			}
 
 			base.Dispose(disposing);

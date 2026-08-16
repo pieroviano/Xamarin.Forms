@@ -105,9 +105,26 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			}
 		}
 
-		protected override void OnShown()
+		/// <summary>
+		/// The page has reached the screen: apply its appearance and tell Forms it appeared.
+		/// </summary>
+		/// <remarks>
+		/// MEASURED, and this is why the hook moved: it used to hang off the Gtk 3 "show" vfunc
+		/// (OnShown), which no longer runs. Gtk 3 widgets were born hidden and gtk_widget_show_all
+		/// walked the tree flipping each one, so "show" fired once per widget; Gtk 4 widgets are
+		/// born visible, so setting Visible = true is not a transition and the vfunc is never
+		/// invoked. Probed on both bindings with the same widget: Gtk 3 fires it once, Gtk 4 zero
+		/// times, while "map" fires on both. Map is also the more honest hook for SendAppearing -
+		/// a mapped widget really is on screen, a shown one merely asked to be.
+		///
+		/// This is the whole reason a Forms page rendered as nothing under Gtk 4: this method and
+		/// PageRenderer.OnMapped are the ONLY initial callers of UpdateBackgroundColor and of the
+		/// packager that builds a page's child renderers, so neither the content nor the background
+		/// was ever created. Chaining to base is mandatory: skipping it leaves the widget unmapped.
+		/// </remarks>
+		protected override void OnMapped()
 		{
-			base.OnShown();
+			base.OnMapped();
 
 			if (_appeared || _disposed)
 				return;

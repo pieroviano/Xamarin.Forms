@@ -10,9 +10,14 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		#region VisualElementRenderer overrides
 
+		/// <remarks>
+		/// Only <c>disposing == true</c> may touch other objects: detaching a GtkSharp signal is a
+		/// native g_signal_handler_disconnect, which must not run on the finalizer thread. See the
+		/// remarks on ViewRenderer.Dispose.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			var formsButton = Control;
+			var formsButton = disposing ? Control : null;
 			if (formsButton != null)
 			{
 				formsButton.Clicked -= Button_Clicked;

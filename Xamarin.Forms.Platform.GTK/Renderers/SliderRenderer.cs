@@ -11,14 +11,20 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		protected override bool PreventGestureBubbling { get; set; } = true;
 
+		/// <remarks>
+		/// The detach belongs INSIDE the guard: Range.ValueChanged's remover is a native
+		/// g_signal_handler_disconnect, which must not run on the finalizer thread. See the remarks
+		/// on ViewRenderer.Dispose. This is the shape CheckBoxRenderer and TimePickerRenderer already
+		/// use.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			if (Control != null)
-				Control.ValueChanged -= OnControlValueChanged;
-
 			if (disposing && !_disposed)
 			{
 				_disposed = true;
+
+				if (Control != null)
+					Control.ValueChanged -= OnControlValueChanged;
 			}
 
 			base.Dispose(disposing);

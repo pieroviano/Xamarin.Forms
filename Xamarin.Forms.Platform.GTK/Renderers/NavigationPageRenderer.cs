@@ -79,7 +79,11 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			base.Dispose(disposing);
 		}
 
-		protected override void OnShown()
+		/// <remarks>
+		/// OnMapped, not the Gtk 3 "show" vfunc: Gtk 4 widgets are born visible, so that vfunc never
+		/// fires. See the remarks on AbstractPageRenderer.OnMapped.
+		/// </remarks>
+		protected override void OnMapped()
 		{
 			if (_appeared)
 				return;
@@ -88,7 +92,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 			PageController.SendAppearing();
 
-			base.OnShown();
+			base.OnMapped();
 		}
 
 		/// <remarks>

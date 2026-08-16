@@ -26,9 +26,16 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			return new SizeRequest(size);
 		}
 
+		/// <remarks>
+		/// Only <c>disposing == true</c> may touch other objects. Detaching a GtkSharp signal is a
+		/// native call - Clicked's remover reaches SignalClosure.Disconnect on a raw pointer - and
+		/// GLib's own finalizer path refuses to do that inline for exactly that reason. See the
+		/// remarks on ViewRenderer.Dispose; ImageButtonRenderer, which wraps the same control,
+		/// already guards this correctly.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			if (Control != null)
+			if (disposing && Control != null)
 			{
 				Control.Clicked -= OnButtonClicked;
 				Control.ButtonPressEvent -= OnButtonPressEvent;
