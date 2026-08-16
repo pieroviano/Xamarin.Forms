@@ -13,13 +13,28 @@ namespace Xamarin.Forms.Platform.GTK
 		private string _defaultAccessibilityLabel;
 		private string _defaultAccessibilityHint;
 
+		/// <remarks>
+		/// The <c>disposing</c> guard is not tidiness. Without it this ran from the finalizer too,
+		/// and <c>Gtk.Widget.Destroy</c> reads <c>Parent</c>, which asks GtkSharp to produce a
+		/// managed wrapper for the parent's native handle. On the finalizer thread that peer may
+		/// already be gone, so GtkSharp tries to construct a fresh one and throws
+		/// <c>GLib.MissingIntPtrCtorException</c> - no renderer declares the (IntPtr) constructor
+		/// that would need - and an exception on the finalizer thread takes the process with it.
+		/// MEASURED: the gallery died on exactly that, via ImageRenderer.
+		///
+		/// Only <c>disposing == true</c> may touch other objects; that is the IDisposable contract,
+		/// and it is what <c>ImageRenderer.Dispose</c> one level down already does. The native widget
+		/// needs no finalizer-time help here in any case - GTK owns it, and its parent drops it when
+		/// the tree goes away.
+		/// </remarks>
 		protected override void Dispose(bool disposing)
 		{
-			if (Control != null)
+			if (disposing && Control != null)
 			{
 				Control.Destroy();
 				Control = null;
 			}
+
 			base.Dispose(disposing);
 		}
 
