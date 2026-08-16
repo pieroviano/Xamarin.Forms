@@ -1,7 +1,7 @@
 name: linux-gtk
 
 # The GTK backend is the only one of this fork's platform legs that still exists after the prune
-# in cc8874b9b, so it is the only one with CI here. This workflow is not a supplement to the
+# to the GTK leg, so it is the only one with CI here. This workflow is not a supplement to the
 # upstream Windows/macOS pipelines - azure-pipelines.yml and build/steps/*.yml were deleted by
 # that prune, so this IS the CI for this fork.
 on:
