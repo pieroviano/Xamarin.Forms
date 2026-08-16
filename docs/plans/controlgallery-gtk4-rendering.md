@@ -982,3 +982,57 @@ regression baseline records *current verified state*, not aspiration. Both are n
 byte-identical (§6.1), so on the machine that produced the baseline any failure of the pixel gate is
 a real change. Regenerate deliberately, update the sign-off, and say in the commit message why the
 image moved.
+
+---
+
+## 11. Renderer suite after the library fixes
+
+Re-measured on 2026-08-16, after the `OnMapped`, `RemoveFromContainer`, compat `EventBox`,
+`SizeAllocate`, child-attach and layout-anchor fixes.
+
+| Suite | Documented before | Now |
+|---|---|---|
+| `Core.UnitTests` | 4856 | **4856 passed / 0 failed** |
+| `Xaml.UnitTests` | 1043 | **1043 passed / 0 failed** |
+| `Platform.GTK.UnitTests` | 42 failed of 185 | **7 failed of 177** |
+
+The GTK figure excludes `PropertyMappingTests` (the known hang), so it is not strictly
+apples-to-apples — but the direction is unambiguous and the two tripwires are exactly on their
+documented counts. The plan predicted these library-level fixes would move the renderer suite
+downward, and they did.
+
+The 7 remaining: 3 `FontLayoutTests`, 2 `VisualElementTrackerTests` (`InputTransparent` scoping),
+`M5ControlTests.LineGeometryChangesAreAcceptedAfterAllocation`,
+`CoreControlMappingTests.ImageLoadsItsSourceAndFollowsAChange`, and
+`CoreControlMappingTests.BoxViewPaintsItsColourAndRepaintsOnChange` — the last being the
+Windows/Linux disagreement already documented in `CLAUDE.md`.
+
+### `FormsEntryFontAttributesChangeAtRuntime` is flaky, and possibly aggravated by the font fix
+
+Two of the three font failures — `EntryFontWeightRoundTripRestoresTheTextLayout`
+("the entry's own Pango layout must widen under bold: normal=172 bold=172") and
+`ClearingTheFontRemovesTheAttributes` ("clearing must return the label to the theme font's width:
+407 != 141") — fail in **every** configuration and are genuinely pre-existing.
+
+The third is not deterministic. Isolated by reverting only the font commit (`971ad859`) and
+re-running:
+
+| | fails |
+|---|---|
+| without the font fix | 1 of 4 runs |
+| with the font fix | 4 of 5 runs |
+
+So it is flaky either way, but markedly more likely to fail with the change in. **No mechanism is
+known**: the commit touches Label markup, `EditorRenderer` and an additive `ResolveFont` helper, none
+of which is on an `Entry`'s path. The plausible link is shared process state — this suite mutates
+`Device.PlatformServices`, the `Registrar` and a single GTK context, and runs unparallelised, so an
+earlier Label test whose metrics changed can perturb a later Entry one. Unproven.
+
+Do not "fix" it from this evidence. Establish the mechanism first, with enough repeats to separate
+the two rates properly; 4-of-5 against 1-of-4 is suggestive, not a result.
+
+**A trap worth repeating**, because it nearly produced a wrong conclusion here: `git revert
+--no-commit` stages its inverse, and `git checkout -- <file>` then restores the file *from the index*,
+i.e. to the reverted content — so a "with the change" run measured the change absent. Verify which
+state the tree is actually in (`grep` for a token the commit introduced) before trusting a
+before/after comparison.
