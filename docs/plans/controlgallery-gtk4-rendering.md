@@ -392,3 +392,80 @@ work caused and it must be resolved, not absorbed.
   in `gtk4-migration.md` §6, and unrelated to what §2 measured.
 - CI integration of the screenshot test: it is Windows-only and non-headless, and the existing lane
   (`.github/workflows/linux-gtk.yml`) is Ubuntu. Adding a Windows lane is a separate decision.
+
+---
+
+## 9. Progress — 2026-08-16
+
+Steps 1, 2, 4 and 5 done; step 3 (R4) still open. Measured against §2 each time, as §5 requires.
+
+| Observable | §2 baseline | Now |
+|---|---:|---:|
+| `gtk_box_append` assertions | 14 | **0** |
+| allocate-without-measure | 6 | **0** |
+| Pango font fallback | 1 | 1 *(pre-existing, R5, sequenced last)* |
+| total stderr lines | 21 | **1** |
+| window size | 828 × 7860 | **828 × 629** *(reference: 816 × 639)* |
+| flyout + detail rows | absent | **still absent** |
+
+### What was fixed, and where
+
+**R2 — GtkSharp** (`35257d9cc`). `Box.Add`/`PackStart`/`PackEnd`, `Fixed.Add`, `Grid.Add` now refuse
+to append a child that is already parented, and detach it from a previous parent first, through that
+parent's own `Remove` rather than `gtk_widget_unparent`. `Container.Add` had had the first half of
+this guard all along; the partials never did.
+
+**R3 — GtkSharp** (`35257d9cc`), and it was one line from being invisible. `Widget.SizeAllocate`
+allocated without measuring. The single call site in the whole backend is
+`FlyoutPage.AllocateWrapperToRevealer` (`FlyoutPage.cs:447`), which measures the **revealer**
+(`:434-435`) and then allocates the **wrapper** — and Gtk 4's precondition is on the widget being
+allocated, so it was never satisfied. That is why all six warnings named `EventBox`, and why the
+flyout "animated invisibly": the allocation was refused every frame.
+
+**R1 — Xamarin.Forms** (`f3908350`). Root cause confirmed by instrumenting
+`Container.MeasureChildren` (§4.1): the window's only child, `PlatformRenderer`, inherited
+`GtkFormsContainer`'s union-of-children measure, and Gtk 4 sizes a toplevel to
+`max(default size, child minimum)` — so that answer beat `SetDefaultSize(800, 600)` and formed a
+feedback loop with `FormsWindow.OnSizeAllocated` feeding the new height back into Forms. The climb
+was visible in the log as **1024 → 1096 → 1168 … at exactly 72px a pass**,
+`GtkToolbarConstants.ToolbarHeight`. `PlatformRenderer.OnMeasure` now returns zero.
+
+The plan's §5 note about reordering was right, and it fired: fixing R2/R3 first made the window
+*worse* (7860 → 26292), because allocations that now propagate and children that now really attach
+gave the runaway more to inflate to. R1 had to land before anything else could be judged.
+
+### A defect the plan did not predict
+
+Once the layout fixes let the gallery run further it **died on the finalizer thread**:
+`GLib.MissingIntPtrCtorException` out of `ImageRenderer`. `ViewRenderer.Dispose` called
+`Control.Destroy()` regardless of the `disposing` flag; `Gtk.Widget.Destroy` reads `Parent`, which
+asks GtkSharp to wrap the parent's native handle, and on the finalizer thread that peer may be gone,
+so it tries to construct one — and no renderer declares the `(IntPtr)` constructor that needs. Fixed
+by honouring `disposing`, which `ImageRenderer.Dispose` one level down already did.
+
+**Related, unfixed, and worth a sweep:** eight more renderers override `Dispose(bool)` and ignore the
+flag entirely — `ButtonRenderer`, `ListViewRenderer`, `OpenGLViewRenderer`, `PageRenderer`,
+`RadioButtonRenderer`, `ScrollViewRenderer`, `StepperRenderer`, `TabbedPageRenderer`. Each is the
+same latent crash.
+
+### R4 — where the investigation stands
+
+Ruled out so far:
+
+- **Not the missing appends (R2).** They are zero now and the content is still absent.
+- **Not `Fixed` swallowing the layout hook.** `FlyoutPage` overrides `OnSizeAllocated`, and
+  `Drawing.Compat.cs:159-188` does give `Fixed` that hook and drives it from `OnSizeAllocate`.
+- **Not `ShowAll` non-recursion on its own.** The compat `ShowAll` is `Visible = true` and `NoShowAll`
+  is inert (`Widget.Compat.cs:437, 511`), but Gtk 4 widgets are visible by default, so this is
+  consistent rather than lossy — it needs confirming against a real tree walk, not assumed.
+
+Next, and this is §4.2's first bullet, not yet run: walk the tree from `PlatformRenderer` with
+`FirstChild`/`NextSibling`, logging each node's type, `Visible` and allocation, to separate
+"never attached" from "attached but zero-sized" from "attached, sized, not painted". The three have
+different fixes and the capture alone cannot tell them apart.
+
+### Regression state
+
+GtkSharp `1708 passed / 0 failed / 36 skipped` — unchanged from its documented baseline. Bindings
+are at **4.22.4.26228**; `Directory.Build.props:120` and `Directory.Nuget.Props:18` both bumped, and
+`project.assets.json` confirms the new version resolved rather than a cached one.
