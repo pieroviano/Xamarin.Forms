@@ -489,6 +489,17 @@ possible and each citation was rewritten to stand on its own:
   prune is now described without a SHA, pointing here instead.
 - `Version.targets` — the illustrative error string now reads `sha.<commit>`.
 
+**Done on both branches**, as §7 requires: `1b0e6550` on `gtk4`, `94c366c9` on `5.0.0`. The 5.0.0
+edit was made through a throwaway worktree so the checked-out `gtk4` tree was never disturbed, and
+its wording names the `gtk4` branch when pointing here, because `docs/plans/` does not exist on
+`5.0.0`. Consequence to expect: the two branches now carry near-identical but independent edits to
+the same four files, so a future merge of `5.0.0` into `gtk4` will conflict there — trivially, and on
+prose only.
+
+(Worktree note for anyone repeating this: `git worktree add` under the agent scratchpad path failed
+with *"Could not reset index file to revision 'HEAD'"* after checking out all 4273 files — Windows
+MAX_PATH. A short path such as `d:\CommonLibrary\_xf-wt-500` works.)
+
 ### Still open
 
 - **§8, the push**, deliberately not run. `git push --force origin 5.0.0 gtk4`, after re-checking
