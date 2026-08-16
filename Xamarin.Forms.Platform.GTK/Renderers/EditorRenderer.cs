@@ -178,8 +178,13 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private static void AdjustMinimumHeight(TextView textView, FontDescription font = null)
 		{
-			var fDescr = font != null ? font : textView.GetDefaultFont(Gtk.StateFlags.Normal);
-			var metrics = textView.PangoContext.GetMetrics(font, Language.Default);
+			// ResolveFont, not the raw description: GetMetrics loads a fontset from what it is given
+			// and does not merge with the context, so the family-less description FontDescriptionHelper
+			// produces for an element that names no font family would be looked up verbatim - Pango
+			// logs 'couldn't load font "Normal 11", falling back to "Sans 11"' and then measures the
+			// fallback. This also fixes the metrics: fDescr was previously computed and discarded.
+			var fDescr = textView.ResolveFont(font);
+			var metrics = textView.PangoContext.GetMetrics(fDescr, Language.Default);
 			var pangoUnits = (metrics.Ascent + metrics.Descent) / Pango.Scale.PangoScale;
 
 			// Gtk 4 removed the screen resolution (it went with GdkScreen), and the Pango context
