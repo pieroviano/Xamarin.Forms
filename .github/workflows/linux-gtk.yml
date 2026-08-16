@@ -97,8 +97,21 @@ jobs:
       # upstream's arrangement, not this port's, and it means the XAML suite cannot compile in
       # Release at all. Debug is also the configuration every gate in docs/plans/gtk-linux-net10.md
       # is measured in, so CI and the plan now agree.
+      # Xamarin.Forms.Gtk.Linux.slnf, NOT Xamarin.Forms.Gtk.sln, and that is the ONLY difference:
+      # the filter lists every project in the solution except Xamarin.Forms.ControlGallery.GTK
+      # .ScreenshotTests. That one targets net10.0-windows and photographs the running gallery's
+      # toplevel with user32!PrintWindow - a Win32 API with no X11/Wayland equivalent - so there is
+      # nothing an Ubuntu runner could do with it but fail to restore System.Drawing.Common's
+      # Windows assets and then not run a single test. It stays in the .sln so Visual Studio and a
+      # Windows `dotnet build Xamarin.Forms.Gtk.sln` still build it.
+      #
+      # A solution filter rather than a per-project OS condition on purpose: the exclusion is a
+      # property of THIS LANE, so it belongs in a file the lane names, where it is one line of
+      # review rather than a conditional buried in a csproj. Adding a project to the solution and
+      # forgetting the filter is a build that covers less than it looks like it does - if that
+      # happens, the symptom is a project that never appears in this job's output.
       - name: Build
-        run: dotnet build Xamarin.Forms.Gtk.sln -c Debug
+        run: dotnet build Xamarin.Forms.Gtk.Linux.slnf -c Debug
 
       # The two pre-existing suites are RUN AND REPORTED but do not gate this job. Nothing here
       # is skipped, filtered or weakened - the full suite runs and the .trx artifact carries

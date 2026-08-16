@@ -1,0 +1,20 @@
+{
+  "solution": {
+    "path": "Xamarin.Forms.Gtk.sln",
+    "projects": [
+      "Xamarin.Forms.Build.Tasks\\Xamarin.Forms.Build.Tasks.csproj",
+      "Xamarin.Forms.ControlGallery.GTK\\Xamarin.Forms.ControlGallery.GTK.csproj",
+      "Xamarin.Forms.Controls\\Xamarin.Forms.Controls.csproj",
+      "Xamarin.Forms.Core\\Xamarin.Forms.Core.csproj",
+      "Xamarin.Forms.Core.UnitTests\\Xamarin.Forms.Core.UnitTests.csproj",
+      "Xamarin.Forms.CustomAttributes\\Xamarin.Forms.CustomAttributes.csproj",
+      "Xamarin.Forms.Maps\\Xamarin.Forms.Maps.csproj",
+      "Xamarin.Forms.Maps.GTK\\Xamarin.Forms.Maps.GTK.csproj",
+      "Xamarin.Forms.Platform\\Xamarin.Forms.Platform.csproj",
+      "Xamarin.Forms.Platform.GTK\\Xamarin.Forms.Platform.GTK.csproj",
+      "Xamarin.Forms.Platform.GTK.UnitTests\\Xamarin.Forms.Platform.GTK.UnitTests.csproj",
+      "Xamarin.Forms.Xaml\\Xamarin.Forms.Xaml.csproj",
+      "Xamarin.Forms.Xaml.UnitTests\\Xamarin.Forms.Xaml.UnitTests.csproj"
+    ]
+  }
+}

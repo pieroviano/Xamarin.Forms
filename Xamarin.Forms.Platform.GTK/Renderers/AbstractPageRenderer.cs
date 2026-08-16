@@ -137,6 +137,17 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			PageController.SendAppearing();
 		}
 
+		/// <summary>
+		/// True when a Forms parent owns this page's <see cref="VisualElement.Bounds"/>.
+		/// </summary>
+		/// <remarks>
+		/// Xamarin.Forms lays out strictly top-down: a page with a <see cref="VisualElement"/> parent
+		/// is positioned by that parent's <c>LayoutChildren</c>, and a renderer's job is to make GTK
+		/// match those bounds - never the reverse. Only the root page has no Forms parent to size it,
+		/// and the platform gives it the window's size directly (FormsWindow.OnSizeAllocated).
+		/// </remarks>
+		protected bool IsLaidOutByFormsParent => Element?.Parent is VisualElement;
+
 		protected override void OnSizeAllocated(Gdk.Rectangle allocation)
 		{
 			base.OnSizeAllocated(allocation);
@@ -144,14 +155,26 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 			var now = DateTime.Now;
 			var diff = now.Subtract(_lastAllocationTime);
 
+			// MEASURED, and this guard is what makes the page layout converge to one answer. Writing
+			// the GTK allocation back into a child page's Forms Bounds closes a loop with no anchor:
+			// NavigationPageRenderer derives ContainerArea as (allocation - toolbar), the child page's
+			// content is then requested at that height inside a Controls.Page that adds the toolbar
+			// back, so the allocation reproduces itself and EVERY height is a fixed point. The gallery
+			// settled at the correct 561 or at 633 (one GtkToolbarConstants.ToolbarHeight too tall)
+			// depending only on which value the first allocation pass happened to observe - 6 launches
+			// in 10 landed on 633 and then emitted "Allocation height too small ... needs at least
+			// 800x633" forever. The parent's assignment is the anchor; it must not be overwritten.
 			if (_lastAllocation != allocation)
 			{
 				_lastAllocation = allocation;
 				_lastAllocationTime = now;
-				SetPageSize(_lastAllocation.Width, _lastAllocation.Height); // Check ToolBar for size calculations.
+
+				if (!IsLaidOutByFormsParent)
+					SetPageSize(_lastAllocation.Width, _lastAllocation.Height); // Check ToolBar for size calculations.
+
 				PageQueueResize();
 			}
-			else if (diff > TimeSpan.FromMilliseconds(50)) // Prevent infinite resizing loops for very fast layout changes
+			else if (!IsLaidOutByFormsParent && diff > TimeSpan.FromMilliseconds(50)) // Prevent infinite resizing loops for very fast layout changes
 			{
 				SetPageSize(allocation.Width, allocation.Height);
 			}

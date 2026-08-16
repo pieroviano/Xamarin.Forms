@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      net10.0-windows, and Windows-only on purpose. This suite drives the REAL gallery
+      executable and photographs its toplevel with user32!PrintWindow, which has no analogue
+      under X11/Wayland, so there is nothing here that a Linux run could do. Windows also gives
+      the capture a genuine compositor: PrintWindow renders an occluded, background window, so
+      the gallery never has to be foregrounded and the suite does not fight the desktop.
+
+      It is excluded from the Ubuntu CI lane by NOT being in the solution filter that lane
+      builds - Xamarin.Forms.Gtk.Linux.slnf, which .github/workflows/linux-gtk.yml passes to
+      `dotnet build` in place of the full solution. The project IS in Xamarin.Forms.Gtk.sln so
+      that Visual Studio and a Windows `dotnet build Xamarin.Forms.Gtk.sln` pick it up.
+    -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>Xamarin.Forms.ControlGallery.GTK.ScreenshotTests</AssemblyName>
+    <RootNamespace>Xamarin.Forms.ControlGallery.GTK.ScreenshotTests</RootNamespace>
+    <!-- xUnit v3 test projects are executables, not libraries - same as the other three suites. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+      SYSLIB1054: the interop below is hand-written DllImport rather than LibraryImport. It is a
+      verbatim lift of a working capture path (see Interop/NativeMethods.cs), and rewriting it to
+      the source generator while porting it would have meant re-testing pixels instead of copying
+      them. TreatWarningsAsErrors is on repo-wide, so this has to be named rather than ignored.
+    -->
+    <NoWarn>$(NoWarn);SYSLIB1054</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Where the gallery executable is expected. Derived from $(Configuration) rather than
+      hardcoded so a Release run photographs the Release build. The bin-wsl/ redirection that
+      Directory.Build.props applies is Linux-only and this project never runs there.
+    -->
+    <XFGalleryExePath>$(MSBuildThisFileDirectory)..\Xamarin.Forms.ControlGallery.GTK\bin\$(Configuration)\net10.0\Xamarin.Forms.ControlGallery.GTK.exe</XFGalleryExePath>
+    <XFBaselineDirectory>$(MSBuildThisFileDirectory)Baselines</XFBaselineDirectory>
+    <!--
+      Regenerating the golden image is an explicit, reviewed act (plan section 6): a mismatch
+      NEVER overwrites the baseline on its own. Pass -p:UpdateGalleryBaseline=true, or set
+      XF_UPDATE_GALLERY_BASELINE=1 in the environment when the binaries are already built. The
+      run then writes the capture and reports as SKIPPED, never as passed - a regenerating run
+      has not verified anything.
+    -->
+    <UpdateGalleryBaseline Condition="'$(UpdateGalleryBaseline)' == ''">false</UpdateGalleryBaseline>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="XFGalleryExePath" Value="$(XFGalleryExePath)" />
+    <AssemblyMetadata Include="XFBaselineDirectory" Value="$(XFBaselineDirectory)" />
+    <AssemblyMetadata Include="XFUpdateGalleryBaseline" Value="$(UpdateGalleryBaseline)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Build ordering only. ReferenceOutputAssembly="false" keeps the gallery's assembly - and the
+      whole Forms + GtkSharp closure behind it - out of this project's compile and output: the
+      suite talks to the gallery as a PROCESS, through Win32, and linking it would only invite
+      someone to start it in-process, which is exactly the thing this harness must not do. The
+      TFMs also differ (net10.0 vs net10.0-windows), so SetTargetFramework pins the reference
+      instead of letting the SDK negotiate one.
+    -->
+    <ProjectReference Include="..\Xamarin.Forms.ControlGallery.GTK\Xamarin.Forms.ControlGallery.GTK.csproj"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      Private="false" />
+  </ItemGroup>
+
+</Project>
