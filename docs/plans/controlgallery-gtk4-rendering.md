@@ -7,7 +7,7 @@ is itself wrong, past it.
 |---|---|
 | Under repair | `d:\CommonLibrary\Xamarin.Forms`, branch **`gtk4`** (`e2e6fbe1` at the time of §9/§11) |
 | Reference | the **GTK 3 submodule** at `d:\CommonLibrary\Xamarin.Forms\Xamarin.Forms\`, branch **`5.0.0`** (`4ee520f8`), carrying its own `Xamarin.Forms.Gtk3.sln` |
-| Bindings | `d:\CommonLibrary\GtkSharp`, branch **`net4x.gtk4`** (`5f79efd6f`), `Net4x.*` 4.22.4.26229, in scope for edits |
+| Bindings | `d:\CommonLibrary\GtkSharp`, branch **`net4x.gtk4`** (`5f79efd6f`), `Net4x.*` 4.22.4.26228, in scope for edits |
 | Visual comparison | the `window-capture` MCP server from `d:\CommonLibrary\ProcessWindowBitmapSave` (`list_windows`, `capture_window`), and the committed harness in §6 |
 
 **The sibling clone `d:\CommonLibrary\Xamarin.Forms_Gtk3` no longer exists.** It was replaced by the
@@ -257,7 +257,7 @@ this reason) rather than to fight `GtkFixedLayout`.
 `PlatformRenderer.OnMeasure` returning zero is correct and it stays; §4.1 confirmed the summation
 chain, and the log showed the climb at exactly 72 px a pass. But **that was the amplifier, not the
 whole source**. The 72 px runaway's real origin was the **compat `EventBox` using `GtkFixed`'s
-allocation rule instead of `GtkBin`'s** (fixed in the bindings, 4.22.4.26229, commit `2f04f35f`).
+allocation rule instead of `GtkBin`'s** (fixed in the bindings, 4.22.4.26228, commit `2f04f35f`).
 A `GtkBin` gives its single child the whole allocation; `GtkFixed` gives each child its *natural*
 size at a position. With the `Fixed` rule, a page's content collapsed to natural size instead of
 filling what it was given, and every renderer above it then re-derived a size request from that
@@ -604,7 +604,7 @@ been re-measured since the §10 fix**, and it should be — that fix changed `Ab
 |---|---|---|---|
 | R1's self-reinforcing loop makes the steady state look consistent and the wrong widget gets "fixed" | High | §4.1 instruments the *first* measure pass specifically, and cross-checks against the GTK 3 build | **Yes, and worse than predicted.** §10's variant of it — a recurrence with no anchor at all, in which *every* height is a fixed point — cost three failed fixes before anyone stopped treating it as arithmetic. The mitigation worked where it was applied; the risk was simply not stated broadly enough. |
 | Fixing R2 in GtkSharp changes behaviour for every consumer of the bindings | Medium | The change makes the shims match `Container.Add`, which is the existing in-repo precedent; the GtkSharp suite (1708 passed / 0 failed / 36 skipped) is the regression gate, and reparenting semantics get stated in the doc comment | No. Suite unchanged. |
-| Same-day repack serves a stale package and a fix appears to do nothing | Medium, and it will happen | §1.3: pass `--BuildVersion` explicitly; if a fix produces no observable change, verify the package version in `project.assets.json` **before** re-diagnosing | No — the counter was used from the start. Bindings are at 4.22.4.26229. |
+| Same-day repack serves a stale package and a fix appears to do nothing | Medium, and it will happen | §1.3: pass `--BuildVersion` explicitly; if a fix produces no observable change, verify the package version in `project.assets.json` **before** re-diagnosing | No — the counter was used from the start. Bindings are at 4.22.4.26228. |
 | Screenshot baseline brittleness (DPI/theme/fonts) makes the gate flaky | Medium | §6's tolerance design, plus a pre-committed fallback to the geometry-and-log gate | **No, and the fear was misplaced** — run-to-run capture is byte-identical here (§6.1). |
 | Decision 2 ("fix GTK 3's flaws too") quietly expands into a redesign | Medium | Scope is fixed to the two named flaws in step 8; anything else found goes to §8 as follow-up | Not yet — step 8 is untouched. But its *premise* has drifted (§11): the reference no longer shows one of the two named flaws, and the GTK 4 build now does. |
 | R5 shifts label metrics and invalidates the baseline | Low, certain | Sequenced last, with an explicit re-baseline step | Yes, as designed. R5 landed before the baseline was ever taken, so nothing had to be re-baselined. |
@@ -732,7 +732,7 @@ across the live tree is what proved causation — the missing content appeared a
 ### Regression state
 
 GtkSharp `1708 passed / 0 failed / 36 skipped` — unchanged from its documented baseline. Bindings
-are at **4.22.4.26229** (26228 plus the compat `EventBox` allocation rule, R1);
+are at **4.22.4.26228** (26228 plus the compat `EventBox` allocation rule, R1);
 `Directory.Build.props:120` and `Directory.Nuget.Props:18` both bumped, and `project.assets.json`
 confirms the new version resolved rather than a cached one. `Xamarin.Forms.Core.UnitTests`
 4856 / 0 / 5 and `Xamarin.Forms.Xaml.UnitTests` 1043 / 0 / 4, both re-run 2026-08-16 (§6).

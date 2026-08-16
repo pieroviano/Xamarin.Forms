@@ -117,7 +117,7 @@
       See docs/plans/gtk4-migration.md section 0.1.
     -->
     <GtkSharpVersion Condition="'$(GtkSharpVersion)' == ''">4.22.4</GtkSharpVersion>
-    <GtkSharpVersionBuildSuffix Condition="'$(GtkSharpVersionBuildSuffix)' == ''">26229</GtkSharpVersionBuildSuffix>
+    <GtkSharpVersionBuildSuffix Condition="'$(GtkSharpVersionBuildSuffix)' == ''">26228</GtkSharpVersionBuildSuffix>
 
     <!--
       Net4x.NuGetUtility is Windows-only: its targets shell out to native-windows\NuGetUtility.exe.

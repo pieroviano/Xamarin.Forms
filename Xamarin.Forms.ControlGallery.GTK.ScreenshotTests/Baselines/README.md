@@ -13,7 +13,7 @@ signed it off. That sign-off is recorded below; the differences it accepts are i
 
 | | |
 |---|---|
-| Captured from | `gtk4` @ `e2e6fbe1` + the working-tree layout fix, `Net4x.*` 4.22.4.26229 |
+| Captured from | `gtk4` @ `e2e6fbe1` + the working-tree layout fix, `Net4x.*` 4.22.4.26228 |
 | Compared against | the GTK 3 submodule at `Xamarin.Forms/` (branch `5.0.0`, `4ee520f8`), captured the same way in the same session |
 | Toplevel | 828 × 629; the GTK 3 reference is 816 × 639 (802 × 632 as the DWM frame trims it) |
 | Convergence | 10 consecutive launches, all 828 × 629, one allocation critical each — the bistable layout of plan §10 is gone |
