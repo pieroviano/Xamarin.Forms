@@ -16,7 +16,7 @@
    and NuGet rejected it outright:
 
      error MSB4018: System.ArgumentException:
-       PackageVersion string specified '5.0.0.+1048-sha.2ceec4836-azdo.' is invalid.
+       PackageVersion string specified '5.0.0.+1048-sha.<commit>-azdo.' is invalid.
 
    Because every shipping csproj sets GeneratePackageOnBuild, that killed the plain
    `dotnet build Xamarin.Forms.Gtk.sln` step in the workflow - CI could not build itself.

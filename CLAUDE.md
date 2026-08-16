@@ -9,9 +9,11 @@ branch, which is also the default/PR-target branch here. Upstream Xamarin.Forms 
 support on May 1, 2024 and was succeeded by .NET MAUI; this repo is a maintenance fork of the
 5.0.0 line.
 
-**This fork has been pruned to the GTK leg only.** Commit `cc8874b9b` removed the Android, iOS,
-UAP, WPF, Tizen, MacOS and DualScreen projects, the Cake build, the Azure pipelines and the
-original `Xamarin.Forms.sln`. What remains is a shared portable UI abstraction
+**This fork has been pruned to the GTK leg only.** The prune removed the Android, iOS, UAP, WPF,
+Tizen, MacOS and DualScreen projects, the Cake build, the Azure pipelines and the original
+`Xamarin.Forms.sln`. No commit is cited here because none survives: those files were later purged
+from history entirely, which emptied the prune commit and dropped it — see
+`docs/plans/history-purge-deleted-files.md`. What remains is a shared portable UI abstraction
 (`Xamarin.Forms.Core`) mapped onto native **GTK 4** widgets by the renderers in
 `Xamarin.Forms.Platform.GTK`.
 

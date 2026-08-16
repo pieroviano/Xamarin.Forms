@@ -21,8 +21,10 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           action: "fix"
           #only-changed-files: true # only works for PRs
-          # Xamarin.Forms.sln was deleted by the prune in cc8874b9b; this job failed nightly
-          # against it until 2026-08-02. Xamarin.Forms.Gtk.sln is the only solution in the tree.
+          # Xamarin.Forms.sln was deleted when this fork was pruned to the GTK leg; this job failed
+          # nightly against it until 2026-08-02. Xamarin.Forms.Gtk.sln is the only solution in the
+          # tree. (The prune commit itself no longer exists: the purge of deleted files from history
+          # emptied it - see docs/plans/history-purge-deleted-files.md.)
           workspace: "Xamarin.Forms.Gtk.sln"
     
       - name: Commit files

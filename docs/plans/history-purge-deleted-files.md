@@ -1,5 +1,10 @@
 # Purging deleted files from history
 
+> **EXECUTED on 2026-08-16. See §11 for what actually happened.** Every commit SHA quoted in this
+> document is from the *pre-rewrite* history and no longer resolves in this repository; they remain
+> valid inside the backup bundle described in §3. The plan is kept as written, as the record of what
+> was decided and why.
+
 Removing, from every commit on every branch, the files this fork deleted — so they are no longer
 retrievable from history and no longer occupy the pack.
 
@@ -399,3 +404,96 @@ git clone https://github.com/pieroviano/Xamarin.Forms.git
 ```
 
 After §8 has run, only routes 1 and 2 remain.
+
+---
+
+## 11. Outcome — executed 2026-08-16
+
+Run in place on `d:\CommonLibrary\Xamarin.Forms` exactly as specified in §5, stopping before the push
+per decision 5. `origin` still holds the pre-rewrite history.
+
+### What the tips were
+
+Both branches had moved on since the plan was written: the two plan documents were committed and
+pushed as `fef32b8bd` *"Added plans"*, so `gtk4` was one commit further along and its tree hash was
+`43241e179…`, not the `fea15685…` recorded in §1.5. The path list was regenerated against the moved
+tips as §4 requires, and came back **identical: 2852 paths**, both safety checks clean.
+
+### Results
+
+| | Before | After |
+|---|---:|---:|
+| Commits (all refs) | 5884 | **4357** |
+| Objects | 71188 | **44308** |
+| Pack size | 79.73 MiB | **42.76 MiB** |
+| `5.0.0^{tree}` | `561f3ee37…` | `561f3ee37…` — **unchanged** |
+| `gtk4^{tree}` | `43241e179…` | `43241e179…` — **unchanged** |
+| `5.0.0…gtk4` | 0 / 2 | 0 / 2 |
+| `refs/replace/*` | 0 | 0 |
+
+**1527 commits were dropped as empty** — commits that touched only purged paths. That is 26% of the
+history, and it is the direct consequence of decision 4 combined with decision 2: most of upstream's
+Android- and iOS-only commits had nothing left in them once those trees were removed.
+
+The pack landed at 42.76 MiB against the 55–60 MiB the plan estimated; `gc --prune=now --aggressive`
+recovered more than the raw blob arithmetic in §2 predicted.
+
+### Verification
+
+- **§6.1 passed** — both tip trees byte-identical to pre-rewrite. This is the check that proves no
+  live file was caught by the path list.
+- **§6.2 passed** — 0 of the 2852 purged paths appear anywhere in the rewritten history.
+- **§6.4 passed** — `Xamarin.Forms.Gtk.sln` builds with 0 errors; `Core.UnitTests` **4856 passed /
+  0 failed**, `Xaml.UnitTests` **1043 passed / 0 failed**, both exactly their documented counts.
+
+**A spot check that looked like a failure and was not.** `git log --all -- Xamarin.Forms.Platform.Android`
+still reports 131 commits, and 72 paths under that directory survive in history. They are *not*
+purge-set members (confirmed: the intersection is empty, and the rewritten fork-point tree contains
+**zero** Android paths). They are files upstream itself deleted between 2016 and 2020 — before the
+fork point — and decision 1 deliberately left upstream's own churn alone. Anyone auditing this later
+should expect pre-fork deletions to remain and check the fork-point tree, not a `git log` pathspec.
+
+### Deviations from the plan
+
+1. **`git fetch origin` (§5) was deliberately skipped.** It would pull the pre-rewrite history back
+   into `refs/remotes/origin/*`, making all those objects reachable again and undoing the reclaim
+   before the force-push could prune them. `origin` is configured; it is simply not fetched. Fetch
+   only after §8 has run.
+2. **`git clean -xfd` (§6.4) was not run.** The dry run showed it would delete the `Packages/`
+   junction and `.claude/`. It was unnecessary regardless: §6.1 proves the working tree is byte-
+   identical to pre-rewrite, which is a stronger guarantee than a clean rebuild.
+3. **`Platform.GTK.UnitTests` was not run.** Byte-identical trees mean it cannot report anything new,
+   and it contains the known `PropertyMappingTests` hang (`gtk4-migration.md` §6).
+4. **`XFAllowStaleBuildTasks=true` was needed** for the build, as an MSBuild node outside this session
+   held the build-task DLL. Pre-existing and unrelated to the rewrite; noted because §6.4's command
+   does not mention it.
+
+### §1.1 found a second clone
+
+**`d:\CommonLibrary\Xamarin.Forms_Gtk3` is a clone of this repository** — same origin, contains the
+fork point, branches `5.0.0` @ `8feab8a3f` and `gtk4` @ `ca42b7385`. It is not disposable: it is the
+GTK 3 reference build that `controlgallery-gtk4-rendering.md` depends on. Decision taken: **leave it
+untouched.** A local rewrite does not modify it, so it keeps working and doubles as a third copy of
+pre-rewrite history.
+
+**This is the open item for whoever runs §8.** Once `origin` is force-pushed, that clone can never
+pull again and must be re-cloned or kept deliberately as a detached archive. No WSL-only clone
+exists; the two `/mnt/d` hits are these same two directories.
+
+### §7 references repaired
+
+`cc8874b9b` and `2ceec4836` both mapped to `0000…` — dropped as empty, so no translation was
+possible and each citation was rewritten to stand on its own:
+
+- `.github/workflows/dotnet-format-daily.yml`, `.github/workflows/linux-gtk.yml`, `CLAUDE.md` — the
+  prune is now described without a SHA, pointing here instead.
+- `Version.targets` — the illustrative error string now reads `sha.<commit>`.
+
+### Still open
+
+- **§8, the push**, deliberately not run. `git push --force origin 5.0.0 gtk4`, after re-checking
+  §1.4 and deciding the fate of the second clone above. Remember that GitHub keeps the old commits
+  reachable by SHA until it garbage-collects.
+- **Backups to retain** until the push is verified from a fresh clone:
+  `d:\CommonLibrary\_backup-xf-prepurge\xamarin-forms-prepurge.bundle` (78.5 MiB, `git bundle verify`
+  clean, records a complete history) and `dot-git-copy\` (86.8 MiB).
