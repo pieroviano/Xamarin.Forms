@@ -572,3 +572,38 @@ Not attempted yet, and it must be validated with six launches, not one.
 `Xamarin.Forms/` on branch `5.0.0`, carrying its own `Xamarin.Forms.Gtk3.sln`. The §1.1 build command
 and the header table's path are stale; `git diff 5.0.0 gtk4` still works because both branches remain
 in this repository.
+
+### Third elimination, and a reframing
+
+| Hypothesis | Change | Result |
+|---|---|---|
+| The container is sized a toolbar short; mirror `SetPageSize`'s subtraction with an addition | `UpdateChildrenLayout` (`AbstractPageRenderer.cs:288-292`) adds `ToolbarHeight` when the child page is in a `NavigationPage` with a nav bar | **6 bad of 6** |
+
+**Three arithmetic fixes have now been tried, in three different places, and all three produced
+exactly 6 bad launches out of 6 against a 6-in-10 baseline.** Nothing improved it; everything made it
+strictly consistent. That uniformity is itself the evidence: if this were an off-by-one-toolbar
+arithmetic error, at least one of the three should have moved the ratio in the right direction, and
+correcting it in the right place should have fixed it outright.
+
+**Read it as a convergence race, not a wrong constant.** The page layout path is eight nested
+`GLib.Idle.Add` deferrals across four files — `AbstractPageRenderer.cs:220, 249, 353`,
+`NavigationPageRenderer.cs:141, 569`, `VisualElementRenderer.cs:266, 309`, `Controls/Page.cs:186` —
+every one of them a documented workaround for GTK discarding a resize queued from inside
+size-allocate. They race each other. The same binary settles at 561 or at 633 depending on which
+idle callback observes which stale value first, and any change that adds work to that path shifts the
+timing so the loser wins every time. The 72 is not a miscalculation; it is the gap the system settles
+into when a pass runs against a stale request.
+
+So the productive question is not "which number is wrong" but **"why does the layout need eight
+deferred passes to converge, and what makes the order non-deterministic"**. Concretely, next:
+
+1. Instrument the order. Log every one of those eight callbacks with a sequence number and the
+   allocation/request it observes, over ten launches, and diff a good run against a bad one. The
+   divergence point is the defect.
+2. The `50ms` re-entrancy guard at `AbstractPageRenderer.cs:154` is a wall-clock threshold in a
+   layout path — a prime suspect for machine- and load-dependent behaviour.
+3. Only then consider collapsing the deferrals into a single ordered pass. That is the real fix if
+   the ordering is the cause, and it is a redesign of this path rather than an edit to it.
+
+**Do not attempt another arithmetic adjustment without evidence from step 1.** Three have been tried
+and paid for; the constant is not where the defect lives.
