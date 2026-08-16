@@ -141,16 +141,46 @@ namespace Xamarin.Forms.Platform.GTK.Extensions
 			}
 		}
 
+		/// <summary>
+		/// Removes a child from its parent, whatever kind of widget that parent is.
+		/// </summary>
+		/// <remarks>
+		/// MEASURED: this was a single <c>self as Container</c> cast, which was exhaustive in Gtk 3 -
+		/// every container derived from GtkContainer. Gtk 4 has no container class at all: Box, Fixed,
+		/// Grid and the compatibility Container are unrelated types that each carry their own Remove,
+		/// so the cast returned null for a Box or a Fixed and the removal silently did nothing. The
+		/// widgets a caller believed it had replaced stayed parented for good - measured on a
+		/// FlyoutPage as the placeholder Detail and Flyout event boxes sitting beside their
+		/// replacements, and the hamburger title bar still packed in Split mode, where
+		/// RefreshDisplayTitle had removed it under Gtk 3.
+		///
+		/// The dispatch mirrors GtkSharp's own ChildAttach.Detach, so that add and remove agree on
+		/// what owns a child.
+		/// </remarks>
 		public static void RemoveFromContainer(this Widget self, Widget child)
 		{
-			var container = self as Container;
+			if (self == null || child == null || child.Parent != self)
+				return;
 
-			if (child != null && child.Parent != null)
+			// Gtk-qualified throughout: unqualified, Grid binds to Xamarin.Forms.Grid in this
+			// namespace, not the widget.
+			switch (self)
 			{
-				if (container != null && container.HasChild(child))
-				{
+				case Gtk.Container container:
 					container.Remove(child);
-				}
+					break;
+				case Gtk.Box box:
+					box.Remove(child);
+					break;
+				case Gtk.Fixed fixd:
+					fixd.Remove(child);
+					break;
+				case Gtk.Grid grid:
+					grid.Remove(child);
+					break;
+				default:
+					child.Unparent();
+					break;
 			}
 		}
 
