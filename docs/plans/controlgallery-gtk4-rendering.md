@@ -541,3 +541,34 @@ than extending it.
 Unrelated and still open: one `Allocation height too small … GtkLabel needs at least 45x59` critical
 fires once at startup on every run, good or bad. It is a Forms `Label` given a rectangle narrower
 than the width its desired size was measured at, so Pango wraps to three lines.
+
+### Two hypotheses eliminated by experiment
+
+Both tested with the six-launch protocol above, against a baseline of **6 bad launches in 10**.
+
+| Hypothesis | Change | Result |
+|---|---|---|
+| The containers use the wrong allocation rule | `Controls/Page.cs` `_contentContainer` and `NavigationPageRenderer.Widget` `Gtk.Fixed` → `GtkFormsContainer`, plus a `GtkFormsContainer.OnGetPreferred*` short-circuit | **6 bad of 6** — worse; pixels identical |
+| `SetPageSize`'s subtraction is the duplicate, so `ContainerArea` should be the only channel | Removed the `-= GtkToolbarConstants.ToolbarHeight` at `AbstractPageRenderer.cs:320` | **6 bad of 6, catastrophically** — 889 to 2035 criticals per launch, an unbounded loop |
+
+The second result is the more informative: **the subtraction is load-bearing**, not the duplicate.
+Removing it does not merely mis-size the page, it diverges. So `SetPageSize` is computing the right
+number for the Forms element, and the duplication is on the *other* side — the size written onto the
+child page's container.
+
+That points at `UpdateChildrenLayout` (`AbstractPageRenderer.cs:288-292`), which does
+`renderer.Container.SetSize(child.Bounds.Width, child.Bounds.Height)`. For a page inside a
+`NavigationPage`, `child.Bounds` is already inset by `ContainerArea`, but the container being sized is
+a `Controls.Page` that *physically contains the toolbar plus the content* - so it needs
+`Bounds.Height + ToolbarHeight`, while its content needs `Bounds.Height`. The untested candidate is
+therefore to add the toolbar back when sizing that container, mirroring `SetPageSize`'s subtraction,
+rather than removing either.
+
+Not attempted yet, and it must be validated with six launches, not one.
+
+### Note on the reference build
+
+`d:\CommonLibrary\Xamarin.Forms_Gtk3` no longer exists. The GTK 3 reference is now a **submodule** at
+`Xamarin.Forms/` on branch `5.0.0`, carrying its own `Xamarin.Forms.Gtk3.sln`. The §1.1 build command
+and the header table's path are stale; `git diff 5.0.0 gtk4` still works because both branches remain
+in this repository.
