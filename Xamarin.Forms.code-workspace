@@ -7,7 +7,7 @@
 			"path": "../GtkSharp"
 		},
 		{
-			"path": "../Xamarin.Forms_Gtk3"
+			"path": "Xamarin.Forms"
 		}
 	],
 	"settings": {}
