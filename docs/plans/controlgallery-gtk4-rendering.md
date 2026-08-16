@@ -469,3 +469,75 @@ different fixes and the capture alone cannot tell them apart.
 GtkSharp `1708 passed / 0 failed / 36 skipped` — unchanged from its documented baseline. Bindings
 are at **4.22.4.26228**; `Directory.Build.props:120` and `Directory.Nuget.Props:18` both bumped, and
 `project.assets.json` confirms the new version resolved rather than a cached one.
+
+---
+
+## 10. The toolbar double-count — open, and a correction to §9
+
+### The measurement in §9 was not sound
+
+§9 and several progress reports quoted "stderr 21 lines → 1". **That figure came from single
+launches, and the gallery is not deterministic.** Sampled properly, on the committed build:
+
+| launches | runs with the `needs at least 500x633` criticals |
+|---|---|
+| 4 | 2 |
+| 6 | 4 |
+
+**6 of 10 launches are bad**, emitting 20–66 criticals; the rest emit exactly 1. The good runs are
+real but not representative, and the "1 line" claim should be read as "the best case", not "the
+state". Anything measured here by launching once is noise — take at least six samples and report the
+ratio.
+
+### The defect
+
+The navigation toolbar is double-counted, and the evidence for the mechanism is solid even though
+the fix below is not:
+
+- `Controls/Page.cs:110-136` builds `root = Box(vertical){ _headerContainer (toolbar, expand false),
+  _contentContainerWrapper (expand+fill) }`.
+- `AbstractPageRenderer.cs:314-326` `SetPageSize()` takes the renderer container's own allocation and
+  subtracts `GtkToolbarConstants.ToolbarHeight` to produce the Forms element's `Bounds`.
+- The parent writes those same `Bounds` back onto that container as its GTK size request
+  (`AbstractPageRenderer.cs:288-292`, `VisualElementRenderer.cs:233-237`).
+
+So the container is *requested* at content height while physically containing toolbar + content, and
+its GTK minimum becomes request + 72. Measured chain, window client 561:
+`PageRenderer alloc=500x633 req=500x561 min=500x633`, and `633 = 72 + 561`. GTK 4 notices and logs;
+GTK 3 never propagated the page size at all, so it pinned content at natural size instead and the
+disagreement stayed silent.
+
+### The fix that was tried and REJECTED
+
+A workflow proposed making the page's content host and the navigation host filling containers
+(`Controls/Page.cs` `_contentContainer` and `NavigationPageRenderer.Widget`, `Gtk.Fixed` →
+`GtkFormsContainer`) plus a `GtkFormsContainer.OnGetPreferred*` short-circuit on the explicit size
+request. It reported "three launches out of three give 561".
+
+**It does not reproduce, and it is worse.** Applied in full and sampled the same way:
+
+| | bad runs |
+|---|---|
+| without the patch | 6 of 10 |
+| with the patch | **6 of 6** |
+
+It turns an intermittent defect into a consistent one, with pixels identical either way. Reverted.
+
+**The trap that cost an hour here, worth repeating:** the first comparison was one run before against
+one run after, which is exactly how a bistable defect gets misattributed. It read as "the patch broke
+it" when the true reading was "both states are unstable". Do not evaluate anything in this area on a
+single launch.
+
+### Where to look next
+
+The mechanism above says the container's size request is the wrong number, so the promising direction
+is `SetPageSize`/`UpdateChildrenLayout` — either request the container at the FULL height (toolbar
+included) while laying the Forms content out inside the inset, or stop writing a request onto that
+container at all and let `IPageController.ContainerArea` be the only channel.
+`NavigationPageRenderer.ApplyChildPageSizes` (`:170-195`) already argues for the latter in a long
+remark and deliberately sets no size request — the rejected patch fought that existing design rather
+than extending it.
+
+Unrelated and still open: one `Allocation height too small … GtkLabel needs at least 45x59` critical
+fires once at startup on every run, good or bad. It is a Forms `Label` given a rectangle narrower
+than the width its desired size was measured at, so Pango wraps to three lines.
