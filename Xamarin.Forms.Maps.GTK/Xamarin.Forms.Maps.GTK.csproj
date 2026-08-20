@@ -5,7 +5,7 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageId>Net4x.Xamarin.Forms.Maps.GTK</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Maps.GTK</PackageId>
         <Description>GTK3 map renderer for Xamarin.Forms.Maps, drawn with Cairo over OpenStreetMap-compatible tiles.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -32,11 +32,11 @@
           it has already happened twice. $(InputBoxLibraryVersion) and $(VersionBuildSuffix) are
           unrelated and undefined here, so the version evaluated to the bare string ".".
         -->
-        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <PackageReference Include="GtkSharp" Version="$(GtkSharp3Version).$(GtkSharp3VersionBuildSuffix)" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
-        <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" />
+        <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.Base.csproj" />
         <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
     </ItemGroup>
     <PropertyGroup>

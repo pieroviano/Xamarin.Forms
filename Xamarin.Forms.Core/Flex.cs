@@ -3,7 +3,7 @@
 // for the license information.
 // 
 // Author(s):
-//  - Laurent Sansonetti (native Xamarin flex https://github.com/xamarin/flex)
+//  - Laurent Sansonetti (native Xamarin flex https://github.com/pieroviano/flex)
 //  - Stephane Delcroix (.NET port)
 //
 using System;

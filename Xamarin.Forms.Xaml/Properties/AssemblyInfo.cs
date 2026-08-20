@@ -5,10 +5,6 @@ using Xamarin.Forms.Internals;
 
 [assembly: InternalsVisibleTo("Xamarin.Forms.Xaml.UnitTests")]
 [assembly: InternalsVisibleTo("Xamarin.Forms.Build.Tasks")]
-[assembly: InternalsVisibleTo("Xamarin.Forms.Xaml.Design")]
-[assembly: InternalsVisibleTo("Xamarin.Forms.Loader")]// Xamarin.Forms.Loader.dll Xamarin.Forms.Xaml.XamlLoader.Load(object, string), kzu@microsoft.com
-[assembly: InternalsVisibleTo("Xamarin.HotReload.Forms")]
-[assembly: InternalsVisibleTo("Xamarin.HotReload.UnitTests")]
 [assembly: Preserve]
 
 [assembly: XmlnsDefinition("http://xamarin.com/schemas/2014/forms", "Xamarin.Forms.Xaml")]

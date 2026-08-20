@@ -29,7 +29,7 @@ namespace Xamarin.Forms.Controls.Issues
 			_label = new Label { AutomationId = "label" };
 
 			var hashButton = new Button { Text = "1:hash", HorizontalOptions = LayoutOptions.FillAndExpand, AutomationId = "hashButton" };
-			hashButton.Clicked += (sender, args) => Load("https://github.com/xamarin/Xamarin.Forms/issues/2736#issuecomment-389443737");
+			hashButton.Clicked += (sender, args) => Load("https://github.com/pieroviano/Xamarin.Forms/issues/2736#issuecomment-389443737");
 
 			var unicodeButton = new Button { Text = "2:unicode", HorizontalOptions = LayoutOptions.FillAndExpand, AutomationId = "unicodeButton" };
 			unicodeButton.Clicked += (sender, args) => Load("https://www.google.no/maps/place/Skøyen");

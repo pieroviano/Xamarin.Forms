@@ -45,11 +45,11 @@
           prerelease "5.0.0-0", and record that as this project's version in project.assets.json.
         -->
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Platform.GTK</PackageId>
         <Description>GTK3 backend for Xamarin.Forms, built on GtkSharp 3.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <AssemblyName>Xamarin.Forms.Platform.GTK</AssemblyName>
+        <AssemblyName>Xamarin.Forms.Platform.Gtk3</AssemblyName>
         <RootNamespace>Xamarin.Forms.Platform.GTK</RootNamespace>
         <Description>GTK3 Backend for Xamarin.Forms</Description>
         <LangVersion>latest</LangVersion>
@@ -65,7 +65,7 @@
         <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <PackageReference Include="GtkSharp" Version="$(GtkSharp3Version).$(GtkSharp3VersionBuildSuffix)" />
     </ItemGroup>
     <!--
     Nothing is quarantined any more (plan M6 is complete for the renderer surface):
@@ -127,12 +127,16 @@
     </Target>
 
     <!--
-      The version half of the same guard, checked where it actually matters. $(VersionPrefix) and
-      $(VersionSuffix) are the static fallbacks Directory.Build.props supplies to keep the
-      tooling's expressions parseable; a PackageVersion still equal to them at GenerateNuspec
-      time means SetVersions' git-derived value was computed and then thrown away.
+      The version half of the same guard, checked where it actually matters.
+
+      Version.targets now composes PackageVersion as $(VersionPrefix).$(VersionSuffix) plus the
+      +sha build metadata, so the bare $(VersionPrefix).$(VersionSuffix) is no longer a version
+      this tree can produce on its own - the four-component prefix is expected, the missing
+      metadata is the tell. Reaching GenerateNuspec with the metadata gone means something ran
+      after SetVersions and replaced the value wholesale, which is precisely what
+      NuGet.Utility.targets' PrepareGenerateNuspecPack does.
     -->
-    <Target Name="_XFAssertPackageVersionIsGitDerived" BeforeTargets="GenerateNuspec" DependsOnTargets="SetVersions">
-        <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="PackageVersion is '$(PackageVersion)', the static fallback rather than the version Version.targets' SetVersions computed from git. Something overwrote it after SetVersions ran, so this pack would produce a $(PackageId) package that cannot be traced to a commit and collides with every other build of this branch." />
+    <Target Name="_XFAssertPackageVersionCarriesCommit" BeforeTargets="GenerateNuspec" DependsOnTargets="SetVersions">
+        <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="PackageVersion is '$(PackageVersion)', i.e. $(VersionPrefix).$(VersionSuffix) with the +sha build metadata Version.targets appends stripped off. Something overwrote it after SetVersions ran, so this pack would produce a $(PackageId) package that cannot be traced to a commit - every build of this branch on the same day would claim the same identity." />
     </Target>
 </Project>

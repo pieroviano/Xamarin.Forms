@@ -4,7 +4,12 @@
     <PropertyGroup>
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-        <PackageId>Net4x.Xamarin.Forms.Platform.Base</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Platform.Base</PackageId>
+        <!-- Assembly identity is independent of the .csproj file name: Core grants
+             InternalsVisibleTo("Xamarin.Forms.Platform") and AssemblyInfoTests does
+             Assembly.Load("Xamarin.Forms.Platform"). -->
+        <AssemblyName>Xamarin.Forms.Platform</AssemblyName>
+        <RootNamespace>Xamarin.Forms.Platform</RootNamespace>
         <Description>Platform facade referenced by the Xamarin.Forms renderers.</Description>
         <IsPackable>true</IsPackable>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>

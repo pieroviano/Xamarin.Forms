@@ -2,6 +2,9 @@
   <PropertyGroup>
     <!-- Sample/support project: not shipped as a package. -->
     <IsPackable>false</IsPackable>
+    <!-- The .csproj file name carries the Gtk3 flavour; the app's assembly identity does not. -->
+    <AssemblyName>Xamarin.Forms.Gtk3.ControlGallery.GTK</AssemblyName>
+    <RootNamespace>Xamarin.Forms.ControlGallery.GTK</RootNamespace>
 
     <ProjectGuid>{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}</ProjectGuid>
     <!-- Exe, not WinExe: WinExe is a Windows-subsystem concept and there is no such
@@ -55,13 +58,13 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj" />
-    <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
-    <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" />
+    <PackageReference Version="5.0.0.*" Include="Net4x.Xamarin.Forms.Gtk3.Controls.GTK" />
+    <PackageReference Version="5.0.0.*" Include="Net4x.Xamarin.Forms.Gtk3.Core" />
+    <PackageReference Version="5.0.0.*" Include="Net4x.Xamarin.Forms.Gtk3.Maps.Base" />
     <!-- Back in as of M6 §9.3: Xamarin.Forms.Maps.GTK is netstandard2.0 / GtkSharp 3 and draws
          its own Cairo slippy map, with no GMap.NET or GTK#2 left. -->
-    <ProjectReference Include="..\Xamarin.Forms.Maps.GTK\Xamarin.Forms.Maps.GTK.csproj" />
-    <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
+    <PackageReference Version="5.0.0.*" Include="Net4x.Xamarin.Forms.Gtk3.Maps.GTK" />
+    <PackageReference Version="5.0.0.*" Include="Net4x.Xamarin.Forms.Gtk3.Platform.GTK" />
   </ItemGroup>
   <!--
     Gallery images, HTML and CSS. These used to be <Content Include="..\Xamarin.Forms.ControlGallery.iOS\...">

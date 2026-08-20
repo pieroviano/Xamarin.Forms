@@ -2379,7 +2379,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/3467
+		//https://github.com/pieroviano/Xamarin.Forms/issues/3467
 		public void TargetNullValueIgnoredWhenBindingIsResolved()
 		{
 			var bindable = new MockBindable();
@@ -2402,7 +2402,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/3994
+		//https://github.com/pieroviano/Xamarin.Forms/issues/3994
 		public void INPCOnBindingWithSource()
 		{
 			var page = new ContentPage { Title = "Foo" };
@@ -2418,7 +2418,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/10405
+		//https://github.com/pieroviano/Xamarin.Forms/issues/10405
 		public void TypeConversionExceptionIsCaughtAndLogged()
 		{
 			var label = new Label();

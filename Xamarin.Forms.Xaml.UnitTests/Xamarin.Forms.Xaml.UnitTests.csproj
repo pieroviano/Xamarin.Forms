@@ -5,7 +5,7 @@
     <AssemblyName>Xamarin.Forms.Xaml.UnitTests</AssemblyName>
     <!-- xUnit v3 test projects are executables, not libraries. -->
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
     <LangVersion>latest</LangVersion>
     <WarningLevel>4</WarningLevel>
     <!--
@@ -34,7 +34,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj" />
+    <ProjectReference Include="..\Xamarin.Forms.Controls\Xamarin.Forms.Controls.GTK.csproj" />
     <ProjectReference Include="..\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -69,15 +69,12 @@
       thing that can supply it, so a missing restore fails loudly instead of silently
       falling back to whatever the machine happens to have installed.
     -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net47" Version="1.0.3"
-                      PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net47" Version="1.0.3" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
     <!-- build\ is the directory that contains .NETFramework\v4.7\, which is what
          $(TargetFrameworkRootPath) expects. Trailing slash matters to MSBuild. -->
-    <AssemblyMetadata Include="NetFrameworkReferenceAssemblies"
-                      Condition="'$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)' != ''"
-                      Value="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)/build/" />
+    <AssemblyMetadata Include="NetFrameworkReferenceAssemblies" Condition="'$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)' != ''" Value="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net47)/build/" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Xamarin.Forms.Core.UnitTests\MockDispatcherProvider.cs">

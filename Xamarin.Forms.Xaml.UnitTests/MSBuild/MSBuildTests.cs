@@ -757,7 +757,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			var expectedXamlC = new FileInfo(xamlCStamp).LastWriteTimeUtc;
 
 			//Build again, after modifying the timestamp on a Xaml file, should trigger a partial XamlG and full XamlC
-			//https://github.com/xamarin/xamarin-android/blob/61851599fb1999964bd200ec1c373b6e395933f3/src/Xamarin.Android.Build.Tasks/Utilities/MonoAndroidHelper.cs#L342
+			//https://github.com/pieroviano/xamarin-android/blob/61851599fb1999964bd200ec1c373b6e395933f3/src/Xamarin.Android.Build.Tasks/Utilities/MonoAndroidHelper.cs#L342
 			File.SetLastWriteTimeUtc(customViewXamlG, expectedCustomViewXamlG.AddDays(1));
 			File.SetLastAccessTimeUtc(customViewXamlG, expectedCustomViewXamlG.AddDays(1));
 			Build(projectFile);

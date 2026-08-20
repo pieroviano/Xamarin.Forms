@@ -5,7 +5,7 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <IsPackable>false</IsPackable>
+        <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
@@ -15,7 +15,7 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <NoWarn>0169</NoWarn>
-        <PackageId>Net4x.$(AssemblyName)</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.CustomAttributes</PackageId>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>

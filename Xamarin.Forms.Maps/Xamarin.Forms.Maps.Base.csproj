@@ -5,7 +5,12 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageId>Net4x.Xamarin.Forms.Maps.Base</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Maps.Base</PackageId>
+        <!-- Assembly identity is independent of the .csproj file name: XAML says
+             assembly=Xamarin.Forms.Maps, Core grants it InternalsVisibleTo, and
+             AssemblyInfoTests does Assembly.Load("Xamarin.Forms.Maps"). -->
+        <AssemblyName>Xamarin.Forms.Maps</AssemblyName>
+        <RootNamespace>Xamarin.Forms.Maps</RootNamespace>
         <Description>Map control abstraction for Xamarin.Forms.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>

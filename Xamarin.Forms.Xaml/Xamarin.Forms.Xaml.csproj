@@ -5,7 +5,7 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageId>Net4x.Xamarin.Forms.Xaml</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Xaml</PackageId>
         <Description>XAML loader and markup support for Xamarin.Forms.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>

@@ -262,7 +262,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		[Trait("Description", "Columns with a Star width less than one should not cause the Grid to contract below the target width; see https://github.com/xamarin/Xamarin.Forms/issues/11742")]
+		[Trait("Description", "Columns with a Star width less than one should not cause the Grid to contract below the target width; see https://github.com/pieroviano/Xamarin.Forms/issues/11742")]
 		public void StarWidthsLessThanOneShouldNotContractGrid()
 		{
 			var grid = new Grid
@@ -2263,7 +2263,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/4933
+		//https://github.com/pieroviano/Xamarin.Forms/issues/4933
 		public void GridHeightCorrectWhenAspectFitImageGetsShrinked()
 		{
 			var contentGrid = new Grid

@@ -4,7 +4,7 @@ using Xamarin.Forms.Internals;
 
 namespace Xamarin.Forms.Controls.Issues
 {
-	// This test covers the issue reported in https://github.com/xamarin/Xamarin.Forms/issues/2763
+	// This test covers the issue reported in https://github.com/pieroviano/Xamarin.Forms/issues/2763
 
 	[Preserve(AllMembers = true)]
 	[Issue(IssueTracker.Github, 2763,

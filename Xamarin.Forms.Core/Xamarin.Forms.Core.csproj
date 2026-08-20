@@ -5,7 +5,7 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <PackageId>Net4x.Xamarin.Forms.Core</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Core</PackageId>
         <Description>Core assembly of Xamarin.Forms: the cross-platform UI abstraction.</Description>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -13,7 +13,7 @@
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'"></PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'"></PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Xamarin.Forms.Platform\Xamarin.Forms.Platform.csproj" />
+        <ProjectReference Include="..\Xamarin.Forms.Platform\Xamarin.Forms.Platform.Base.csproj" />
     </ItemGroup>
     <!--
 		netstandard1.0 support removed: Internals\Legacy\** (FileAccess/FileMode/FileShare

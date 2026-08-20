@@ -5,10 +5,15 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <IsPackable>false</IsPackable>
+        <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
         <XFDisableTargetsValidation>True</XFDisableTargetsValidation>
-        <PackageId>Net4x.$(AssemblyName)</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Controls.GTK</PackageId>
+        <!-- The project file is named for the GTK leg, but the assembly identity must stay
+             Xamarin.Forms.Controls: 14 XAML files say assembly=Xamarin.Forms.Controls, and
+             Xamarin.Forms.Core's AssemblyInfo.cs grants InternalsVisibleTo under that name. -->
+        <AssemblyName>Xamarin.Forms.Controls</AssemblyName>
+        <RootNamespace>Xamarin.Forms.Controls</RootNamespace>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DefineConstants>TRACE;DEBUG;PERF;APP</DefineConstants>
@@ -36,7 +41,7 @@
         <!-- A reference to the entire .NET Framework is automatically included -->
         <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" Condition="$(FromSource) == 'true'" />
         <ProjectReference Include="..\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" Condition="$(FromSource) == 'true'" />
-        <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj" Condition="$(FromSource) == 'true'" />
+        <ProjectReference Include="..\Xamarin.Forms.Maps\Xamarin.Forms.Maps.Base.csproj" Condition="$(FromSource) == 'true'" />
         <ProjectReference Include="..\Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj" Condition="$(FromSource) == 'true'" />
         <!--
       Build-order only (ReferenceOutputAssembly=false): this project's XAML is compiled by
@@ -207,7 +212,6 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     <ItemGroup>
-        <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
         <Content Include="$(SolutionDir)License.txt" Link="License.txt" Pack="true" PackagePath="\License.txt" Condition="Exists('$(SolutionDir)License.txt')" />
     </ItemGroup>
     <Import Project="..\Xamarin.Forms.Controls.Issues\Xamarin.Forms.Controls.Issues.Shared\Xamarin.Forms.Controls.Issues.Shared.projitems" Label="Shared" />

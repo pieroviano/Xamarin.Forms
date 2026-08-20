@@ -60,7 +60,25 @@
       <VersionMetadataLabel>@(VersionMetadata -> '%(Identity)', '-')</VersionMetadataLabel>
       <VersionMetadataPlusLabel Condition="'$(VersionMetadataLabel)' != ''">+$(VersionMetadataLabel)</VersionMetadataPlusLabel>
       <Version>$(GitBaseVersionMajor).$(GitBaseVersionMinor).$(GitBaseVersionPatch)</Version>
-      <PackageVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
+      <!--
+        Four components, $(VersionPrefix).$(VersionSuffix), not the three GitSemVer* supplies.
+
+        The other six packable projects import Net4x.NuGetUtility, whose PrepareGenerateNuspecPack
+        runs BeforeTargets="GenerateNuspec" - i.e. after this target - and overwrote PackageVersion
+        with exactly $(VersionPrefix).$(VersionSuffix). The result was that the same commit packed
+        three different ways: six packages as 5.0.0.<yyddd> on Windows, Xamarin.Forms.Platform.GTK
+        (which deliberately does not import that tooling) as 5.0.0, and on Linux - where the
+        tooling is skipped by its own '$(OS)' == 'Windows_NT' condition - all seven as 5.0.0.
+        Computing the same value here makes that overwrite a no-op rather than the thing that
+        decides the version, so every project agrees and both OSes produce the same file names.
+
+        The commit still survives the change. NuGet strips +build-metadata from package identity
+        and from the .nupkg file name, so the file is Net4x.<id>.5.0.0.<yyddd>.nupkg while the
+        InformationalVersion set below - and the AssemblyMetadata("PackageVersion") attribute -
+        still name the sha. Do not fold the sha into the version proper to "fix" the file name:
+        a four-part version plus a dash-label is where NuGet stops treating it as stable.
+      -->
+      <PackageVersion>$(VersionPrefix).$(VersionSuffix)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
 
       <PackageVersion Condition="$(IsAzurePipelines)">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>
       <PackageVersion Condition="$(IsAzurePipelines) and '$(GitBaseVersion)' == '4.2.0'">$(GitSemVerMajor).$(GitSemVerMinor).$(GitBaseVersionPatch).$(BUILDVERSION42)$(GitSemVerDashLabel)$(VersionMetadataPlusLabel)</PackageVersion>

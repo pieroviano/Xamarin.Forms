@@ -1539,7 +1539,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/2019
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2019
 		public void EventSubscribingOnBindingContextChanged()
 		{
 			var source = new MockBindable();
@@ -1599,7 +1599,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/6281
+		//https://github.com/pieroviano/Xamarin.Forms/issues/6281
 		public void SetValueToTextInvokesToString()
 		{
 			var prop = BindableProperty.Create("foo", typeof(string), typeof(MockBindable), null);
@@ -1610,7 +1610,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/6281
+		//https://github.com/pieroviano/Xamarin.Forms/issues/6281
 		public void SetBindingToTextInvokesToString()
 		{
 			var prop = BindableProperty.Create("foo", typeof(string), typeof(MockBindable), null);
@@ -1621,7 +1621,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/9151
+		//https://github.com/pieroviano/Xamarin.Forms/issues/9151
 		public void SetValueWorksWithAttachedCollectionValuedProperties()
 		{
 			var prop = BindableProperty.CreateAttached("AttachedCollection", typeof(IList<string>), typeof(AttachedPropertyHolder), null, defaultValueCreator: _ => new List<string>());
@@ -1633,7 +1633,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/9151
+		//https://github.com/pieroviano/Xamarin.Forms/issues/9151
 		public void SetValueWorksWithAttachedCollectionValuedPropertiesOnMultipleBindables()
 		{
 			var prop = BindableProperty.CreateAttached("AttachedCollection", typeof(IList<string>), typeof(AttachedPropertyHolder), null, defaultValueCreator: _ => new List<string>());

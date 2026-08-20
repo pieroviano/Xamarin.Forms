@@ -4,7 +4,7 @@ using Xamarin.Forms.Internals;
 
 namespace Xamarin.Forms.Controls.Issues
 {
-	// This test covers the issue reported in https://github.com/xamarin/Xamarin.Forms/issues/2247
+	// This test covers the issue reported in https://github.com/pieroviano/Xamarin.Forms/issues/2247
 	// for NavigationBehavior.PushAsync. Coverage for NavigationBehavior.PushModalAsync is provided by Bugzilla33561.
 
 	[Preserve(AllMembers = true)]

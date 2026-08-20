@@ -74,7 +74,7 @@ namespace Xamarin.Forms.Controls.Issues
 #pragma warning disable 4014
 			// For some reason, Jason seemed to think we deliberately should _not_ add an await here.
 			// So leaving it out unless someone comes up with a really good reason to add it.
-			// (see https://github.com/xamarin/Xamarin.Forms/pull/65#discussion-diff-59305011) 
+			// (see https://github.com/pieroviano/Xamarin.Forms/pull/65#discussion-diff-59305011) 
 			if (articlelistingitem != null)
 				DisplayAlert("Alert", "I'm not deleting just refreshing...", "Ok");
 #pragma warning restore 4014

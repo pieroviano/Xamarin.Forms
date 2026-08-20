@@ -5,15 +5,15 @@ VisualStudioVersion = 18.7.11919.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Core", "Xamarin.Forms.Core\Xamarin.Forms.Core.csproj", "{18330E96-CC09-4CEB-B8E8-76C77DA0A5E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Platform", "Xamarin.Forms.Platform\Xamarin.Forms.Platform.csproj", "{75F7ECB1-3856-458F-86C7-D06F78BDD366}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Platform.Base", "Xamarin.Forms.Platform\Xamarin.Forms.Platform.Base.csproj", "{75F7ECB1-3856-458F-86C7-D06F78BDD366}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Xaml", "Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj", "{A1DA41A1-F8F9-4DF2-87FC-BF3322ABBBAB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.CustomAttributes", "Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj", "{8799C30A-36B9-48C9-9625-D4003CE03AEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Maps", "Xamarin.Forms.Maps\Xamarin.Forms.Maps.csproj", "{8213CA21-8C7F-4768-BAB4-2AC6B76E70A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Maps.Base", "Xamarin.Forms.Maps\Xamarin.Forms.Maps.Base.csproj", "{8213CA21-8C7F-4768-BAB4-2AC6B76E70A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Controls", "Xamarin.Forms.Controls\Xamarin.Forms.Controls.csproj", "{5A1A318E-90AF-4B26-ACAF-A124287BD221}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Controls.GTK", "Xamarin.Forms.Controls\Xamarin.Forms.Controls.GTK.csproj", "{5A1A318E-90AF-4B26-ACAF-A124287BD221}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Build.Tasks", "Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj", "{D77B4803-198B-402A-81DA-41324054810B}"
 EndProject
@@ -21,13 +21,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Platform.GTK"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Maps.GTK", "Xamarin.Forms.Maps.GTK\Xamarin.Forms.Maps.GTK.csproj", "{A9772BB1-0E17-42F5-A6DB-60BFCCBFDB9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.ControlGallery.GTK", "Xamarin.Forms.ControlGallery.GTK\Xamarin.Forms.ControlGallery.GTK.csproj", "{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Core.UnitTests", "Xamarin.Forms.Core.UnitTests\Xamarin.Forms.Core.UnitTests.csproj", "{00259593-A283-47A5-ACB7-9C3819B16364}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Xaml.UnitTests", "Xamarin.Forms.Xaml.UnitTests\Xamarin.Forms.Xaml.UnitTests.csproj", "{12B5054B-0F72-49A9-85EA-F89FA7EDDD2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Platform.GTK.UnitTests", "Xamarin.Forms.Platform.GTK.UnitTests\Xamarin.Forms.Platform.GTK.UnitTests.csproj", "{6C7A2E43-9B41-4D5F-8F3C-1E2A7D904B18}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xamarin.Forms.Platform.UnitTests", "Xamarin.Forms.Platform.GTK.UnitTests\Xamarin.Forms.Platform.UnitTests.csproj", "{6C7A2E43-9B41-4D5F-8F3C-1E2A7D904B18}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{98013F4F-7A74-4B69-8949-57EE3C21ED50}"
 EndProject
@@ -161,18 +159,6 @@ Global
 		{A9772BB1-0E17-42F5-A6DB-60BFCCBFDB9D}.Release|x64.Build.0 = Release|Any CPU
 		{A9772BB1-0E17-42F5-A6DB-60BFCCBFDB9D}.Release|x86.ActiveCfg = Release|Any CPU
 		{A9772BB1-0E17-42F5-A6DB-60BFCCBFDB9D}.Release|x86.Build.0 = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|x64.Build.0 = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Debug|x86.Build.0 = Debug|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|Any CPU.Build.0 = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|x64.ActiveCfg = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|x64.Build.0 = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|x86.ActiveCfg = Release|Any CPU
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340}.Release|x86.Build.0 = Release|Any CPU
 		{00259593-A283-47A5-ACB7-9C3819B16364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{00259593-A283-47A5-ACB7-9C3819B16364}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00259593-A283-47A5-ACB7-9C3819B16364}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -214,8 +200,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{5A1A318E-90AF-4B26-ACAF-A124287BD221} = {98013F4F-7A74-4B69-8949-57EE3C21ED50}
-		{03A51E5B-0A1E-41F0-AAE3-4B19406F7340} = {FF370EAF-8B46-4883-AED1-56DE2A2A54D5}
 		{00259593-A283-47A5-ACB7-9C3819B16364} = {98013F4F-7A74-4B69-8949-57EE3C21ED50}
 		{12B5054B-0F72-49A9-85EA-F89FA7EDDD2C} = {98013F4F-7A74-4B69-8949-57EE3C21ED50}
 		{6C7A2E43-9B41-4D5F-8F3C-1E2A7D904B18} = {98013F4F-7A74-4B69-8949-57EE3C21ED50}

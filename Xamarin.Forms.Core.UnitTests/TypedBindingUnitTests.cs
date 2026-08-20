@@ -1053,7 +1053,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/4103
+		//https://github.com/pieroviano/Xamarin.Forms/issues/4103
 		public void TestTargetNullValue()
 		{
 			var property = BindableProperty.Create("Text", typeof(string), typeof(MockBindable), default(string));
@@ -1714,8 +1714,8 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/3650
-		//https://github.com/xamarin/Xamarin.Forms/issues/3613
+		//https://github.com/pieroviano/Xamarin.Forms/issues/3650
+		//https://github.com/pieroviano/Xamarin.Forms/issues/3613
 		public void TypedBindingsShouldNotHang()
 		{
 			var typedBinding = new TypedBinding<VM3650, string>(

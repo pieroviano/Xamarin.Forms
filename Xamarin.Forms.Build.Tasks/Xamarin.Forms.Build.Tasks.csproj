@@ -26,7 +26,7 @@
         <DelaySign>false</DelaySign>
     </PropertyGroup>
     <PropertyGroup>
-        <PackageId>Net4x.Xamarin.Forms.Build.Tasks</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Build.Tasks</PackageId>
         <Description>MSBuild tasks and targets for Xamarin.Forms XAML compilation.</Description>
         <IsPackable>true</IsPackable>
         <_DisableStrongNamer Condition=" '$(_DisableStrongNamer)' != 'True' ">False</_DisableStrongNamer>

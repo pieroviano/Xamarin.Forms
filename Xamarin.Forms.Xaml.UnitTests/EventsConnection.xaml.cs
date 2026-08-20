@@ -80,7 +80,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		// This is necessary because the interpreter searches the class
 		// specified by x:Class for a static method.
-		// See: https://github.com/xamarin/Xamarin.Forms/issues/5100
+		// See: https://github.com/pieroviano/Xamarin.Forms/issues/5100
 		static void HandleStaticClicked(object sender, EventArgs e)
 		{
 			staticClicked++;
@@ -185,7 +185,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		// This is necessary because the interpreter searches the subclass
 		// for a static method.
-		// See: https://github.com/xamarin/Xamarin.Forms/issues/5100
+		// See: https://github.com/pieroviano/Xamarin.Forms/issues/5100
 		static void HandleStaticClicked(object sender, EventArgs e)
 		{
 			staticClicked++;

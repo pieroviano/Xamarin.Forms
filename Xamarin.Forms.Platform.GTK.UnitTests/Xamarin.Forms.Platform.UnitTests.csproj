@@ -6,7 +6,7 @@
     <RootNamespace>Xamarin.Forms.Platform.GTK.UnitTests</RootNamespace>
     <!-- xUnit v3 test projects are executables, not libraries - same as Xaml.UnitTests. -->
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
     <LangVersion>latest</LangVersion>
     <!--
       SDK-style default globbing on purpose (plan D3/§10.2): the legacy explicit

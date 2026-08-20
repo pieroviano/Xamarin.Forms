@@ -53,7 +53,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
-			//this was later reported as https://github.com/xamarin/Xamarin.Forms/issues/7286
+			//this was later reported as https://github.com/pieroviano/Xamarin.Forms/issues/7286
 			public void RegisteringXNameOnSubPages(bool useCompiledXaml)
 			{
 				var layout = new Gh7097(useCompiledXaml);
