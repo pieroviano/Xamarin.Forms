@@ -10,6 +10,7 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 	public class EntryRenderer : ViewRenderer<Entry, EntryWrapper>
 	{
 		private bool _disposed;
+		private bool _updatingTextFromElement;
 
 		IEntryController EntryController => Element;
 
@@ -102,8 +103,25 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 		private void UpdateText()
 		{
 			var text = Element.UpdateFormsText(Element.Text, Element.TextTransform);
-			if (Control.Entry.Text != text)
+			if (Control.Entry.Text == text)
+				return;
+
+			// gtk_editable_set_text deletes the old text, then inserts the new, and each step raises
+			// Changed. Echoed back from here, the intermediate "" and the final text are set on
+			// Element.Text from inside its own change notification, which Forms queues and replays
+			// - each replay setting the widget again, so the two values alternate forever. The
+			// widget only ever changes to what the element already holds here: nothing to echo.
+			// Same guard as EditorRenderer.UpdateText.
+			_updatingTextFromElement = true;
+
+			try
+			{
 				Control.Entry.Text = text;
+			}
+			finally
+			{
+				_updatingTextFromElement = false;
+			}
 		}
 
 		private void UpdateColor()
@@ -138,6 +156,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void OnChanged(object sender, System.EventArgs e)
 		{
+			if (_updatingTextFromElement)
+				return;
+
 			ElementController.SetValueFromRenderer(Entry.TextProperty, Control.Entry.Text);
 		}
 

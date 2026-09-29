@@ -41,6 +41,39 @@ namespace Xamarin.Forms.Platform.GTK.UnitTests
 			});
 		}
 
+		/// <summary>
+		/// Setting the native text deletes, then inserts, raising Changed for each step. Echoed back,
+		/// the intermediate "" reaches the element from inside its own change notification, and
+		/// Forms' replay of the queued values set the widget again, forever.
+		/// </summary>
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public void TextSetOnAHostedEntryIsOneChangeWithNoIntermediateEcho(bool searchBar)
+		{
+			Run(() =>
+			{
+					View view = searchBar ? new SearchBar { Text = "hi" } : (View)new Entry { Text = "hi" };
+					var changes = new List<string>();
+
+					if (view is SearchBar bar)
+						bar.TextChanged += (s, e) => changes.Add(e.NewTextValue);
+					else
+						((Entry)view).TextChanged += (s, e) => changes.Add(e.NewTextValue);
+
+					using (var host = GtkTestHost.HostView(view))
+					{
+						if (view is SearchBar b)
+							b.Text = "changed";
+						else
+							((Entry)view).Text = "changed";
+						host.Pump();
+
+						Assert.Equal(new[] { "changed" }, changes);
+					}
+			});
+		}
+
 		[Fact]
 		public void EntryTextChangesFlowBackFromTheNativeControl()
 		{

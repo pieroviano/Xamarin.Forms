@@ -7,6 +7,8 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 {
 	public class SearchBarRenderer : ViewRenderer<SearchBar, SearchEntry>
 	{
+		private bool _updatingTextFromElement;
+
 		protected override void OnElementChanged(ElementChangedEventArgs<SearchBar> e)
 		{
 			if (e.NewElement != null)
@@ -91,7 +93,22 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		void UpdateText()
 		{
-			Control.SearchText = Element.UpdateFormsText(Element.Text, Element.TextTransform);
+			var text = Element.UpdateFormsText(Element.Text, Element.TextTransform);
+			if (Control.SearchText == (text ?? string.Empty))
+				return;
+
+			// Setting the entry raises Changed twice (delete, then insert): not echoed back - see
+			// EntryRenderer.UpdateText.
+			_updatingTextFromElement = true;
+
+			try
+			{
+				Control.SearchText = text;
+			}
+			finally
+			{
+				_updatingTextFromElement = false;
+			}
 		}
 
 		private void UpdatePlaceholder()
@@ -127,6 +144,9 @@ namespace Xamarin.Forms.Platform.GTK.Renderers
 
 		private void SearchTextChanged(object sender, EventArgs e)
 		{
+			if (_updatingTextFromElement)
+				return;
+
 			ElementController.SetValueFromRenderer(SearchBar.TextProperty, Control.SearchText);
 		}
 
