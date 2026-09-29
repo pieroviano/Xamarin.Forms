@@ -401,6 +401,9 @@ namespace System.Windows
 		public static readonly RoutedEvent GotKeyboardFocusEvent = Register<KeyboardFocusChangedEventHandler>("GotKeyboardFocus", RoutingStrategy.Bubble);
 		public static readonly RoutedEvent LostKeyboardFocusEvent = Register<KeyboardFocusChangedEventHandler>("LostKeyboardFocus", RoutingStrategy.Bubble);
 
+		/// <summary>Raised before focus leaves, so a handler that marks it handled keeps focus where it is.</summary>
+		public static readonly RoutedEvent PreviewLostKeyboardFocusEvent = Register<KeyboardFocusChangedEventHandler>("PreviewLostKeyboardFocus", RoutingStrategy.Tunnel);
+
 		static RoutedEvent Register<THandler>(string name, RoutingStrategy strategy) =>
 			EventManager.RegisterRoutedEvent(name, strategy, typeof(THandler), typeof(UIElement));
 
@@ -432,6 +435,9 @@ namespace System.Windows
 		public event RoutedEventHandler LostFocus { add => AddHandler(LostFocusEvent, value); remove => RemoveHandler(LostFocusEvent, value); }
 		public event KeyboardFocusChangedEventHandler GotKeyboardFocus { add => AddHandler(GotKeyboardFocusEvent, value); remove => RemoveHandler(GotKeyboardFocusEvent, value); }
 		public event KeyboardFocusChangedEventHandler LostKeyboardFocus { add => AddHandler(LostKeyboardFocusEvent, value); remove => RemoveHandler(LostKeyboardFocusEvent, value); }
+
+		/// <inheritdoc cref="PreviewLostKeyboardFocusEvent" />
+		public event KeyboardFocusChangedEventHandler PreviewLostKeyboardFocus { add => AddHandler(PreviewLostKeyboardFocusEvent, value); remove => RemoveHandler(PreviewLostKeyboardFocusEvent, value); }
 
 		public void AddHandler(RoutedEvent routedEvent, Delegate handler) => AddHandler(routedEvent, handler, false);
 

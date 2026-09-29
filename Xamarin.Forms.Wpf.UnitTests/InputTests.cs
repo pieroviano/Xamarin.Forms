@@ -74,6 +74,52 @@ namespace Wpf.UnitTests
 			});
 		}
 
+		/// <summary>
+		/// The tunnelling pair of LostKeyboardFocus, raised before focus moves so a handler can keep it - which is
+		/// how a cancellable focus change is expressed, and what a converted VB6 Validate handler relies on.
+		/// </summary>
+		[Fact]
+		public void FocusIsPreviewedBeforeItLeavesAndThenLost()
+		{
+			Run(() =>
+			{
+				var first = new TextBox();
+				var second = new TextBox();
+				var window = Host(new StackPanel { Children = { first, second } });
+				NativeInput.SetFocus(first);
+				var order = new List<string>();
+				first.PreviewLostKeyboardFocus += (s, e) => order.Add("preview");
+				first.LostKeyboardFocus += (s, e) => order.Add("lost");
+
+				NativeInput.SetFocus(second);
+
+				Assert.Equal(new[] { "preview", "lost" }, order);
+				Assert.Same(second, Keyboard.FocusedElement);
+				window.Close();
+			});
+		}
+
+		[Fact]
+		public void AHandledPreviewKeepsFocusWhereItIs()
+		{
+			Run(() =>
+			{
+				var first = new TextBox();
+				var second = new TextBox();
+				var window = Host(new StackPanel { Children = { first, second } });
+				NativeInput.SetFocus(first);
+				var lost = false;
+				first.PreviewLostKeyboardFocus += (s, e) => e.Handled = true;
+				first.LostKeyboardFocus += (s, e) => lost = true;
+
+				NativeInput.SetFocus(second);
+
+				Assert.Same(first, Keyboard.FocusedElement);
+				Assert.False(lost, "focus did not move, so nothing was lost");
+				window.Close();
+			});
+		}
+
 		[Fact]
 		public void AHandledKeyIsKeptFromTheWidget()
 		{

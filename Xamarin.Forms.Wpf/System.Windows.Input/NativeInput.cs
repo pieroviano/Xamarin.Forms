@@ -390,6 +390,21 @@ namespace System.Windows.Input
 			if (ReferenceEquals(old, element))
 				return;
 
+			// Tunnelling and before the move, as in WPF: a handler that marks it handled keeps focus where it is.
+			// That is how a cancellable focus change is expressed, and what a VB6 Validate handler setting Cancel
+			// relies on. The native widget is not pulled back, so GTK may still draw the focus ring on the one the
+			// user clicked; the focused element WPF reports, and the events that follow from it, stay put.
+			if (old != null)
+			{
+				var preview = new KeyboardFocusChangedEventArgs(old, element)
+				{
+					RoutedEvent = UIElement.PreviewLostKeyboardFocusEvent
+				};
+				old.RaiseEvent(preview);
+				if (preview.Handled)
+					return;
+			}
+
 			Keyboard.FocusedElement = element;
 			if (old != null)
 			{
