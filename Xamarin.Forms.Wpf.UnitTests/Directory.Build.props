@@ -1,0 +1,5 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+  <!-- The fixtures are XAML: XamlG and XamlC from Build.Tasks, as in Xamarin.Forms.Controls. -->
+  <Import Project="..\Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.props" />
+</Project>

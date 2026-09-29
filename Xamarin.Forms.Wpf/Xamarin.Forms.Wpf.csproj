@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <!-- Explicit, for the same restore-time reason Xamarin.Forms.Platform.GTK.csproj gives. -->
+        <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <PackageId>Net4x.Xamarin.Forms.Wpf</PackageId>
+        <IsPackable>true</IsPackable>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <!--
+          NOT System.Windows.*.dll: XamlG skips every referenced assembly whose file name starts with
+          "System." when it gathers XmlnsDefinition attributes (XamlGenerator.AssemblyIsSystem), and
+          this assembly's XmlnsDefinition is what maps the WPF presentation namespace to its types.
+        -->
+        <AssemblyName>Xamarin.Forms.Wpf</AssemblyName>
+        <RootNamespace>System.Windows</RootNamespace>
+        <Description>The WPF API (System.Windows) implemented over Xamarin.Forms and rendered by its GTK 4 backend: WPF code and XAML run on Linux, macOS and Windows.</Description>
+        <LangVersion>latest</LangVersion>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+        <!-- Deferred the same way, and for the same Gtk 4 deprecations, as in Xamarin.Forms.Platform.GTK.csproj. -->
+        <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Xamarin.Forms.Wpf.UnitTests" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="GtkSharp4" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
+        <ProjectReference Include="..\Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj" />
+        <ProjectReference Include="..\Xamarin.Forms.Platform.GTK\Xamarin.Forms.Platform.GTK.csproj" />
+    </ItemGroup>
+    <PropertyGroup>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
+        <Content Include="$(SolutionDir)License.txt" Link="License.txt" Pack="true" PackagePath="\License.txt" Condition="Exists('$(SolutionDir)License.txt')" />
+    </ItemGroup>
+</Project>

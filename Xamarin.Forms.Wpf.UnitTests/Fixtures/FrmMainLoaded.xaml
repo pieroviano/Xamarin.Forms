@@ -1,0 +1,29 @@
+<Window x:Class="Showcase.Forms.frmMainLoaded"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:Showcase.Forms"
+    xmlns:vb6="clr-namespace:Vb6ToCSharp.UpgradeHelpers.Wpf.Controls;assembly=Vb6ToCSharp.WPF.UpgradeHelpers"
+    mc:Ignorable="d"
+    Title="Showcase"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="CenterScreen"
+    ResizeMode="NoResize"
+    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+  <Grid x:Name="LayoutRoot" Width="408" Height="297" HorizontalAlignment="Left" VerticalAlignment="Top">
+    <ComboBox x:Name="cboShade" Margin="8,84,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="161" Height="23" TabIndex="7" IsEditable="False" />
+    <ListBox x:Name="lstLog" Margin="184,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="217" Height="109" TabIndex="6" />
+    <GroupBox x:Name="fraMode" Margin="8,123,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="161" Height="65" TabIndex="3" Header="Mode">
+      <Grid Margin="-6,-17,-6,-6">
+        <RadioButton x:Name="optB" Margin="8,40,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="137" Height="17" TabIndex="5" Content="Detailed" />
+        <RadioButton x:Name="optA" Margin="8,16,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="137" Height="17" TabIndex="4" Content="Simple" IsChecked="True" />
+      </Grid>
+    </GroupBox>
+    <TextBox x:Name="txtName" Margin="8,40,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="161" Height="23" TabIndex="0" Text="World" />
+    <Button x:Name="cmdClose" Margin="312,252,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="81" Height="25" TabIndex="2" Content="_Close" IsCancel="True" />
+    <Button x:Name="cmdRun" Margin="224,252,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="81" Height="25" TabIndex="1" Content="_Run" IsDefault="True" />
+    <Label x:Name="lblResult" Margin="8,204,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="393" Height="17" TabIndex="8" Content="Result" Padding="0" />
+    <Label x:Name="lblName" Margin="8,16,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="161" Height="17" TabIndex="9" Content="Name:" Padding="0" />
+  </Grid>
+</Window>

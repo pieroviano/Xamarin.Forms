@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="..\Xamarin.Forms.Build.Tasks\build\Xamarin.Forms.targets" />
+</Project>
