@@ -55,7 +55,7 @@
           same PropertyGroup; MSBuild takes the last write, so the first was dead text that still
           read as the shipping description to anyone editing here.
         -->
-        <Description>GTK4 backend for Xamarin.Forms, built on Net4x.GtkSharp 4.</Description>
+        <Description>GTK4 backend for Xamarin.Forms, built on GtkSharp 4.</Description>
         <LangVersion>latest</LangVersion>
         <!--
           TRUE, so the SDK emits AssemblyVersion/FileVersion/InformationalVersion from the
@@ -96,12 +96,12 @@
     </PropertyGroup>
     <ItemGroup>
         <!--
-          Net4x.GtkSharp, NOT GtkSharp: the Gtk 4 bindings, built from github.com/pieroviano/GtkSharp
+          GtkSharp4, NOT GtkSharp: the Gtk 4 bindings, built from github.com/pieroviano/GtkSharp
           branch net4x.gtk4 and restored from the local-net4x source in NuGet.config. It brings
           Net4x.{Gdk,Gio,GLib,Cairo,Pango,Gsk,Graphene}Sharp with it as dependencies, so those are
           not listed here. See docs/plans/gtk4-migration.md.
         -->
-        <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <PackageReference Include="GtkSharp4" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
         <!--
           WebKitGTK 6.0 and the JavaScriptCore it returns script results as. Optional at RUNTIME -
           Controls/WebView degrades to a placeholder when the native library is absent - but a
@@ -185,7 +185,7 @@
       The first is the third head of the same tooling hydra. Net4x.NuGetUtility rewrites a
       PackageReference whose Include is the bare string "GtkSharp" - see Directory.Build.props -
       and that reference now names the GTK 3 package, which this backend cannot use at all. A
-      rewrite would restore it ALONGSIDE Net4x.GtkSharp, giving the compiler two assemblies that
+      rewrite would restore it ALONGSIDE GtkSharp4, giving the compiler two assemblies that
       both define namespace Gtk; the resulting errors point at renderer source, not at the cause.
 
       The second exists because a missing local feed is not an error to NuGet. Packages/ is a
@@ -195,7 +195,7 @@
       failure it is. See docs/plans/gtk4-migration.md V1.
     -->
     <Target Name="_XFAssertNoGtk3Package" BeforeTargets="BeforeBuild;Pack">
-        <Error Condition="'@(PackageReference->AnyHaveMetadataValue('Identity', 'GtkSharp'))' == 'true'" Text="A PackageReference to 'GtkSharp' (the GTK 3 bindings) is present in $(MSBuildProjectFile) alongside Net4x.GtkSharp. This backend targets GTK 4; the two packages both define namespace Gtk and cannot coexist. The Net4x.NuGetUtility tooling re-adds exactly this reference on Windows builds - remove it again, and see the comment in Directory.Build.props." />
+        <Error Condition="'@(PackageReference->AnyHaveMetadataValue('Identity', 'GtkSharp'))' == 'true'" Text="A PackageReference to 'GtkSharp' (the GTK 3 bindings) is present in $(MSBuildProjectFile) alongside GtkSharp4. This backend targets GTK 4; the two packages both define namespace Gtk and cannot coexist. The Net4x.NuGetUtility tooling re-adds exactly this reference on Windows builds - remove it again, and see the comment in Directory.Build.props." />
     </Target>
 
     <Target Name="_XFAssertLocalFeedExists" BeforeTargets="BeforeBuild">

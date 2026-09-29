@@ -51,7 +51,7 @@ namespace Xamarin.Forms.Controls.Issues
 		protected override void Init()
 		{
 			// Based on Sample
-			// https://github.com/xamarin/xamarin-forms-samples/blob/master/UserInterface/Accessibility/Accessibility/AccessibilityPage.xaml
+			// https://github.com/pieroviano/xamarin-forms-samples/blob/master/UserInterface/Accessibility/Accessibility/AccessibilityPage.xaml
 			Content = new ScrollView()
 			{
 				Content =

@@ -39,7 +39,7 @@ namespace Xamarin.Forms.Controls.Issues
 					new Button
 					{
 						Text = "Go to github",
-						Command = new Command(() => webView.Source = "https://github.com/xamarin/Xamarin.Forms")
+						Command = new Command(() => webView.Source = "https://github.com/pieroviano/Xamarin.Forms")
 					},
 					new Button
 					{

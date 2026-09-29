@@ -80,7 +80,7 @@ We also recommend installing [Xamarin Android Device Manager](https://developer.
 If you already have VS 2019+ installed, you can verify that these features are installed by modifying the VS 2019+ installation via the Visual Studio Installer.
 
 ##### Provisioning script
-If you are getting errors about missing SDKs, you can run our provisioning script. Note that it can take some time to run the whole script. To better understand how the script works, feel free to check out our [build.cake](https://github.com/xamarin/Xamarin.Forms/blob/5.0.0/build.cake) file.
+If you are getting errors about missing SDKs, you can run our provisioning script. Note that it can take some time to run the whole script. To better understand how the script works, feel free to check out our [build.cake](https://github.com/pieroviano/Xamarin.Forms/blob/5.0.0/build.cake) file.
 
 - On CMD
     ```
@@ -182,11 +182,11 @@ We follow the style used by the [.NET Foundation](https://github.com/dotnet/runt
 
 ## Contributing ##
 
-- [How to Contribute](https://github.com/xamarin/Xamarin.Forms/blob/main/.github/CONTRIBUTING.md)
+- [How to Contribute](https://github.com/pieroviano/Xamarin.Forms/blob/main/.github/CONTRIBUTING.md)
 
 ### Reporting Bugs ###
 
-We use [GitHub Issues](https://github.com/xamarin/Xamarin.Forms/issues) to track issues. If at all possible, please submit a [reproduction of your bug](https://github.com/xamarin/Xamarin.Forms/blob/main/.github/repro.md) along with your bug report.
+We use [GitHub Issues](https://github.com/pieroviano/Xamarin.Forms/issues) to track issues. If at all possible, please submit a [reproduction of your bug](https://github.com/pieroviano/Xamarin.Forms/blob/main/.github/repro.md) along with your bug report.
 
 ## Stats
 <img src="https://repobeats.axiom.co/api/embed/f917a77cbbdeee19b87fa1f2f932895d1df18b30.svg" />

@@ -43,7 +43,7 @@ namespace Xamarin.Forms.Controls.Issues
 
 			(Content as StackLayout).Children.Insert(0, new WebView
 			{
-				Source = "https://github.com/xamarin/Xamarin.Forms/issues/4001",
+				Source = "https://github.com/pieroviano/Xamarin.Forms/issues/4001",
 				HeightRequest = 400
 			});
 		}

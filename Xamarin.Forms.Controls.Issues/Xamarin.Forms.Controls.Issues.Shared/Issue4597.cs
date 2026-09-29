@@ -36,7 +36,7 @@ namespace Xamarin.Forms.Controls.Issues
 		string _theListView = "theListViewAutomationId";
 		string _fileName = "xamarinlogo.png";
 		string _fileNameAutomationId = "CoffeeAutomationId";
-		string _uriImage = "https://github.com/xamarin/Xamarin.Forms/blob/3216ce4ccd096f8b9f909bbeea572dcf2a8c4466/Xamarin.Forms.ControlGallery.iOS/Resources/xamarinlogo.png?raw=true";
+		string _uriImage = "https://github.com/pieroviano/Xamarin.Forms/blob/3216ce4ccd096f8b9f909bbeea572dcf2a8c4466/Xamarin.Forms.ControlGallery.iOS/Resources/xamarinlogo.png?raw=true";
 		bool _isUri = false;
 		string _nextTestId = "NextTest";
 		string _activeTestId = "activeTestId";

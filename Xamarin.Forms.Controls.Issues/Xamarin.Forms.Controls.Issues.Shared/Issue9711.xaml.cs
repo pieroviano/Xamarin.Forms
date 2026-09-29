@@ -8,7 +8,7 @@ using Xamarin.Forms.CustomAttributes;
 using Xamarin.Forms.Internals;
 
 // Thanks to GitHub user [@Matmork](https://github.com/Matmork) for this reproducible test case.
-// https://github.com/xamarin/Xamarin.Forms/issues/9711#issuecomment-602520024
+// https://github.com/pieroviano/Xamarin.Forms/issues/9711#issuecomment-602520024
 
 #if UITEST
 using Xamarin.Forms.Core.UITests;

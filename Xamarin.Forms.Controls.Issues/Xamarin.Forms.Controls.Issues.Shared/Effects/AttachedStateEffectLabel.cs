@@ -10,6 +10,6 @@ namespace Xamarin.Forms.Controls.Effects
 	{
 		// Android renderers don't detach effects when the renderers get disposed
 		// so this is a hack setup to detach those effects when testing if dispose is called from a renderer
-		// https://github.com/xamarin/Xamarin.Forms/issues/2520
+		// https://github.com/pieroviano/Xamarin.Forms/issues/2520
 	}
 }

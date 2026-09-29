@@ -45,7 +45,7 @@
       through a ProjectReference is not enough, and the failure without it is every test in the
       suite erroring inside Gtk.Application.Init.
     -->
-    <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+    <PackageReference Include="GtkSharp4" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
   </ItemGroup>
 
   <ItemGroup>

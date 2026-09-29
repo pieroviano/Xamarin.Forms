@@ -145,7 +145,7 @@ namespace Xamarin.Forms.Controls.Issues
 						Longitude = 42,
 						Location = "Empire State Building",
 						Name = "King Kong",
-						Image = "https://github.com/xamarin/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/Fruits.jpg?raw=true"
+						Image = "https://github.com/pieroviano/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/Fruits.jpg?raw=true"
 					},
 					new Monkey()
 					{
@@ -154,7 +154,7 @@ namespace Xamarin.Forms.Controls.Issues
 						Longitude = 42,
 						Location = "The 90s",
 						Name = "Donkey Kong",
-						Image = "https://github.com/xamarin/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/FlowerBuds.jpg?raw=true"
+						Image = "https://github.com/pieroviano/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/FlowerBuds.jpg?raw=true"
 					},
 					new Monkey()
 					{
@@ -163,7 +163,7 @@ namespace Xamarin.Forms.Controls.Issues
 						Longitude = 42,
 						Location = "Sunday Mornings",
 						Name = "Grape Ape",
-						Image = "https://github.com/xamarin/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/games.png?raw=true"
+						Image = "https://github.com/pieroviano/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/games.png?raw=true"
 					},
 					new Monkey()
 					{
@@ -172,7 +172,7 @@ namespace Xamarin.Forms.Controls.Issues
 						Longitude = 42,
 						Location = "The Sky",
 						Name = "Flying Monkey",
-						Image = "https://github.com/xamarin/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/gear.png?raw=true"
+						Image = "https://github.com/pieroviano/Xamarin.Forms/blob/17881ec93d6b3fb0ee5e1a2be46d7eeadef23529/Xamarin.Forms.ControlGallery.Android/Resources/drawable/gear.png?raw=true"
 					},
 				};
 

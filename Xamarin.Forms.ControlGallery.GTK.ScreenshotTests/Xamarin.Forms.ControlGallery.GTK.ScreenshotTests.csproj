@@ -62,19 +62,4 @@
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!--
-      Build ordering only. ReferenceOutputAssembly="false" keeps the gallery's assembly - and the
-      whole Forms + GtkSharp closure behind it - out of this project's compile and output: the
-      suite talks to the gallery as a PROCESS, through Win32, and linking it would only invite
-      someone to start it in-process, which is exactly the thing this harness must not do. The
-      TFMs also differ (net10.0 vs net10.0-windows), so SetTargetFramework pins the reference
-      instead of letting the SDK negotiate one.
-    -->
-    <ProjectReference Include="..\Xamarin.Forms.ControlGallery.GTK\Xamarin.Forms.ControlGallery.GTK.csproj"
-                      ReferenceOutputAssembly="false"
-                      SkipGetTargetFrameworkProperties="true"
-                      Private="false" />
-  </ItemGroup>
-
 </Project>

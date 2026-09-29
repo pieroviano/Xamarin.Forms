@@ -16,7 +16,7 @@ namespace Xamarin.Forms.Controls.Issues
 	[NUnit.Framework.Category(Core.UITests.UITestCategories.Github5000)]
 #endif
 	// This may crash for you on Android if you click too many buttons
-	// https://github.com/xamarin/Xamarin.Forms/issues/3603
+	// https://github.com/pieroviano/Xamarin.Forms/issues/3603
 	[Preserve(AllMembers = true)]
 	[Issue(IssueTracker.Github, 3408, "System.ObjectDisposedException: from SwitchCellRenderer when changing ItemSource", PlatformAffected.iOS)]
 	public class Issue3408 : TestContentPage
@@ -174,7 +174,7 @@ namespace Xamarin.Forms.Controls.Issues
 		}
 
 		// This work around exists because of this issue
-		// https://github.com/xamarin/Xamarin.Forms/issues/3602
+		// https://github.com/pieroviano/Xamarin.Forms/issues/3602
 		object context = null;
 		protected override void OnBindingContextChanged()
 		{

@@ -185,7 +185,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		// fixed at https://github.com/xamarin/flex/commit/0ccb9f1625abdc5400def29651373937bf6610cd
+		// fixed at https://github.com/pieroviano/flex/commit/0ccb9f1625abdc5400def29651373937bf6610cd
 		public void TestSwapChildrenOrder()
 		{
 			var layoutSize = new Size(300, 50);
@@ -393,7 +393,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/2551
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2551
 		public void TestReverseWithGrow()
 		{
 			var label0 = new Label
@@ -416,7 +416,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		[Fact]
 		public void TestIsVisible()
-		//https://github.com/xamarin/Xamarin.Forms/issues/2593
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2593
 		{
 			var label0 = new Label
 			{
@@ -458,7 +458,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		[Fact]
 		public void ChangingGrowTriggersLayout()
-		//https://github.com/xamarin/Xamarin.Forms/issues/2821
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2821
 		{
 			var layout = new FlexLayout
 			{
@@ -482,7 +482,7 @@ namespace Xamarin.Forms.Core.UnitTests
 
 		[Fact]
 		public void PaddingOnLayout()
-		//https://github.com/xamarin/Xamarin.Forms/issues/2663
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2663
 		{
 			var label0 = new Label
 			{

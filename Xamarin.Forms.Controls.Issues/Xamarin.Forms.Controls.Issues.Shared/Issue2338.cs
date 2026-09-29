@@ -66,7 +66,7 @@ namespace Xamarin.Forms.Controls.Issues
 		}
 
 		// Various tests are commented out on certain platforms because
-		// https://github.com/xamarin/Xamarin.Forms/issues/3188
+		// https://github.com/pieroviano/Xamarin.Forms/issues/3188
 		[Test]
 		[NUnit.Framework.Category(Core.UITests.UITestCategories.UwpIgnore)]
 		public async Task SwapMainPageOut()

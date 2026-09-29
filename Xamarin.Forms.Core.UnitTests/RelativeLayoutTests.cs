@@ -115,7 +115,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/2169
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2169
 		public void BoundsUpdatedIfConstraintsChangedWhileNotParented()
 		{
 			var relativeLayout = new RelativeLayout

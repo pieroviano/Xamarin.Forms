@@ -308,6 +308,6 @@ codebase answers both questions.
 ---
 
 *Repository: [github.com/pieroviano/Xamarin.Forms](https://github.com/pieroviano/Xamarin.Forms),
-branch `5.0.0`. Original project: [xamarin/Xamarin.Forms](https://github.com/xamarin/Xamarin.Forms)
+branch `5.0.0`. Original project: [xamarin/Xamarin.Forms](https://github.com/pieroviano/Xamarin.Forms)
 (MIT). For new cross-platform work, see [.NET MAUI](https://github.com/dotnet/maui) and the
 [official upgrade guidance](https://learn.microsoft.com/dotnet/maui/migration).*

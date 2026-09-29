@@ -85,7 +85,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Duplo/issues/1207#issuecomment-47159917
+		//https://github.com/pieroviano/Duplo/issues/1207#issuecomment-47159917
 		public void xNameInCustomTypes()
 		{
 			var xaml = @"<ContentPage
@@ -420,7 +420,7 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/2574
+		//https://github.com/pieroviano/Xamarin.Forms/issues/2574
 		public void xNameOnRoot()
 		{
 			var xaml = @"<ContentPage

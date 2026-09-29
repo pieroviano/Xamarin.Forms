@@ -58,11 +58,11 @@
           it has already happened twice. $(InputBoxLibraryVersion) and $(VersionBuildSuffix) are
           unrelated and undefined here, so the version evaluated to the bare string ".".
 
-          Net4x.GtkSharp, NOT GtkSharp, since the Gtk 4 migration - and the same tooling rewrites
+          GtkSharp4, NOT GtkSharp, since the Gtk 4 migration - and the same tooling rewrites
           the Include back to the bare "GtkSharp", which would restore the GTK 3 package next to
           this one. _XFAssertNoGtk3Package below fails the build if that happens.
         -->
-        <PackageReference Include="Net4x.GtkSharp" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
+        <PackageReference Include="GtkSharp4" Version="$(GtkSharpVersion).$(GtkSharpVersionBuildSuffix)" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
@@ -84,6 +84,6 @@
       assembly defining namespace Gtk, and errors that point anywhere but here.
     -->
     <Target Name="_XFAssertNoGtk3Package" BeforeTargets="BeforeBuild;Pack">
-        <Error Condition="'@(PackageReference-&gt;AnyHaveMetadataValue('Identity', 'GtkSharp'))' == 'true'" Text="A PackageReference to 'GtkSharp' (the GTK 3 bindings) is present in $(MSBuildProjectFile) alongside Net4x.GtkSharp. This backend targets GTK 4; the two packages both define namespace Gtk and cannot coexist. Remove it again - see the comment in Directory.Build.props." />
+        <Error Condition="'@(PackageReference-&gt;AnyHaveMetadataValue('Identity', 'GtkSharp'))' == 'true'" Text="A PackageReference to 'GtkSharp' (the GTK 3 bindings) is present in $(MSBuildProjectFile) alongside GtkSharp4. This backend targets GTK 4; the two packages both define namespace Gtk and cannot coexist. Remove it again - see the comment in Directory.Build.props." />
     </Target>
 </Project>

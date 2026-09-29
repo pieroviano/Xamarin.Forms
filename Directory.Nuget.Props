@@ -4,22 +4,21 @@
         <NuGetPackageRoot Condition="'$(NuGetPackageRoot)'=='' and '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' != 'true'">~/.nuget/packages/</NuGetPackageRoot>
         <VersionBuildSuffix Condition="'$(Configuration)'!='Release'">*</VersionBuildSuffix>
         <VersionBuildSuffix Condition="'$(Configuration)'=='Release'">*</VersionBuildSuffix>
-        <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)' == ''">2.1.0</NuGetUtilityVersion>
+        <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)' == ''">1.0.0</NuGetUtilityVersion>
         <DirectoryNuGet>true</DirectoryNuGet>
-        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
-        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' != 'true'">~/.nuget/packages/</NuGetPackageRoot>
-        <VersionBuildSuffix Condition="'$(Configuration)' != 'Release'">*</VersionBuildSuffix>
-        <VersionBuildSuffix Condition="'$(Configuration)' == 'Release'">*</VersionBuildSuffix>
+        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)'=='' and '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'=='true'">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
+        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)'=='' and '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'!='true'">~/.nuget/packages/</NuGetPackageRoot>
+        <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)'==''">1.0.17</NuGetUtilityVersion>
+        <DirectoryNuGet Condition="'$(DirectoryNuGet)'==''">true</DirectoryNuGet>
         <VersionBuildSuffix Condition="'$(VersionBuildSuffix)'==''">*</VersionBuildSuffix>
-        <VersionBuildSuffix Condition="'$(VersionBuildSuffix)' == ''">*</VersionBuildSuffix>
-        <NuGetUtilityVersion Condition="'$(NuGetUtilityVersion)'==''">1.0.13</NuGetUtilityVersion>
-        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
-        <VersionBuildSuffix>*</VersionBuildSuffix>
         <GtkSharpVersionBuildSuffix>26229</GtkSharpVersionBuildSuffix>
+        <GtkSharp3VersionBuildSuffix>95</GtkSharp3VersionBuildSuffix>
+        <VersionBuildSuffix>*</VersionBuildSuffix>
+        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)'==''">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
+        <GtkSharp3Version>3.24.24</GtkSharp3Version>
         <GtkSharpVersion>4.22.4</GtkSharpVersion>
         <InputBoxLibraryVersion>2.0.0</InputBoxLibraryVersion>
-        <Net4xXUnit2Version>1.0.0</Net4xXUnit2Version>
-        <NuGetUtilityVersion>1.0.9</NuGetUtilityVersion>
+        <Net4xXUnit2Version>3.1.5</Net4xXUnit2Version>
         <ObfuscarVersion>2.2.37</ObfuscarVersion>
         <XamarinFormsGtkVersion>5.0.0</XamarinFormsGtkVersion>
     </PropertyGroup>

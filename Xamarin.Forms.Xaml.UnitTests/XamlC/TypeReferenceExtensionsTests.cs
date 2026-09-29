@@ -159,7 +159,7 @@ namespace Xamarin.Forms.XamlcUnitTests
 		[InlineData(typeof(Bar<string>), typeof(Foo), true)]
 		[InlineData(typeof(Bar<string>), typeof(Foo<bool>), false)]
 		[InlineData(typeof(Bar<string>), typeof(Foo<string>), true)]
-		[InlineData(typeof(Qux<string>), typeof(double), false)] //https://github.com/xamarin/Xamarin.Forms/issues/1497
+		[InlineData(typeof(Qux<string>), typeof(double), false)] //https://github.com/pieroviano/Xamarin.Forms/issues/1497
 		[InlineData(typeof(IGrault<object>), typeof(IGrault<string>), false)]
 		[InlineData(typeof(IGrault<string>), typeof(IGrault<object>), false)]
 		[InlineData(typeof(ICovariant<object>), typeof(ICovariant<string>), false)]

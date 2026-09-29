@@ -5,10 +5,10 @@
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
-        <IsPackable>false</IsPackable>
+        <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
         <XFDisableTargetsValidation>True</XFDisableTargetsValidation>
-        <PackageId>Net4x.$(AssemblyName)</PackageId>
+        <PackageId>Net4x.Xamarin.Forms.Gtk3.Controls.Tests</PackageId>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DefineConstants>TRACE;DEBUG;PERF;APP</DefineConstants>

@@ -132,7 +132,7 @@ namespace Xamarin.Forms.Controls.Issues
 		[Test]
 		[Category(UITestCategories.Button)]
 		[Category(UITestCategories.Accessibility)]
-		[Ignore("Automated Test not relevant until https://github.com/xamarin/Xamarin.Forms/issues/1529 is fixed")]
+		[Ignore("Automated Test not relevant until https://github.com/pieroviano/Xamarin.Forms/issues/1529 is fixed")]
 		public void Issue5150Test() 
 		{
 			Verify("button1prop", "button1", "Name 1");

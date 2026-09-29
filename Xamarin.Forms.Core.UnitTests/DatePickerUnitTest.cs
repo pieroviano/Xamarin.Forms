@@ -182,7 +182,7 @@ namespace Xamarin.Forms.Core.UnitTests
 		}
 
 		[Fact]
-		//https://github.com/xamarin/Xamarin.Forms/issues/5784
+		//https://github.com/pieroviano/Xamarin.Forms/issues/5784
 		public void SetMaxAndMinDateTimeToNow()
 		{
 			var datePicker = new DatePicker();

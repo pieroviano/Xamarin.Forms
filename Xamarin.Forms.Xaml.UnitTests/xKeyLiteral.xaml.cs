@@ -26,7 +26,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 			[Theory]
 			[InlineData(false)]
 			[InlineData(true)]
-			//this requirement might change, see https://github.com/xamarin/Xamarin.Forms/issues/12425
+			//this requirement might change, see https://github.com/pieroviano/Xamarin.Forms/issues/12425
 			public void xKeyRequireStringLiteral(bool useCompiledXaml)
 			{
 				if (useCompiledXaml)

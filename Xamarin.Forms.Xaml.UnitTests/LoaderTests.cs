@@ -789,7 +789,7 @@ namespace Xamarin.Forms.Xaml.UnitTests
 
 		[Fact]
 		public void BindingIsResolvedAsBindingExtension()
-		// https://github.com/xamarin/Xamarin.Forms/issues/3606#issuecomment-422377338
+		// https://github.com/pieroviano/Xamarin.Forms/issues/3606#issuecomment-422377338
 		{
 			var bindingType = XamlParser.GetElementType(new XmlType("http://xamarin.com/schemas/2014/forms", "Binding", null), null, null, out var ex);
 			Assert.Null(ex);
