@@ -210,6 +210,14 @@ namespace System.Windows.Controls
 
 		void OnCanExecuteChanged(object sender, EventArgs e) => CoerceIsEnabled();
 
+		/// <summary>A routed command finds its bindings up the tree: a new place may enable or disable it.</summary>
+		internal override void OnLogicalParentChanged(DependencyObject oldParent)
+		{
+			base.OnLogicalParentChanged(oldParent);
+			if (Command != null)
+				CoerceIsEnabled();
+		}
+
 		internal override void OnHeaderChanged()
 		{
 			if (HasNativeView && NativeView is XF.Label label)

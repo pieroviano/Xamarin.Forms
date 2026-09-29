@@ -22,12 +22,18 @@ namespace System.Windows
 		/// <summary>GTK windows that have been closed, kept so their wrappers are never finalized after the widget is gone.</summary>
 		static readonly List<Gtk.Window> s_closed = new List<Gtk.Window>();
 
+		static readonly List<Window> s_open = new List<Window>();
+
+		/// <summary>The windows shown and not closed, in the order they were first shown.</summary>
+		internal static IReadOnlyList<Window> OpenWindows => s_open.ToArray();
+
 		HostWindow _host;
 		XF.ContentPage _page;
 		DispatcherFrame _dialogFrame;
 		bool? _dialogResult;
 		bool _isDialog;
 		bool _closing;
+		bool _shown;
 		Window _owner;
 		readonly List<Window> _ownedWindows = new List<Window>();
 
@@ -234,9 +240,13 @@ namespace System.Windows
 			if (IsClosed)
 				throw new InvalidOperationException("Cannot set Visibility or call Show, ShowDialog, or WindowInteropHelper.EnsureHandle after a Window has closed.");
 
-			var first = _host == null;
-			if (first)
+			// ShowDialog makes the host first (to make it modal), so the first show is not "no host yet".
+			var first = !_shown;
+			_shown = true;
+			if (_host == null)
 				CreateHost();
+			if (first)
+				s_open.Add(this);
 
 			SetValue(VisibilityProperty, Visibility.Visible);
 			_host.Visible = true;
@@ -352,6 +362,7 @@ namespace System.Windows
 			}
 
 			IsClosed = true;
+			s_open.Remove(this);
 			foreach (var owned in _ownedWindows.ToArray())
 				owned.Close();
 
@@ -424,7 +435,7 @@ namespace System.Windows
 		}
 
 		/// <summary>The size to open at: the content's when the window sizes to it, else Width/Height, else the content's.</summary>
-		(int Width, int Height) InitialSize()
+		internal (int Width, int Height) InitialSize()
 		{
 			var request = NativeView.Measure(double.PositiveInfinity, double.PositiveInfinity, XF.MeasureFlags.IncludeMargins).Request;
 			var sizeToContent = SizeToContent;

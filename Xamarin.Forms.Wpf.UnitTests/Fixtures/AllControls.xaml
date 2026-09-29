@@ -1,0 +1,102 @@
+<Window x:Class="Wpf.UnitTests.Fixtures.AllControls"
+    x:ClassModifier="internal"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:Wpf.UnitTests.Fixtures"
+    mc:Ignorable="d"
+    Title="Every element Vb6ToCSharp's WpfEmitter writes"
+    SizeToContent="WidthAndHeight"
+    WindowStartupLocation="Manual"
+    Left="10"
+    Top="20"
+    ResizeMode="CanMinimize"
+    WindowStyle="ToolWindow"
+    ShowInTaskbar="False"
+    WindowState="Normal"
+    Icon="Fixtures/Pixel.png"
+    Background="#FFC0C0C0"
+    Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
+    FontFamily="MS Sans Serif"
+    FontSize="10.67"
+    FontWeight="Bold"
+    FontStyle="Italic">
+  <!-- TODO comments the emitter writes are plain XML comments -->
+  <DockPanel LastChildFill="True">
+    <Menu DockPanel.Dock="Top">
+      <MenuItem x:Name="mnuFile" Header="_File">
+        <MenuItem x:Name="mnuOpen" Header="_Open" InputGestureText="Ctrl+O" />
+        <Separator x:Name="mnuSep" />
+        <MenuItem x:Name="mnuCheck" Header="Check" IsCheckable="True" IsChecked="True" />
+        <MenuItem x:Name="mnuHidden" Header="Hidden" IsEnabled="False" Visibility="Collapsed" />
+      </MenuItem>
+    </Menu>
+    <Grid x:Name="LayoutRoot" Width="600" Height="400" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Grid.Background><ImageBrush ImageSource="Fixtures/Pixel.png" Stretch="None" AlignmentX="Left" AlignmentY="Top" /></Grid.Background>
+      <Label x:Name="lbl" Margin="1,2,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="50" Height="17" TabIndex="0" IsTabStop="False" IsEnabled="False" Visibility="Hidden" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Foreground="#FF0000" ToolTip="tip" Tag="tag" Cursor="Hand" FontFamily="Arial" FontSize="12" FontWeight="Bold" FontStyle="Italic" Content="_Name" Padding="0" HorizontalContentAlignment="Right" BorderBrush="Black" BorderThickness="1" />
+      <TextBox x:Name="txt" Margin="1,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="80" Height="40" Text="a" AcceptsReturn="True" TextWrapping="Wrap" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" MaxLength="10" IsReadOnly="True" TextAlignment="Right" BorderThickness="0" />
+      <Button x:Name="btn" Content="_Go" IsDefault="True" IsCancel="True" />
+      <CheckBox x:Name="chk" Content="Check" IsThreeState="True" IsChecked="{x:Null}" />
+      <CheckBox x:Name="chk2" Content="Checked" IsChecked="True" />
+      <RadioButton x:Name="opt" Content="Option" IsChecked="True" />
+      <GroupBox x:Name="fra" Header="Frame" BorderThickness="0">
+        <Grid Margin="-6,-17,-6,-6">
+          <Label x:Name="inner" Content="in" />
+        </Grid>
+      </GroupBox>
+      <ComboBox x:Name="cbo" IsEditable="True" Text="b">
+        <ComboBoxItem Content="a" />
+        <ComboBoxItem Content="b" />
+      </ComboBox>
+      <ComboBox x:Name="cboList" IsEditable="False" />
+      <ListBox x:Name="lst" SelectionMode="Extended">
+        <ListBoxItem Content="x" />
+        <ListBoxItem Content="y" />
+      </ListBox>
+      <Canvas x:Name="pic" ClipToBounds="True">
+        <Canvas.Background><ImageBrush ImageSource="Fixtures/Pixel.png" Stretch="None" AlignmentX="Left" AlignmentY="Top" /></Canvas.Background>
+        <Label x:Name="inCanvas" Canvas.Left="5" Canvas.Top="6" Width="20" Height="10" Content="c" />
+      </Canvas>
+      <Image x:Name="img" Source="Fixtures/Pixel.png" Stretch="None" />
+      <ScrollBar x:Name="hsb" Orientation="Horizontal" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" Value="5" />
+      <ScrollBar x:Name="vsb" Orientation="Vertical" Minimum="0" Maximum="32767" SmallChange="1" LargeChange="1" />
+      <TreeView x:Name="tvw" />
+      <ListView x:Name="lvw" SelectionMode="Single">
+        <ListView.View><GridView>
+          <GridViewColumn Header="Name" Width="96" />
+          <GridViewColumn Header="Size" Width="50" />
+        </GridView></ListView.View>
+      </ListView>
+      <ProgressBar x:Name="prg" Minimum="0" Maximum="100" Value="30" Orientation="Vertical" />
+      <Slider x:Name="sld" Minimum="0" Maximum="10" SmallChange="1" LargeChange="5" TickFrequency="1" TickPlacement="BottomRight" Orientation="Horizontal" Value="3" />
+      <StatusBar x:Name="sbr" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="25">
+        <StatusBarItem Content="ready" Width="80" Tag="k1" />
+        <StatusBarItem Content="auto" />
+      </StatusBar>
+      <ToolBar x:Name="tbr" VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="25">
+        <Button Content="B" Tag="k" ToolTip="t" />
+        <Separator />
+        <ToggleButton Content="T" />
+      </ToolBar>
+      <TabControl x:Name="tab">
+        <TabItem Header="_One">
+          <Grid>
+            <Label x:Name="onFirstTab" Content="1" />
+          </Grid>
+        </TabItem>
+        <TabItem Header="Two" Tag="k" />
+      </TabControl>
+      <DatePicker x:Name="dtp" SelectedDate="2020-01-02" SelectedDateFormat="Short" />
+      <Calendar x:Name="cal" />
+      <RichTextBox x:Name="rtb" IsReadOnly="True">
+        <FlowDocument><Paragraph><Run Text="rich" /></Paragraph></FlowDocument>
+      </RichTextBox>
+      <Line x:Name="lin" X1="0" Y1="0" X2="10" Y2="10" Stroke="Black" StrokeThickness="1" StrokeDashArray="4 2" />
+      <Rectangle x:Name="shp" Margin="1,1,0,0" Width="20" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Stroke="Black" StrokeThickness="1" RadiusX="2" RadiusY="2" Fill="Red" />
+      <Ellipse x:Name="ell" Width="10" Height="10" Stroke="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" Visibility="Hidden" />
+      <Border x:Name="dat" BorderBrush="Gray" BorderThickness="1" />
+      <local:Widget x:Name="usr" Width="30" Height="20" />
+    </Grid>
+  </DockPanel>
+</Window>

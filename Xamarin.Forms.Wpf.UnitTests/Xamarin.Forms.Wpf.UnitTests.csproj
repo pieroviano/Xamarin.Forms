@@ -29,6 +29,11 @@
     <ProjectReference Include="..\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Images a WPF resource URI finds: one next to the executable, one only inside the assembly. -->
+    <Content Include="Fixtures\Pixel.png" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Fixtures\Embedded.png" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The GTK bootstrap, pump and helpers of the backend's own suite: linked, so a fix there applies here. -->
     <Compile Include="..\Xamarin.Forms.Platform.GTK.UnitTests\GtkTestHost.cs" Link="GtkTestHost.cs" />
   </ItemGroup>

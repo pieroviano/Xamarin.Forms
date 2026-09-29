@@ -682,8 +682,20 @@ namespace System.Windows.Input
 		}
 	}
 
+	/// <summary>A binding added or removed may change what commands can run: command sources ask again, as WPF's do.</summary>
 	public sealed class CommandBindingCollection : Collection<CommandBinding>
 	{
+		protected override void InsertItem(int index, CommandBinding item)
+		{
+			base.InsertItem(index, item);
+			CommandManager.InvalidateRequerySuggested();
+		}
+
+		protected override void RemoveItem(int index)
+		{
+			base.RemoveItem(index);
+			CommandManager.InvalidateRequerySuggested();
+		}
 	}
 
 	public abstract class InputGesture

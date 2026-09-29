@@ -88,6 +88,42 @@ namespace System.Windows.Controls.Primitives
 
 		void OnCanExecuteChanged(object sender, EventArgs e) => CoerceIsEnabled();
 
+		/// <summary>A routed command finds its bindings up the tree: a new place may enable or disable it.</summary>
+		internal override void OnLogicalParentChanged(DependencyObject oldParent)
+		{
+			base.OnLogicalParentChanged(oldParent);
+			if (Command != null)
+				CoerceIsEnabled();
+		}
+
+		/// <summary>WPF: a focused button clicks on Enter, and on Space when the key comes up.</summary>
+		protected override void OnKeyDown(KeyEventArgs e)
+		{
+			base.OnKeyDown(e);
+			if (e.Handled || !ReferenceEquals(e.OriginalSource, this))
+				return;
+
+			if (e.Key == Key.Enter)
+			{
+				e.Handled = true;
+				PerformClick();
+			}
+			else if (e.Key == Key.Space)
+			{
+				e.Handled = true;
+			}
+		}
+
+		protected override void OnKeyUp(KeyEventArgs e)
+		{
+			base.OnKeyUp(e);
+			if (!e.Handled && e.Key == Key.Space && ReferenceEquals(e.OriginalSource, this))
+			{
+				e.Handled = true;
+				PerformClick();
+			}
+		}
+
 		internal override XF.View CreateNativeView()
 		{
 			var button = new XF.Button { Padding = new XF.Thickness(4, 1) };

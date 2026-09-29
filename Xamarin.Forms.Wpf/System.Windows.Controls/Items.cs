@@ -686,8 +686,13 @@ namespace System.Windows.Controls.Primitives
 		public static readonly RoutedEvent SelectionChangedEvent =
 			EventManager.RegisterRoutedEvent("SelectionChanged", RoutingStrategy.Bubble, typeof(SelectionChangedEventHandler), typeof(Selector));
 
-		public static readonly XF.BindableProperty SelectedIndexProperty = Dp.Register<Selector>(nameof(SelectedIndex), typeof(int), -1, mode: XF.BindingMode.TwoWay);
-		public static readonly XF.BindableProperty SelectedItemProperty = Dp.Register<Selector>(nameof(SelectedItem), typeof(object), null, mode: XF.BindingMode.TwoWay);
+		/// <summary>Coerced as WPF's is: an index outside the items is -1.</summary>
+		public static readonly XF.BindableProperty SelectedIndexProperty = Dp.Register<Selector>(nameof(SelectedIndex), typeof(int), -1, mode: XF.BindingMode.TwoWay,
+			coerce: (b, v) => b is Selector s ? s.CoerceIndex((int)v) : v);
+
+		/// <summary>Coerced as WPF's is: an item that is not among the items is no selection.</summary>
+		public static readonly XF.BindableProperty SelectedItemProperty = Dp.Register<Selector>(nameof(SelectedItem), typeof(object), null, mode: XF.BindingMode.TwoWay,
+			coerce: (b, v) => b is Selector s && v != null && !s.Items.Contains(v) ? null : v);
 		public static readonly XF.BindableProperty SelectedValuePathProperty = Dp.Register<Selector>(nameof(SelectedValuePath), typeof(string), string.Empty);
 		public static readonly XF.BindableProperty IsSynchronizedWithCurrentItemProperty = Dp.Register<Selector>(nameof(IsSynchronizedWithCurrentItem), typeof(bool?), null);
 
@@ -743,33 +748,59 @@ namespace System.Windows.Controls.Primitives
 
 		protected virtual void OnSelectionChanged(SelectionChangedEventArgs e) => RaiseEvent(e);
 
+		internal int CoerceIndex(int index) => index >= 0 && index < Items.Count ? index : -1;
+
 		/// <summary>Selects the item at <paramref name="index"/> (-1: none), from code or from the view.</summary>
 		internal void Select(int index, bool fromNative)
 		{
-			if (index < -1 || index >= Items.Count)
-				index = -1;
-
-			var oldItem = SelectedItem;
-			var oldIndex = SelectedIndex;
-			var newItem = index < 0 ? null : Items[index];
-			if (oldIndex == index && ReferenceEquals(oldItem, newItem))
-				return;
-
-			_selecting = true;
 			FromNative = fromNative;
 			try
 			{
-				SetValue(SelectedIndexProperty, index);
-				SetValue(SelectedItemProperty, newItem);
-				SyncContainers(oldItem, newItem);
-				if (HasNativeView && !fromNative)
-					ApplySelection();
+				SelectedIndex = CoerceIndex(index);
+			}
+			finally
+			{
+				FromNative = false;
+			}
+		}
+
+		/// <summary>
+		/// One property of the pair changed: the other follows, and the change is announced.
+		/// </summary>
+		/// <remarks>
+		/// Never by setting the property that changed, from its own change notification: Xamarin.Forms queues that
+		/// set and notifies again after it, so a handler that "reverted" the raw value and then applied the real
+		/// one ran forever. Out-of-range values are the properties' coercion's business instead.
+		/// </remarks>
+		void OnSelectionPropertyChanged(bool indexChanged, object oldItem)
+		{
+			object newItem;
+			_selecting = true;
+			try
+			{
+				if (indexChanged)
+				{
+					var index = SelectedIndex;
+					newItem = index < 0 ? null : Items[index];
+					SetValue(SelectedItemProperty, newItem);
+				}
+				else
+				{
+					newItem = SelectedItem;
+					SetValue(SelectedIndexProperty, newItem == null ? -1 : Items.IndexOf(newItem));
+				}
 			}
 			finally
 			{
 				_selecting = false;
-				FromNative = false;
 			}
+
+			if (ReferenceEquals(oldItem, newItem))
+				return;
+
+			SyncContainers(oldItem, newItem);
+			if (HasNativeView && !FromNative)
+				ApplySelection();
 
 			OnSelectionChanged(new SelectionChangedEventArgs(SelectionChangedEvent,
 				oldItem == null ? (IList)Array.Empty<object>() : new[] { oldItem },
@@ -813,20 +844,9 @@ namespace System.Windows.Controls.Primitives
 
 			var p = e.Property.Bindable;
 			if (p == SelectedIndexProperty)
-			{
-				// Undo the raw value; Select sets both properties and raises the event.
-				_selecting = true;
-				SetValue(SelectedIndexProperty, e.OldValue);
-				_selecting = false;
-				Select((int)e.NewValue, false);
-			}
+				OnSelectionPropertyChanged(true, SelectedItem);
 			else if (p == SelectedItemProperty)
-			{
-				_selecting = true;
-				SetValue(SelectedItemProperty, e.OldValue);
-				_selecting = false;
-				Select(e.NewValue == null ? -1 : Items.IndexOf(e.NewValue), false);
-			}
+				OnSelectionPropertyChanged(false, e.OldValue);
 		}
 
 		/// <summary>Keeps the selection on the same item when items come and go; a removed selected item leaves none.</summary>

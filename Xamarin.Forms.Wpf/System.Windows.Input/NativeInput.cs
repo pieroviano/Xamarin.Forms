@@ -136,7 +136,14 @@ namespace System.Windows.Input
 		static UIElement ElementAt(Gtk.Window toplevel, double x, double y) =>
 			ElementOf(toplevel.Pick(x, y, Gtk.PickFlags.Default));
 
-		static bool OnButton(WpfWindow window, Gtk.Window toplevel, uint button, int clickCount, double x, double y, bool pressed, Gdk.ModifierType state)
+		internal static bool OnButton(WpfWindow window, Gtk.Window toplevel, uint button, int clickCount, double x, double y, bool pressed, Gdk.ModifierType state)
+		{
+			var handled = HandleButton(window, toplevel, button, clickCount, x, y, pressed, state);
+			CommandManager.InvalidateRequerySuggested();
+			return handled;
+		}
+
+		static bool HandleButton(WpfWindow window, Gtk.Window toplevel, uint button, int clickCount, double x, double y, bool pressed, Gdk.ModifierType state)
 		{
 			Remember(toplevel, x, y);
 			UpdateModifiers(state);
@@ -173,7 +180,7 @@ namespace System.Windows.Input
 			return e.Handled;
 		}
 
-		static void OnMotion(WpfWindow window, Gtk.Window toplevel, double x, double y, Gdk.ModifierType state)
+		internal static void OnMotion(WpfWindow window, Gtk.Window toplevel, double x, double y, Gdk.ModifierType state)
 		{
 			Remember(toplevel, x, y);
 			UpdateModifiers(state);
@@ -271,7 +278,15 @@ namespace System.Windows.Input
 		}
 
 		/// <returns>Whether a handler handled the key, which keeps it from the focused widget.</returns>
+		/// <remarks>After any input WPF asks command sources whether their commands can run now; so does this.</remarks>
 		internal static bool OnKey(WpfWindow window, uint keyval, Gdk.ModifierType state, bool down)
+		{
+			var handled = HandleKey(window, keyval, state, down);
+			CommandManager.InvalidateRequerySuggested();
+			return handled;
+		}
+
+		static bool HandleKey(WpfWindow window, uint keyval, Gdk.ModifierType state, bool down)
 		{
 			var key = GdkKeys.ToKey(keyval);
 

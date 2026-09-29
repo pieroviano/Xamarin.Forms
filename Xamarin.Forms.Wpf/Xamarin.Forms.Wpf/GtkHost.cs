@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using XFApplication = Xamarin.Forms.Application;
 
@@ -28,6 +29,16 @@ namespace Xamarin.Forms.Wpf
 
 			// The view that shows a GTK widget as it is: Forms.Init scans only the backend's own renderers.
 			Internals.Registrar.Registered.Register(typeof(NativeHostView), typeof(NativeHostRenderer));
+
+			// An exception in a handler GTK calls (a click, a key, a timer) would otherwise end the process from
+			// inside GLib; WPF surfaces it from the message loop instead, and so does this (Dispatcher.PushFrame).
+			GLib.ExceptionManager.UnhandledException += args =>
+			{
+				if (args.IsTerminating)
+					return;
+
+				System.Windows.Threading.Dispatcher.CurrentDispatcher.Defer(args.ExceptionObject as Exception);
+			};
 
 			FormsApplication = XFApplication.Current ?? new ResourceApplication();
 			foreach (var resource in SystemColors.Resources())

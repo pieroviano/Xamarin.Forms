@@ -20,9 +20,8 @@ namespace System.Windows
 		bool _isInitialized;
 		int _initCount;
 
-		public FrameworkElement()
-		{
-		}
+		/// <summary>The first element brings GTK and Xamarin.Forms up (and with them the system resources).</summary>
+		public FrameworkElement() => GtkHost.EnsureInitialized();
 
 		// ---- layout --------------------------------------------------------------------------------------------------
 

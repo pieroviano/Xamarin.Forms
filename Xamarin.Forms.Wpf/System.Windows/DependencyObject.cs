@@ -207,6 +207,17 @@ namespace System.Windows
 			OnLogicalParentChanged(oldParent);
 		}
 
+		/// <summary>
+		/// The binding context (WPF's DataContext) flows down the WPF logical tree: Xamarin.Forms pushes it only to the
+		/// children it tracks itself, and these are not among them.
+		/// </summary>
+		protected override void OnBindingContextChanged()
+		{
+			base.OnBindingContextChanged();
+			foreach (var child in LogicalChildrenCore.OfType<DependencyObject>())
+				SetInheritedBindingContext(child, BindingContext);
+		}
+
 		/// <summary>Re-reads what this element inherits, which a new parent may change.</summary>
 		internal virtual void OnLogicalParentChanged(DependencyObject oldParent)
 		{

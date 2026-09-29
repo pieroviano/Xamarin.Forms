@@ -10,9 +10,11 @@ namespace Xamarin.Forms.Wpf
 	/// </summary>
 	internal static class Dp
 	{
-		internal static BindableProperty Register<TOwner>(string name, Type type, object defaultValue, bool inherits = false, BindingMode mode = BindingMode.OneWay)
+		/// <param name="coerce">WPF's coercion: the value actually stored for the one set (a selected index within the items).</param>
+		internal static BindableProperty Register<TOwner>(string name, Type type, object defaultValue, bool inherits = false, BindingMode mode = BindingMode.OneWay,
+			BindableProperty.CoerceValueDelegate coerce = null)
 		{
-			var bindable = CreateBindable(name, type, typeof(TOwner), defaultValue, mode);
+			var bindable = CreateBindable(name, type, typeof(TOwner), defaultValue, mode, coerce);
 			Declare(bindable, defaultValue, inherits);
 			return bindable;
 		}
@@ -37,11 +39,13 @@ namespace Xamarin.Forms.Wpf
 			return bindable;
 		}
 
-		internal static BindableProperty CreateBindable(string name, Type type, Type owner, object defaultValue, BindingMode mode = BindingMode.OneWay)
+		internal static BindableProperty CreateBindable(string name, Type type, Type owner, object defaultValue, BindingMode mode = BindingMode.OneWay,
+			BindableProperty.CoerceValueDelegate coerce = null)
 		{
 			BindableProperty bindable = null;
 			bindable = BindableProperty.Create(name, type, owner, defaultValue, mode,
-				propertyChanged: (b, o, n) => (b as DependencyObject)?.OnBindableChanged(bindable, o, n));
+				propertyChanged: (b, o, n) => (b as DependencyObject)?.OnBindableChanged(bindable, o, n),
+				coerceValue: coerce);
 			return bindable;
 		}
 

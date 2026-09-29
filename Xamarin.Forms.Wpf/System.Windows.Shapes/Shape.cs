@@ -70,7 +70,7 @@ namespace System.Windows.Shapes
 			shape.Fill = ToForms(Fill);
 			shape.Stroke = ToForms(Stroke);
 			shape.StrokeThickness = StrokeThickness;
-			shape.StrokeDashArray = StrokeDashArray?.ToForms();
+			shape.StrokeDashArray = StrokeDashArray?.ToForms() ?? new XF.DoubleCollection();
 			shape.StrokeDashOffset = StrokeDashOffset;
 			shape.Aspect = Stretch == Stretch.Fill ? XF.Stretch.Fill : Stretch == Stretch.Uniform ? XF.Stretch.Uniform : Stretch == Stretch.UniformToFill ? XF.Stretch.UniformToFill : XF.Stretch.None;
 		}

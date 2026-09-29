@@ -39,8 +39,30 @@ namespace System.Windows.Threading
 		static readonly Dictionary<Thread, Dispatcher> s_dispatchers = new Dictionary<Thread, Dispatcher>();
 
 		readonly List<DispatcherFrame> _frames = new List<DispatcherFrame>();
+		System.Runtime.ExceptionServices.ExceptionDispatchInfo _pending;
 
 		Dispatcher(Thread thread) => Thread = thread;
+
+		/// <summary>
+		/// An exception from a callback the message loop ran: rethrown by the loop (<see cref="PushFrame"/>) once the
+		/// callback has returned, as WPF surfaces it from Run - rather than ending the process from inside GLib.
+		/// </summary>
+		internal void Defer(Exception exception)
+		{
+			if (exception is System.Reflection.TargetInvocationException invocation && invocation.InnerException != null)
+				exception = invocation.InnerException;
+
+			if (_pending == null && exception != null)
+				_pending = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception);
+		}
+
+		/// <summary>Rethrows the exception a callback left, if any.</summary>
+		internal void ThrowPending()
+		{
+			var pending = _pending;
+			_pending = null;
+			pending?.Throw();
+		}
 
 		/// <summary>The dispatcher of the calling thread, created on first use.</summary>
 		public static Dispatcher CurrentDispatcher
@@ -181,7 +203,10 @@ namespace System.Windows.Threading
 			try
 			{
 				while (frame.Continue && !dispatcher.HasShutdownStarted)
+				{
 					GLib.MainContext.Iteration(true);
+					dispatcher.ThrowPending();
+				}
 			}
 			finally
 			{
@@ -355,7 +380,12 @@ namespace System.Windows.Threading
 				Status = DispatcherOperationStatus.Completed;
 				_completion.TrySetException(e);
 				Completed?.Invoke(this, EventArgs.Empty);
-				throw;
+
+				// WPF: Application.DispatcherUnhandledException may handle it; otherwise the loop rethrows it.
+				var inner = e is System.Reflection.TargetInvocationException tie && tie.InnerException != null ? tie.InnerException : e;
+				if (Application.Current?.RaiseDispatcherUnhandledException(inner) != true)
+					Dispatcher.Defer(inner);
+				return;
 			}
 
 			Completed?.Invoke(this, EventArgs.Empty);

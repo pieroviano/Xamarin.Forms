@@ -74,6 +74,7 @@ namespace System.Windows.Media
 		}
 	}
 
+	[XF.TypeConverter(typeof(BrushConverter))]
 	public abstract class Brush : Freezable
 	{
 		public double Opacity
@@ -88,7 +89,6 @@ namespace System.Windows.Media
 		internal virtual XF.Color ToFormsColor() => XF.Color.Default;
 	}
 
-	[XF.TypeConverter(typeof(BrushConverter))]
 	public sealed class SolidColorBrush : Brush
 	{
 		public SolidColorBrush()

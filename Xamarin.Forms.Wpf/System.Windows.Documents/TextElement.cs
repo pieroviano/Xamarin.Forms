@@ -119,9 +119,9 @@ namespace System.Windows.Documents
 		internal override string PlainText => "\n";
 	}
 
+	/// <remarks>WPF also has Add(string): left out, because XamlC cannot choose between Add overloads for XAML content.</remarks>
 	public class InlineCollection : Collection<Inline>
 	{
-		public void Add(string text) => Add(new Run(text));
 	}
 
 	[XF.ContentProperty(nameof(Inlines))]
