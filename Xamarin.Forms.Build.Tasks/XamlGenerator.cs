@@ -53,6 +53,12 @@ namespace Xamarin.Forms.Build.Tasks
 		public TaskLoggingHelper Logger { get; }
 		public string RootClrNamespace { get; private set; }
 		public string RootType { get; private set; }
+
+		/// <summary>
+		/// The visibility of the generated partial class: public unless the root says otherwise with
+		/// <c>x:ClassModifier</c> - which it must when the code-behind half is internal, or the two halves disagree.
+		/// </summary>
+		public System.Reflection.TypeAttributes RootTypeVisibility { get; private set; } = System.Reflection.TypeAttributes.Public;
 		public string References { get; }
 		bool GenerateDefaultCtor { get; set; }
 		bool AddXamlCompilationAttribute { get; set; }
@@ -147,6 +153,7 @@ namespace Xamarin.Forms.Build.Tasks
 				XmlnsHelper.ParseXmlns(rootClass.Value, out rootType, out rootNs, out rootAsm, out targetPlatform);
 				RootType = rootType;
 				RootClrNamespace = rootNs;
+				RootTypeVisibility = ClassVisibility(GetAttributeValue(root, "ClassModifier", XamlParser.X2006Uri, XamlParser.X2009Uri));
 			}
 			else if (hasXamlCompilationProcessingInstruction)
 			{
@@ -200,6 +207,7 @@ namespace Xamarin.Forms.Build.Tasks
 			var declType = new CodeTypeDeclaration(RootType)
 			{
 				IsPartial = true,
+				TypeAttributes = System.Reflection.TypeAttributes.Class | RootTypeVisibility,
 				CustomAttributes = {
 					new CodeAttributeDeclaration(new CodeTypeReference($"global::{typeof(XamlFilePathAttribute).FullName}"),
 						 new CodeAttributeArgument(new CodePrimitiveExpression(XamlFile))),
@@ -319,6 +327,20 @@ namespace Xamarin.Forms.Build.Tasks
 					Attributes = access,
 					CustomAttributes = { GeneratedCodeAttrDecl }
 				};
+			}
+		}
+
+		/// <summary>The class visibility an <c>x:ClassModifier</c> names, with the spellings <c>x:FieldModifier</c> accepts.</summary>
+		static System.Reflection.TypeAttributes ClassVisibility(string classModifier)
+		{
+			switch (classModifier?.ToLowerInvariant())
+			{
+				case "internal":
+				case "notpublic": //WPF syntax
+				case "friend": //VB
+					return System.Reflection.TypeAttributes.NotPublic;
+				default:
+					return System.Reflection.TypeAttributes.Public;
 			}
 		}
 

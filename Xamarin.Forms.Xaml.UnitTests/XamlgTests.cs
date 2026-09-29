@@ -419,6 +419,59 @@ namespace Xamarin.Forms.MSBuild.UnitTests
 			}
 		}
 
+		[Theory]
+		[InlineData(null, System.Reflection.TypeAttributes.Public)]
+		[InlineData("Public", System.Reflection.TypeAttributes.Public)]
+		[InlineData("internal", System.Reflection.TypeAttributes.NotPublic)]
+		[InlineData("NotPublic", System.Reflection.TypeAttributes.NotPublic)]
+		[InlineData("Friend", System.Reflection.TypeAttributes.NotPublic)]
+		public void ClassModifier(string modifier, System.Reflection.TypeAttributes expected)
+		{
+			var xaml = $@"
+			<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
+			             xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml""
+			             x:Class=""Xamarin.Forms.Xaml.UnitTests.ClassModifier""
+			             {(modifier == null ? "" : $@"x:ClassModifier=""{modifier}""")}>
+			</ContentPage>";
+
+			using (var reader = new StringReader(xaml))
+			{
+				var generator = new XamlGenerator(null, null, null, null, null, null,
+					IOPath.GetFullPath(IOPath.Combine(AppContext.BaseDirectory, "Xamarin.Forms.Core.dll")));
+				generator.ParseXaml(reader);
+
+				Assert.Equal(expected, generator.RootTypeVisibility);
+			}
+		}
+
+		[Fact]
+		public void AnInternalClassModifierGeneratesAnInternalPartialClass()
+		{
+			var xaml = @"
+			<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
+			             xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml""
+			             x:Class=""Xamarin.Forms.Xaml.UnitTests.InternalPage""
+			             x:ClassModifier=""internal"">
+			</ContentPage>";
+
+			var output = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName() + ".g.cs");
+			var input = IOPath.ChangeExtension(output, ".xaml");
+			File.WriteAllText(input, xaml);
+			try
+			{
+				var generator = new XamlGenerator(input, "C#", "InternalPage.xaml", "InternalPage.xaml", "Tests", output,
+					IOPath.GetFullPath(IOPath.Combine(AppContext.BaseDirectory, "Xamarin.Forms.Core.dll")));
+				generator.Execute();
+
+				Assert.Contains("internal partial class InternalPage", File.ReadAllText(output));
+			}
+			finally
+			{
+				File.Delete(input);
+				File.Delete(output);
+			}
+		}
+
 		[Fact]
 		//https://github.com/pieroviano/Xamarin.Forms/issues/2574
 		public void xNameOnRoot()
