@@ -269,7 +269,43 @@ namespace System.Windows.Controls
 
 		void OnSourceChanged(object sender, NotifyCollectionChangedEventArgs e) => Refresh();
 
-		void OnSourceListChanged(object sender, ListChangedEventArgs e) => Refresh();
+		/// <summary>
+		/// A binding list (a data view) reports one row at a time: the change is applied to that row alone, so filling a
+		/// table cell by cell is not a full refresh per cell. With a sort or a filter the order may move: refresh.
+		/// </summary>
+		void OnSourceListChanged(object sender, ListChangedEventArgs e)
+		{
+			var list = (IList)sender;
+			if (SortDescriptions.Count > 0 || Filter != null || list.Count != _items.Count + Delta(e.ListChangedType))
+			{
+				Refresh();
+				return;
+			}
+
+			var index = e.NewIndex;
+			switch (e.ListChangedType)
+			{
+				case ListChangedType.ItemChanged when index >= 0 && index < _items.Count:
+					var old = _items[index];
+					_items[index] = list[index];
+					Raise(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, _items[index], old, index));
+					break;
+				case ListChangedType.ItemAdded when index >= 0 && index <= _items.Count:
+					_items.Insert(index, list[index]);
+					Raise(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[index], index));
+					break;
+				case ListChangedType.ItemDeleted when index >= 0 && index < _items.Count:
+					var removed = _items[index];
+					_items.RemoveAt(index);
+					Raise(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removed, index));
+					break;
+				default:
+					Refresh();
+					break;
+			}
+		}
+
+		static int Delta(ListChangedType type) => type == ListChangedType.ItemAdded ? 1 : type == ListChangedType.ItemDeleted ? -1 : 0;
 
 		int SortedIndexOf(object item)
 		{

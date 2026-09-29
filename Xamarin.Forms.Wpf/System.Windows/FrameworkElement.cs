@@ -13,7 +13,7 @@ namespace System.Windows
 	/// properties map one to one onto the Xamarin.Forms view: <c>Width</c> is its width request, <c>Margin</c> its
 	/// margin, the alignments its layout options - which is also how WPF's own panels read them.
 	/// </summary>
-	public class FrameworkElement : UIElement, ISupportInitialize
+	public partial class FrameworkElement : UIElement, ISupportInitialize
 	{
 		ResourceDictionary _resources;
 		bool _isLoaded;

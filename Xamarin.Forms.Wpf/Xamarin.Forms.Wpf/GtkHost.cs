@@ -26,6 +26,9 @@ namespace Xamarin.Forms.Wpf
 				Forms.Init();
 			}
 
+			// The view that shows a GTK widget as it is: Forms.Init scans only the backend's own renderers.
+			Internals.Registrar.Registered.Register(typeof(NativeHostView), typeof(NativeHostRenderer));
+
 			FormsApplication = XFApplication.Current ?? new ResourceApplication();
 			foreach (var resource in SystemColors.Resources())
 			{
