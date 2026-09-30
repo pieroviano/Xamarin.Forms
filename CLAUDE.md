@@ -23,6 +23,13 @@ compatibility surface in a sibling repository rather than by churn here — see
 `docs/plans/gtk4-migration.md`, which is the reference for the whole migration including the local
 package feed, the three waves of compiler errors, and what is deliberately deferred.
 
+**`Xamarin.Forms.Wpf` is not the pruned WPF backend coming back.** It is the opposite direction: the
+WPF API (`System.Windows.*`) implemented *over* Xamarin.Forms and rendered by the GTK 4 renderers, so
+WPF code and WPF XAML run on Linux and macOS. It is `netstandard2.0` like the other libraries, packs as
+`Net4x.Xamarin.Forms.Wpf`, and its surface and boundaries are in
+[Xamarin.Forms.Wpf/README.md](Xamarin.Forms.Wpf/README.md). Add to it only what WPF itself has: a
+consumer compiles the same source against real WPF.
+
 Empty directories such as `Xamarin.Forms.Platform.Android/` may still exist in a working tree as
 local `bin`/`obj` residue from before the prune. They contain no tracked files — ignore them, or
 delete them locally.
@@ -65,18 +72,19 @@ Build-wide settings live in `Directory.Build.props` / `Environment.Build.props`:
 - `ANDROID_RENDERERS` and `AndroidTargetFrameworks` are still declared in
   `Environment.Build.props` but are vestigial — no Android project remains.
 
-All library projects (`Core`, `Xaml`, `Platform.GTK`, `Build.Tasks`, `Maps`, `Maps.GTK`) target a
-single TFM, `netstandard2.0`. The three test projects target `net10.0`.
+All library projects (`Core`, `Xaml`, `Platform.GTK`, `Build.Tasks`, `Maps`, `Maps.GTK`, `Wpf`) target
+a single TFM, `netstandard2.0`. The four test projects target `net10.0`.
 
 ## Tests
 
-Three suites, all **xUnit v3 on `net10.0`**, all run with `dotnet test`:
+Four suites, all **xUnit v3 on `net10.0`**, all run with `dotnet test`:
 
 | Project | Tests | Notes |
 |---|---|---|
 | `Xamarin.Forms.Core.UnitTests` | 4848 | platform-independent Core |
 | `Xamarin.Forms.Xaml.UnitTests` | 1046 | XAML loader + XamlC compiler |
 | `Xamarin.Forms.Platform.GTK.UnitTests` | 169 | **real GTK widgets** |
+| `Xamarin.Forms.Wpf.UnitTests` | 173 | the WPF facade, on real GTK widgets (`WpfTestBase.Run`/`Host`) |
 
 ```powershell
 dotnet test Xamarin.Forms.Gtk.sln                          # everything
@@ -96,7 +104,7 @@ conversion hit (all fixed, but the patterns recur):
 - **`Assert.Throws<T>` matches the type exactly**, where NUnit's accepted derived types.
 - **NUnit `Assume.That` → `Assert.SkipWhen`** (both mean "inconclusive"), not an assertion.
 
-**All three suites disable test parallelisation** via an `AssemblyTestConfig.cs`, and this is
+**All four suites disable test parallelisation** via an `AssemblyTestConfig.cs`, and this is
 load-bearing, not tidiness. These tests mutate process-global state (`Device.PlatformServices`,
 `Application.Current`, the `Registrar`). Without the guard `Core.UnitTests` does not merely fail —
 it hangs indefinitely. Do not remove it. `Xaml.UnitTests` additionally applies an assembly-level

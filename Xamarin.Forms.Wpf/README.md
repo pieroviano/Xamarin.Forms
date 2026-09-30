@@ -20,6 +20,7 @@ dotnet add package GtkSharp4                        # fetches the GTK runtime on
 | `Window` | a GTK window of its own (`FormsWindow.LoadPage`); any number open; `ShowDialog` = nested loop |
 | `Application` | brings GTK and Xamarin.Forms up; `Run` until `Shutdown` (`ShutdownMode` honoured) |
 | input | GTK event controllers per window: `Preview*` tunnel, then bubble; handled events stop at the widget |
+| focus | `SetFocus` raises `PreviewLostKeyboardFocus` before focus moves, so `e.Handled = true` keeps it, then `LostKeyboardFocus`/`GotKeyboardFocus` |
 | `Dispatcher` | the GLib main context; `DispatcherTimer` = GLib timeout |
 | XAML namespace | `http://schemas.microsoft.com/winfx/2006/xaml/presentation` maps to these namespaces (`XmlnsDefinition`) |
 
