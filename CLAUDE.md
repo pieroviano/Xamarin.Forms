@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -69,6 +69,13 @@ Build-wide settings live in `Directory.Build.props` / `Environment.Build.props`:
 - Versions come from GitInfo + `Version.targets`; `AssemblyVersion` is deliberately frozen at
   `2.0.0.0` (binding-compat) while `PackageVersion` is computed from the git tag/branch. Base
   version is in `GitInfo.txt`.
+- **A project whose `PackageVersion` is git-derived must add `SetVersions` to
+  `$(GetPackageVersionDependsOn)`** (`Xamarin.Forms.Platform.GTK`, `Xamarin.Forms.Wpf` do). Pack asks a
+  referenced project for its version through NuGet's `_GetProjectVersion`, which runs that list and nothing
+  else, so without it the dependency is written as the static `$(VersionPrefix).$(VersionSuffix)` — a version
+  the project never ships. NuGet then resolves the *lowest* version in range, i.e. the oldest build in the
+  feed, and the consumer gets a `MissingMethodException` for anything added since. Guarded by
+  `_XFAssertReportedProjectVersionIsGitDerived`.
 - `ANDROID_RENDERERS` and `AndroidTargetFrameworks` are still declared in
   `Environment.Build.props` but are vestigial — no Android project remains.
 

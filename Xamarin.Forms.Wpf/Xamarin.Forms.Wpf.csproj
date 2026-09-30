@@ -1,10 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <!-- Explicit, for the same restore-time reason Xamarin.Forms.Platform.GTK.csproj gives. -->
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <!-- And explicit for the second restore-time reason that file gives: pack reads this
+             through _GetProjectVersion, which runs $(GetPackageVersionDependsOn) and nothing
+             else, so a package referencing this one would otherwise depend on a version that is
+             never published. -->
+        <GetPackageVersionDependsOn>$(GetPackageVersionDependsOn);SetVersions</GetPackageVersionDependsOn>
         <PackageId>Net4x.Xamarin.Forms.Wpf</PackageId>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>

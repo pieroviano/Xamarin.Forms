@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <!--
       The two Net4x.NuGetUtility imports that used to bracket this file (NuGet.Utility.props
@@ -45,6 +45,21 @@
           prerelease "5.0.0-0", and record that as this project's version in project.assets.json.
         -->
         <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+        <!--
+          And keep this too, for the other half of the same problem. When a package that
+          REFERENCES this project is packed, NuGet asks this project for its version by running
+          its _GetProjectVersion target (NuGet.Build.Tasks.Pack.targets), which returns
+          $(PackageVersion) after running $(GetPackageVersionDependsOn) - and nothing else. Without
+          SetVersions in that list the property is still the static fallback above, so every
+          sibling package declared a dependency on Net4x.Xamarin.Forms.Platform.GTK
+          $(VersionPrefix).$(VersionSuffix), a version this project never ships.
+
+          NuGet resolves a transitive dependency to the LOWEST version that satisfies the range,
+          so a consumer of Net4x.Xamarin.Forms.Wpf 5.0.774 restored
+          Net4x.Xamarin.Forms.Platform.GTK 5.0.762 - the oldest build in the feed - and threw
+          MissingMethodException on the first member added after it (FormsWindow.QuitOnClose).
+        -->
+        <GetPackageVersionDependsOn>$(GetPackageVersionDependsOn);SetVersions</GetPackageVersionDependsOn>
         <PackageId>Net4x.Xamarin.Forms.Platform.GTK</PackageId>
         <IsPackable>true</IsPackable>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -177,6 +192,17 @@
     -->
     <Target Name="_XFAssertPackageVersionIsGitDerived" BeforeTargets="GenerateNuspec" DependsOnTargets="SetVersions">
         <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="PackageVersion is '$(PackageVersion)', the static fallback rather than the version Version.targets' SetVersions computed from git. Something overwrote it after SetVersions ran, so this pack would produce a $(PackageId) package that cannot be traced to a commit and collides with every other build of this branch." />
+    </Target>
+
+    <!--
+      The consumer-side half of the version guard. This one runs where the damage was done: in
+      _GetProjectVersion, i.e. while a package that references this project is being packed. If
+      PackageVersion is still the static fallback there, that pack is about to write a dependency
+      range naming a version this project never publishes, and the failure lands in the consumer's
+      process at runtime rather than in any build here.
+    -->
+    <Target Name="_XFAssertReportedProjectVersionIsGitDerived" AfterTargets="_GetProjectVersion">
+        <Error Condition="'$(PackageVersion)' == '$(VersionPrefix).$(VersionSuffix)'" Text="Pack asked $(MSBuildProjectFile) for its version and got '$(PackageVersion)', the static fallback rather than the git-derived version this project packs as. The referencing package would declare a dependency on $(PackageId) $(PackageVersion), which is never published, and NuGet would resolve the oldest build in the feed instead. $(GetPackageVersionDependsOn) must include SetVersions - see the comment beside it." />
     </Target>
 
     <!--
