@@ -36,6 +36,7 @@
     <!-- Matches Xamarin.Forms.Platform.GTK; see the note on CS0612/CS0618 there. -->
     <NoWarn>$(NoWarn);CS0612;CS0618</NoWarn>
     <PackageId>Net4x.$(AssemblyName)</PackageId>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <!-- HAVE_OPENTK stays off permanently. OpenGLView itself works (plan M6 §9.2: it runs on
        Gtk.GLArea and is exercised by OpenGLViewCoreGalleryPage), but BasicOpenGLGallery and
