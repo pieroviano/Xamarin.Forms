@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.props')" />
     <PropertyGroup>
         <PackageOutputPath>$(XFPackageOutputPath)</PackageOutputPath>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -76,7 +75,6 @@
         <Content Include="README.md" Link="README.md" Pack="true" PackagePath="\README.md" />
         <Content Include="$(SolutionDir)License.txt" Link="License.txt" Pack="true" PackagePath="\License.txt" Condition="Exists('$(SolutionDir)License.txt')" />
     </ItemGroup>
-    <Import Project="$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets" Condition="'$(OS)' == 'Windows_NT' AND Exists('$(NuGetPackageRoot)net4x.nugetutility/$(NuGetUtilityVersion)/build/NuGet.Utility.targets')" />
     <!--
       See the identically named target in Xamarin.Forms.Platform.GTK.csproj for why this exists.
       Short version: the tooling imported just above rewrites the Include of this project's
