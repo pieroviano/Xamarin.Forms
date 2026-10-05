@@ -17,6 +17,15 @@
 		<_XFBuildTasksLocation Condition="'$(_XFBuildTasksLocation)' == ''">$(MSBuildThisFileDirectory)netstandard2.0\</_XFBuildTasksLocation>
 	</PropertyGroup>
 	
+	<!--
+		Plain in-process tasks, deliberately. TaskFactory="TaskHostFactory" looks like the fix for
+		the lock that _PublishBuildTasks reports as XF006, and it is not: MEASURED, the task host is
+		itself kept alive by node reuse ("The file is locked by: MSBuild.exe (68884)" on the build
+		after the one that ran XamlCTask), so it holds
+		$(_XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll exactly as a reused in-proc node does
+		- while costing a process per project that compiles XAML. Node reuse is the thing to turn
+		off, and Directory.Build.rsp in the repo root does that for every command-line build here.
+	-->
 	<UsingTask TaskName="Xamarin.Forms.Build.Tasks.XamlGTask" AssemblyFile="$(_XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll" />
 	<UsingTask TaskName="Xamarin.Forms.Build.Tasks.CssGTask" AssemblyFile="$(_XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll" />
 	<UsingTask TaskName="Xamarin.Forms.Build.Tasks.XamlCTask" AssemblyFile="$(_XFBuildTasksLocation)Xamarin.Forms.Build.Tasks.dll" />

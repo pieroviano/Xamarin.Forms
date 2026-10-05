@@ -150,6 +150,17 @@
     That is what the old .nuspec/<tfm>/ copy was for. The difference here is that a failed
     copy is REPORTED: it used to be ContinueOnError with no message, so a locked destination
     silently left a stale task in place - which is how an XamlCTask crash appeared earlier.
+
+    What locks the COPY is MSBuild NODE REUSE, and that is what Directory.Build.rsp in the repo
+    root turns off (-nodeReuse:false) for every command-line build here. A node that ran XamlCTask
+    keeps the assembly loaded, and a reused node outlives its build, so the next build - the one
+    that rebuilds this project - cannot overwrite the file. MEASURED: with reuse on, the copy fails
+    naming the holder as an MSBuild process left over from the previous build; with it off, two
+    consecutive builds that each change this assembly both publish cleanly. A task host
+    (TaskFactory="TaskHostFactory") does NOT help - see the note in build\Xamarin.Forms.targets.
+
+    Visual Studio owns its own nodes and ignores that response file, so XF006 below stays as the
+    guard, and closing the solution remains its remedy.
   -->
     <ItemGroup>
         <PackageReference Include="Net4x.NuGetUtility" Version="$(NuGetUtilityVersion)" PrivateAssets="All" Condition="'$(OS)' == 'Windows_NT'" />
